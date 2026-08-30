@@ -69,6 +69,36 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
     }
   }, [animeId, currentEpisode]);
 
+  // Auto-fetch online subtitles in background if no local file exists
+  useEffect(() => {
+    if (!animeTitle || isUnreleased) return;
+
+    const fetchAutoSubtitles = async () => {
+      try {
+        const res = await fetch(
+          `/api/subtitles/auto?title=${encodeURIComponent(animeTitle)}&episode=${currentEpisode}&animeId=${animeId || ''}`
+        );
+        const data = await res.json();
+        if (data?.success && data?.data?.content) {
+          const parsedCues = parseSubtitles(data.data.content);
+          if (parsedCues.length > 0) {
+            setSubtitlesList((existing) => (existing.length === 0 ? parsedCues : existing));
+            setSubFileName((existing) => (existing ? existing : data.data.fileName || 'Auto English Subtitles'));
+            setIsSubEnabled(true);
+            setIsSubTimerPlaying(true);
+          }
+        }
+      } catch (err) {
+        // Silently continue
+      }
+    };
+
+    const savedKey = `animestop_sub_${animeId}_${currentEpisode}`;
+    if (typeof window !== 'undefined' && !localStorage.getItem(savedKey)) {
+      fetchAutoSubtitles();
+    }
+  }, [animeTitle, currentEpisode, animeId, isUnreleased]);
+
   // Subtitle playback interval timer (ticks every 250ms for smooth cue rendering)
   useEffect(() => {
     if (!isSubTimerPlaying || subtitlesList.length === 0 || !isSubEnabled) {
