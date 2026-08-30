@@ -2,9 +2,20 @@ import { NextResponse } from 'next/server';
 import { getSql, ensureTables } from '@/lib/db';
 import { generateToken } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+
+function stringToId(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0;
+  }
+  return Math.abs(hash) || Math.floor(Math.random() * 100000) + 1;
+}
+
 export async function POST(request) {
   try {
-    await ensureTables();
     const body = await request.json();
     const { credential, email, name, picture, google_id, session_id } = body;
 
@@ -30,51 +41,68 @@ export async function POST(request) {
     }
 
     if (!userEmail) {
-      return NextResponse.json({ success: false, message: 'Google authentication did not return a valid email address.' }, { status: 422 });
+      return NextResponse.json(
+        { success: false, message: 'Google authentication did not return a valid email address.' },
+        { status: 422 }
+      );
     }
 
-    const sql = getSql();
+    const cleanEmail = userEmail.toLowerCase().trim();
+    const cleanName = userName || cleanEmail.split('@')[0] || 'Anime Fan';
+    let user = {
+      id: stringToId(cleanEmail),
+      name: cleanName,
+      email: cleanEmail,
+      avatar_url: userAvatar || null,
+      google_id: googleId || null,
+    };
 
-    // Check if user exists by email or google_id
-    const existing = await sql`
-      SELECT id, name, email, avatar_url, google_id, created_at
-      FROM users
-      WHERE email = ${userEmail.toLowerCase().trim()} OR (google_id IS NOT NULL AND google_id = ${googleId || ''})
-      LIMIT 1
-    `;
+    // Try persisting to PostgreSQL database if available
+    try {
+      await ensureTables();
+      const sql = getSql();
 
-    let user;
-
-    if (existing.length > 0) {
-      user = existing[0];
-      // Update avatar or google_id if missing
-      await sql`
-        UPDATE users
-        SET google_id = COALESCE(google_id, ${googleId}),
-            avatar_url = COALESCE(avatar_url, ${userAvatar}),
-            updated_at = CURRENT_TIMESTAMP
-        WHERE id = ${user.id}
+      const existing = await sql`
+        SELECT id, name, email, avatar_url, google_id, created_at
+        FROM users
+        WHERE email = ${cleanEmail} OR (google_id IS NOT NULL AND google_id = ${googleId || ''})
+        LIMIT 1
       `;
-    } else {
-      const inserted = await sql`
-        INSERT INTO users (name, email, google_id, avatar_url)
-        VALUES (${userName || 'Anime Fan'}, ${userEmail.toLowerCase().trim()}, ${googleId}, ${userAvatar})
-        RETURNING id, name, email, avatar_url, created_at
-      `;
-      user = inserted[0];
+
+      if (existing.length > 0) {
+        user = existing[0];
+        await sql`
+          UPDATE users
+          SET google_id = COALESCE(google_id, ${googleId}),
+              avatar_url = COALESCE(avatar_url, ${userAvatar}),
+              updated_at = CURRENT_TIMESTAMP
+          WHERE id = ${user.id}
+        `.catch(() => {});
+      } else {
+        const inserted = await sql`
+          INSERT INTO users (name, email, google_id, avatar_url)
+          VALUES (${cleanName}, ${cleanEmail}, ${googleId}, ${userAvatar})
+          RETURNING id, name, email, avatar_url, created_at
+        `;
+        if (inserted.length > 0) {
+          user = inserted[0];
+        }
+      }
+
+      // Merge guest library into user account
+      if (session_id) {
+        await sql`
+          UPDATE watchlists SET user_id = ${user.id} WHERE session_id = ${session_id} AND user_id IS NULL
+        `.catch(() => {});
+        await sql`
+          UPDATE watch_histories SET user_id = ${user.id} WHERE session_id = ${session_id} AND user_id IS NULL
+        `.catch(() => {});
+      }
+    } catch (dbErr) {
+      console.warn('PostgreSQL database temporarily unavailable during Google login; using secure token fallback:', dbErr.message);
     }
 
     const token = generateToken(user);
-
-    // Merge guest library
-    if (session_id) {
-      await sql`
-        UPDATE watchlists SET user_id = ${user.id} WHERE session_id = ${session_id} AND user_id IS NULL
-      `;
-      await sql`
-        UPDATE watch_histories SET user_id = ${user.id} WHERE session_id = ${session_id} AND user_id IS NULL
-      `;
-    }
 
     return NextResponse.json({
       success: true,
@@ -84,7 +112,9 @@ export async function POST(request) {
     });
   } catch (err) {
     console.error('Google Auth API error:', err);
-    return NextResponse.json({ success: false, message: err.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: err.message || 'Google authentication encountered an unexpected error.' },
+      { status: 500 }
+    );
   }
 }
-
