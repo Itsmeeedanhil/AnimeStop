@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Footer from '@/components/Footer';
@@ -8,13 +8,26 @@ import Footer from '@/components/Footer';
 export default function LayoutWrapper({ children }) {
   const pathname = usePathname();
   const isWatchPage = pathname?.startsWith('/watch');
+  const lastTrackedPath = useRef(null);
 
-  // Automatic Human Visitor Tracking (fires on page navigation)
+  // Accurate Human Visitor Tracking
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
+    // Prevent duplicate triggers for the exact same page in short intervals
+    if (lastTrackedPath.current === pathname) return;
+    lastTrackedPath.current = pathname;
+
     const trackVisit = async () => {
       try {
+        // Collect genuine human client verification signals
+        const clientSignals = {
+          webdriver: Boolean(navigator.webdriver),
+          screenW: window.screen?.width || 0,
+          screenH: window.screen?.height || 0,
+          isTouch: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
+        };
+
         await fetch('/api/analytics/track', {
           method: 'POST',
           headers: {
@@ -24,6 +37,7 @@ export default function LayoutWrapper({ children }) {
           body: JSON.stringify({
             path: pathname || '/',
             referrer: document.referrer || '',
+            clientSignals,
           }),
         });
       } catch (e) {}

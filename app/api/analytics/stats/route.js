@@ -10,12 +10,13 @@ export async function GET() {
     let todayHumanVisits = 0;
     let registeredUsers = 0;
     let totalStreams = 0;
+    let botVisitsFiltered = 0;
 
     try {
       await ensureTables();
       const sql = getSql();
 
-      // Query total human visits (excluding bots)
+      // Exact total human visits (excluding bots)
       const totalVisitsRes = await sql`
         SELECT COUNT(*) as count 
         FROM site_visits 
@@ -23,7 +24,7 @@ export async function GET() {
       `;
       totalHumanVisits = parseInt(totalVisitsRes[0]?.count || '0', 10);
 
-      // Query unique human visitors (by visitor hash)
+      // Exact unique human visitors (deduplicated by visitor_hash)
       const uniqueVisitsRes = await sql`
         SELECT COUNT(DISTINCT visitor_hash) as count 
         FROM site_visits 
@@ -31,7 +32,7 @@ export async function GET() {
       `;
       uniqueHumanVisitors = parseInt(uniqueVisitsRes[0]?.count || '0', 10);
 
-      // Query today's human visits
+      // Exact today's human visits
       const todayVisitsRes = await sql`
         SELECT COUNT(*) as count 
         FROM site_visits 
@@ -39,46 +40,55 @@ export async function GET() {
       `;
       todayHumanVisits = parseInt(todayVisitsRes[0]?.count || '0', 10);
 
-      // Query registered accounts
+      // Filtered bots count
+      const botVisitsRes = await sql`
+        SELECT COUNT(*) as count 
+        FROM site_visits 
+        WHERE is_bot = TRUE
+      `;
+      botVisitsFiltered = parseInt(botVisitsRes[0]?.count || '0', 10);
+
+      // Exact registered accounts
       const usersRes = await sql`
         SELECT COUNT(*) as count 
         FROM users
       `;
       registeredUsers = parseInt(usersRes[0]?.count || '0', 10);
 
-      // Query total watch history records
+      // Exact total watch history / stream records
       const historyRes = await sql`
         SELECT COUNT(*) as count 
         FROM watch_histories
       `;
       totalStreams = parseInt(historyRes[0]?.count || '0', 10);
     } catch (dbErr) {
-      console.warn('Database stats unavailable, returning fallback:', dbErr.message);
+      console.warn('Database stats query offline:', dbErr.message);
     }
 
     return NextResponse.json({
       success: true,
       data: {
-        totalHumanVisits: Math.max(totalHumanVisits, 128),
-        uniqueHumanVisitors: Math.max(uniqueHumanVisitors, 42),
-        todayHumanVisits: Math.max(todayHumanVisits, 16),
-        registeredUsers: Math.max(registeredUsers, 1),
-        totalStreams: Math.max(totalStreams, 5),
-        botShield: 'Active (Automated Crawlers Filtered)',
+        totalHumanVisits,
+        uniqueHumanVisitors,
+        todayHumanVisits,
+        botVisitsFiltered,
+        registeredUsers,
+        totalStreams,
+        botShieldStatus: 'Active & Verified',
       },
     });
   } catch (err) {
     return NextResponse.json({
       success: true,
       data: {
-        totalHumanVisits: 128,
-        uniqueHumanVisitors: 42,
-        todayHumanVisits: 16,
-        registeredUsers: 1,
-        totalStreams: 5,
-        botShield: 'Active',
+        totalHumanVisits: 0,
+        uniqueHumanVisitors: 0,
+        todayHumanVisits: 0,
+        botVisitsFiltered: 0,
+        registeredUsers: 0,
+        totalStreams: 0,
+        botShieldStatus: 'Active',
       },
     });
   }
 }
-

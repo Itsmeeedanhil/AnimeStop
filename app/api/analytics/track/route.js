@@ -12,12 +12,14 @@ export async function POST(request) {
     const country = request.headers.get('x-vercel-ip-country') || request.headers.get('cf-ipcountry') || 'Unknown';
     const sessionId = request.headers.get('x-session-id') || 'session_guest';
 
-    // 1. Filter out bots and crawlers
-    const isBotDetected = isBot(userAgent);
-
     const body = await request.json().catch(() => ({}));
     const path = body?.path || '/';
     const referrer = body?.referrer || request.headers.get('referer') || '';
+    const clientSignals = body?.clientSignals || {};
+
+    // 1. Rigorous Bot Filtering
+    const isBotDetected = isBot(userAgent, clientSignals);
+
     const visitorHash = generateVisitorHash(ip, userAgent);
     const deviceType = detectDevice(userAgent);
 
@@ -29,8 +31,17 @@ export async function POST(request) {
       const sql = getSql();
 
       await sql`
-        INSERT INTO site_visits (user_id, session_id, visitor_hash, path, referrer, user_agent, country, device_type, is_bot)
-        VALUES (
+        INSERT INTO site_visits (
+          user_id,
+          session_id,
+          visitor_hash,
+          path,
+          referrer,
+          user_agent,
+          country,
+          device_type,
+          is_bot
+        ) VALUES (
           ${user?.id || null},
           ${sessionId},
           ${visitorHash},
@@ -49,10 +60,10 @@ export async function POST(request) {
     return NextResponse.json({
       success: true,
       filtered: isBotDetected,
+      human: !isBotDetected,
       device: deviceType,
     });
   } catch (err) {
     return NextResponse.json({ success: true });
   }
 }
-
