@@ -4,15 +4,13 @@
     "type": "module",
     "scripts": {
         "build": "vite build",
-        "dev": "vite"
+        "dev": "vite",
+        "vercel-build": "vite build"
     },
     "dependencies": {
-        "@consumet/extensions": "^1.8.8",
         "artplayer": "^5.4.0",
         "axios": "^1.7.9",
         "clsx": "^2.1.1",
-        "cors": "^2.8.6",
-        "express": "^5.2.1",
         "hls.js": "^1.7.1",
         "lucide-react": "^0.475.0",
         "react": "^18.3.1",
