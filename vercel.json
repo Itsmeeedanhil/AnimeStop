@@ -11,19 +11,19 @@
     "routes": [
         {
             "src": "/build/(.*)",
-            "dest": "/public/build/$1"
+            "dest": "/build/$1"
         },
         {
             "src": "/favicon.svg",
-            "dest": "/public/favicon.svg"
+            "dest": "/favicon.svg"
         },
         {
             "src": "/logo.svg",
-            "dest": "/public/logo.svg"
+            "dest": "/logo.svg"
         },
         {
             "src": "/robots.txt",
-            "dest": "/public/robots.txt"
+            "dest": "/robots.txt"
         },
         {
             "src": "/(.*)",
@@ -32,7 +32,7 @@
     ],
     "env": {
         "APP_ENV": "production",
-        "APP_DEBUG": "true",
+        "APP_DEBUG": "false",
         "APP_KEY": "base64:9NaD9pAVZOYhxcpSs3OZgVvyliyL31O3Pz8d561PoeQ=",
         "LOG_CHANNEL": "stderr",
         "SESSION_DRIVER": "file",
