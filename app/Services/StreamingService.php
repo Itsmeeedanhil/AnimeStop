@@ -25,15 +25,19 @@ class StreamingService
         // Extract MyAnimeList ID (idMal)
         $targetId = !empty($animeDetails['idMal']) ? $animeDetails['idMal'] : $animeId;
 
-        // Resolve stream via HiAnime API scraper
-        $streamUrl = $this->hiAnimeService->resolveStream(
-            $englishTitle ?? $romajiTitle ?? 'anime',
-            $episode,
-            $romajiTitle,
-            $targetId
-        );
-
         $trailerEmbedUrl = $trailerId ? "https://www.youtube.com/embed/{$trailerId}?autoplay=1&rel=0" : null;
+
+        // Resolve stream via HiAnime API scraper or direct anime CDN
+        if ($isUnreleased && $trailerEmbedUrl) {
+            $streamUrl = $trailerEmbedUrl;
+        } else {
+            $streamUrl = $this->hiAnimeService->resolveStream(
+                $englishTitle ?? $romajiTitle ?? 'anime',
+                $episode,
+                $romajiTitle,
+                $targetId
+            );
+        }
 
         // Build list of episodes
         $episodesList = [];
