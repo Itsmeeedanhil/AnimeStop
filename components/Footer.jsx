@@ -1,9 +1,19 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { ShieldCheck, Users, Eye } from 'lucide-react';
 
 export default function Footer() {
+  const [stats, setStats] = useState(null);
+
+  useEffect(() => {
+    fetch('/api/analytics/stats')
+      .then((res) => res.json())
+      .then((json) => setStats(json.data))
+      .catch(() => {});
+  }, []);
+
   return (
     <footer className="bg-[#0e0f0f] border-t border-white/5 pt-16 pb-12 mt-20 text-[#99907c]">
       <div className="max-w-[1920px] mx-auto px-4 md:px-12 grid grid-cols-1 md:grid-cols-4 gap-10">
@@ -25,6 +35,21 @@ export default function Footer() {
           <p className="text-xs leading-relaxed text-[#99907c]">
             The definitive cinema-grade anime streaming sanctuary. Ultra-HD streaming with multi-provider failover, curated seasonal archives, and real-time cloud synchronisation.
           </p>
+
+          {/* Live Visitor & Bot-Shield Pill */}
+          {stats && (
+            <div className="flex flex-col gap-1.5 pt-2">
+              <div className="flex items-center gap-2 text-[11px] text-[#ffe9b0] bg-[#1E2020] px-3 py-1.5 rounded-lg border border-[#4d4635]/40 w-fit shadow">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span className="font-bold">{stats.totalHumanVisits.toLocaleString()}</span>
+                <span className="text-[#99907c]">Human Visits</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-[10px] text-emerald-400">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Anti-Bot Shield Active (Crawlers Filtered)</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Quick Links */}
@@ -64,4 +89,3 @@ export default function Footer() {
     </footer>
   );
 }
-
