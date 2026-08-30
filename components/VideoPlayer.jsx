@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { LibraryApi } from '@/lib/api';
-import { RefreshCw, ExternalLink, SkipBack, SkipForward, AlertCircle, VideoOff } from 'lucide-react';
+import { RefreshCw, ExternalLink, SkipBack, SkipForward, AlertCircle, VideoOff, Subtitles } from 'lucide-react';
 
 export default function VideoPlayer({ streamData, anime, currentEpisode, onNextEpisode, onPrevEpisode }) {
   const isUnreleased = streamData?.isUnreleased;
@@ -10,7 +10,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
   const trailerUrl = streamData?.trailerUrl;
   const servers = streamData?.servers || [];
 
-  const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || '4animo-hd1');
+  const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || 'vidlink-sub');
   const [selectedServerId, setSelectedServerId] = useState(defaultServerId);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -36,10 +36,8 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
       }).catch(() => {});
     };
 
-    // Save immediately so it appears instantly in Library / Continue Watching
     recordProgress(15);
 
-    // Keep saving every 15 seconds
     const interval = setInterval(() => {
       recordProgress(300);
     }, 15000);
@@ -76,7 +74,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             {selectedServerId === 'trailer' ? 'Official PV Trailer' : `Playing Episode ${currentEpisode}`}
           </span>
 
-          {/* Server Mirror Pills */}
+          {/* Server Mirror Switcher with Subtitle Badges */}
           {!isUnreleased && servers.length > 1 && (
             <div className="flex items-center gap-1.5 bg-[#121414] p-1 rounded-lg border border-[#4d4635]/40 text-xs overflow-x-auto hide-scrollbar">
               {servers.map((srv) => (
@@ -91,10 +89,10 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
                 >
                   <span>{srv.name}</span>
                   {srv.badge && (
-                    <span className={`text-[9px] px-1 py-0.2 rounded uppercase ${
+                    <span className={`text-[9px] px-1.5 py-0.2 rounded uppercase font-bold ${
                       selectedServerId === srv.id
                         ? 'bg-[#241a00]/20 text-[#241a00]'
-                        : 'bg-white/10 text-[#d0c5af]'
+                        : 'bg-[#ffe9b0]/15 text-[#ffe9b0]'
                     }`}>
                       {srv.badge}
                     </span>
@@ -149,6 +147,21 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         </div>
       </div>
 
+      {/* Subtitle / CC Helper Banner */}
+      {!isUnreleased && (
+        <div className="bg-[#121414] border-b border-[#4d4635]/30 px-4 md:px-6 py-2 flex items-center justify-between gap-2 text-xs text-[#d0c5af]">
+          <div className="flex items-center gap-2">
+            <Subtitles className="w-4 h-4 text-[#ffe9b0] shrink-0" />
+            <span>
+              <strong className="text-[#ffe9b0]">Subtitles:</strong> To turn on English subtitles, click the <strong className="text-white bg-white/10 px-1 py-0.2 rounded">CC</strong> / <strong className="text-white bg-white/10 px-1 py-0.2 rounded">⚙️ Settings</strong> icon at the bottom-right corner of the video player.
+            </span>
+          </div>
+          <span className="hidden sm:inline text-[11px] text-[#99907c]">
+            If subs are missing on this server, switch to Server 2 or 3 above!
+          </span>
+        </div>
+      )}
+
       {/* Unreleased Warning Notice */}
       {isUnreleased && (
         <div className="bg-[#af8d11]/20 border-b border-[#f2ca50]/40 px-4 py-2.5 flex items-center justify-between text-xs text-[#ffe9b0]">
@@ -188,7 +201,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
           <span>Direct Stream: <strong className="text-[#e2e2e2] uppercase">{isUnreleased ? 'OFFICIAL HD TRAILER' : (activeServer.name || 'DIRECT HD STREAM')}</strong></span>
-          <span className="text-[10px] text-[#2ebd85] font-semibold bg-[#2ebd85]/10 px-1.5 py-0.5 rounded">Ad-Popup Shield Active</span>
+          <span className="text-[10px] text-[#2ebd85] font-semibold bg-[#2ebd85]/10 px-1.5 py-0.5 rounded">Ad-Shield Active</span>
         </div>
         <div>
           <span>Progress auto-saves to your library</span>
