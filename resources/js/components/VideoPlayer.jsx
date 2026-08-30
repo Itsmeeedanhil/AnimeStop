@@ -181,7 +181,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
                 </div>
             )}
 
-            {/* Direct Video Player Display Container */}
+            {/* Direct Video Player Display Container with HTML5 Sandbox Popup Blocker */}
             <div className="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden shadow-2xl">
                 {currentUrl ? (
                     <iframe
@@ -190,6 +190,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
                         title={`Streaming ${animeTitle} Episode ${currentEpisode}`}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                         allowFullScreen
+                        sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
                         className="w-full h-full border-0 absolute inset-0 z-10"
                     />
                 ) : (
@@ -206,6 +207,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
                 <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                     <span>Direct Stream: <strong className="text-[#e2e2e2] uppercase">{isUnreleased ? 'OFFICIAL HD TRAILER' : (activeServer.name || 'DIRECT HD STREAM')}</strong></span>
+                    <span className="text-[10px] text-[#2ebd85] font-semibold bg-[#2ebd85]/10 px-1.5 py-0.5 rounded">Ad-Popup Shield Active</span>
                 </div>
                 <div>
                     <span>Progress auto-saves to your library</span>
