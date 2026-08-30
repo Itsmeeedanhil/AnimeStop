@@ -14,25 +14,38 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
   const [selectedServerId, setSelectedServerId] = useState(defaultServerId);
   const [reloadKey, setReloadKey] = useState(0);
 
-  // Auto-save watch progress to library
+  // IMMEDIATELY save watch progress on load, then continuously update
   useEffect(() => {
-    if (!anime?.id) return;
+    const animeId = parseInt(anime?.id || streamData?.animeId, 10);
+    if (!animeId) return;
 
-    const interval = setInterval(() => {
+    const bannerUrl = anime?.bannerImage || streamData?.banner || anime?.coverImage?.extraLarge;
+    const coverUrl = anime?.coverImage?.extraLarge || anime?.coverImage?.large || bannerUrl;
+
+    const recordProgress = (seconds = 10) => {
       LibraryApi.saveProgress({
-        anime_id: anime.id,
+        anime_id: animeId,
         anime_title: animeTitle,
-        anime_image: anime.coverImage?.extraLarge || anime.coverImage?.large,
-        anime_banner: anime.bannerImage,
+        anime_image: coverUrl,
+        anime_banner: bannerUrl,
         episode_number: currentEpisode,
-        progress_seconds: 300,
+        episode_title: `Episode ${currentEpisode}`,
+        progress_seconds: seconds,
         duration_seconds: 1440,
         completed: false,
-      }).catch(err => console.error('Failed to auto-save progress', err));
-    }, 30000);
+      }).catch(() => {});
+    };
+
+    // Save immediately so it appears instantly in Library / Continue Watching
+    recordProgress(15);
+
+    // Keep saving every 15 seconds
+    const interval = setInterval(() => {
+      recordProgress(300);
+    }, 15000);
 
     return () => clearInterval(interval);
-  }, [anime, currentEpisode, animeTitle]);
+  }, [anime, currentEpisode, animeTitle, streamData]);
 
   // Synchronize server when episode changes
   useEffect(() => {
@@ -184,4 +197,3 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
     </div>
   );
 }
-

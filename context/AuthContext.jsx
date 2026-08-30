@@ -36,8 +36,8 @@ export function AuthProvider({ children }) {
   const refreshLibrary = async () => {
     try {
       const data = await LibraryApi.getLibrary();
-      if (data?.watchlist) {
-        const ids = new Set(data.watchlist.map(item => item.anime_id));
+      if (data?.watchlist && Array.isArray(data.watchlist)) {
+        const ids = new Set(data.watchlist.map(item => Number(item.anime_id || item.id)));
         setWatchlistIds(ids);
       }
     } catch (err) {
@@ -75,16 +75,30 @@ export function AuthProvider({ children }) {
   };
 
   const isBookmarked = (animeId) => {
-    return watchlistIds.has(animeId);
+    if (!animeId) return false;
+    return watchlistIds.has(Number(animeId));
   };
 
   const toggleBookmark = async (anime) => {
+    const animeId = Number(anime.id || anime.anime_id);
+    // Optimistically update UI
+    setWatchlistIds(prev => {
+      const next = new Set(prev);
+      if (next.has(animeId)) {
+        next.delete(animeId);
+      } else {
+        next.add(animeId);
+      }
+      return next;
+    });
+
     try {
       const res = await LibraryApi.toggleWatchlist(anime);
       await refreshLibrary();
       return res;
     } catch (err) {
       console.error('Toggle watchlist error:', err);
+      await refreshLibrary();
       throw err;
     }
   };
@@ -117,4 +131,3 @@ export function useAuth() {
   }
   return context;
 }
-

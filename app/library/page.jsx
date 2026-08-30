@@ -6,17 +6,16 @@ import { useRouter } from 'next/navigation';
 import { LibraryApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import AnimeCard from '@/components/AnimeCard';
-import { Library as LibraryIcon, PlayCircle, Bookmark, History, CloudLightning, Play, Trash2, Trash } from 'lucide-react';
+import { Library as LibraryIcon, PlayCircle, Bookmark, History, CloudLightning, Trash2, Trash } from 'lucide-react';
 
 export default function LibraryPage() {
   const router = useRouter();
-  const { user, openAuthModal, toggleBookmark } = useAuth();
+  const { user, openAuthModal } = useAuth();
   const [activeTab, setActiveTab] = useState('continue');
   const [libraryData, setLibraryData] = useState({ continueWatching: [], watchlist: [], history: [] });
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchLibrary = async () => {
-    setIsLoading(true);
     try {
       const data = await LibraryApi.getLibrary();
       setLibraryData(data);
@@ -29,6 +28,13 @@ export default function LibraryPage() {
 
   useEffect(() => {
     fetchLibrary();
+
+    const handleUpdate = () => {
+      fetchLibrary();
+    };
+
+    window.addEventListener('animestop_library_updated', handleUpdate);
+    return () => window.removeEventListener('animestop_library_updated', handleUpdate);
   }, [user]);
 
   const handleClearHistory = async () => {
@@ -162,10 +168,10 @@ export default function LibraryPage() {
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
               {continueWatching.map((item) => {
-                const percent = Math.min(100, Math.round((item.progress_seconds / (item.duration_seconds || 1440)) * 100));
+                const percent = Math.min(100, Math.round(((item.progress_seconds || 15) / (item.duration_seconds || 1440)) * 100));
                 return (
                   <div
-                    key={item.id}
+                    key={`${item.anime_id}-${item.episode_number}-${item.id || ''}`}
                     onClick={() => router.push(`/watch/${item.anime_id}?ep=${item.episode_number}`)}
                     className="group relative rounded-2xl bg-[#1E2020] border border-[#4d4635]/40 hover:border-[#ffe9b0] overflow-hidden transition-all duration-300 shadow-lg cursor-pointer flex flex-col"
                   >
@@ -177,12 +183,6 @@ export default function LibraryPage() {
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
 
-                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <span className="w-12 h-12 rounded-full bg-[#ffe9b0] text-[#241a00] flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
-                          <Play className="w-6 h-6 fill-current ml-0.5" />
-                        </span>
-                      </div>
-
                       <div className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-md bg-black/80 backdrop-blur-md text-[11px] font-bold text-[#ffe9b0]">
                         Ep {item.episode_number}
                       </div>
@@ -190,7 +190,7 @@ export default function LibraryPage() {
                       <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-white/20">
                         <div
                           className="h-full bg-gradient-to-r from-[#f2ca50] to-[#af8d11]"
-                          style={{ width: `${percent}%` }}
+                          style={{ width: `${Math.max(5, percent)}%` }}
                         ></div>
                       </div>
                     </div>
@@ -235,9 +235,9 @@ export default function LibraryPage() {
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
               {watchlist.map((item) => (
                 <AnimeCard
-                  key={item.id}
+                  key={item.anime_id || item.id}
                   anime={{
-                    id: item.anime_id,
+                    id: item.anime_id || item.id,
                     title: { english: item.title, romaji: item.title },
                     coverImage: { large: item.image_url, extraLarge: item.image_url },
                     bannerImage: item.banner_url,
@@ -280,7 +280,7 @@ export default function LibraryPage() {
             <div className="flex flex-col gap-3">
               {history.map((item) => (
                 <div
-                  key={item.id}
+                  key={`${item.anime_id}-${item.episode_number}-${item.id || ''}`}
                   className="flex items-center justify-between p-3.5 rounded-xl bg-[#1E2020] border border-white/5 hover:border-[#ffe9b0]/30 transition-all gap-4"
                 >
                   <div
@@ -302,7 +302,7 @@ export default function LibraryPage() {
                         Episode {item.episode_number}
                       </span>
                       <span className="text-[10px] text-[#99907c] mt-0.5">
-                        Watched on {new Date(item.last_watched_at || item.created_at).toLocaleDateString()}
+                        Watched on {new Date(item.last_watched_at || item.created_at || Date.now()).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
@@ -323,4 +323,3 @@ export default function LibraryPage() {
     </div>
   );
 }
-
