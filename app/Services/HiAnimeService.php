@@ -12,11 +12,11 @@ class HiAnimeService
 
     public function __construct()
     {
-        $this->baseUrl = rtrim(config('services.hianime.url', 'https://hianime-api-ten.vercel.app'), '/');
+        $this->baseUrl = rtrim(config('services.hianime.url', 'http://localhost:5000'), '/');
     }
 
     /**
-     * Search anime on HiAnime to find matching anime ID/slug
+     * Search anime on HiAnime (ryanwtf7/hianime-api)
      */
     public function searchAnime(string $query): ?string
     {
@@ -24,15 +24,15 @@ class HiAnimeService
 
         return Cache::remember($cacheKey, 86400, function () use ($query) {
             try {
-                $response = Http::timeout(6)
+                $response = Http::timeout(4)
                     ->withHeaders(['User-Agent' => 'Mozilla/5.0'])
-                    ->get("{$this->baseUrl}/api/v2/hianime/search", [
+                    ->get("{$this->baseUrl}/api/v2/search", [
                         'q' => $query,
-                        'page' => 1,
                     ]);
 
                 if ($response->successful()) {
-                    $animes = $response->json()['data']['animes'] ?? [];
+                    $json = $response->json();
+                    $animes = $json['data']['animes'] ?? $json['animes'] ?? $json['data'] ?? [];
                     if (!empty($animes[0]['id'])) {
                         return $animes[0]['id'];
                     }
@@ -41,13 +41,13 @@ class HiAnimeService
                 Log::warning("HiAnime search error for query '{$query}': " . $e->getMessage());
             }
 
-            // Fallback normalized slug
+            // Standard fallback normalized slug
             return preg_replace('/[^\w-]/', '', strtolower(str_replace(' ', '-', $query)));
         });
     }
 
     /**
-     * Get episode list for an anime on HiAnime
+     * Get episode list for an anime from ryanwtf7/hianime-api
      */
     public function getEpisodes(string $animeId): array
     {
@@ -55,12 +55,13 @@ class HiAnimeService
 
         return Cache::remember($cacheKey, 3600, function () use ($animeId) {
             try {
-                $response = Http::timeout(6)
+                $response = Http::timeout(4)
                     ->withHeaders(['User-Agent' => 'Mozilla/5.0'])
-                    ->get("{$this->baseUrl}/api/v2/hianime/anime/{$animeId}/episodes");
+                    ->get("{$this->baseUrl}/api/v2/episodes/{$animeId}");
 
                 if ($response->successful()) {
-                    return $response->json()['data']['episodes'] ?? [];
+                    $json = $response->json();
+                    return $json['data'] ?? $json ?? [];
                 }
             } catch (\Throwable $e) {
                 Log::warning("HiAnime episodes error for ID '{$animeId}': " . $e->getMessage());
@@ -71,86 +72,31 @@ class HiAnimeService
     }
 
     /**
-     * Get direct streaming sources (.m3u8), subtitles (.vtt), and intro/outro for an episode
+     * Resolve streaming player URL for an anime title and episode number
      */
-    public function getEpisodeSources(string $animeEpisodeId, string $server = 'hd-1', string $category = 'sub'): ?array
+    public function resolveStream(string $title, int $episodeNumber = 1, ?string $romaji = null, ?int $malId = null): string
     {
-        $cacheKey = 'hianime_sources_' . md5("{$animeEpisodeId}_{$server}_{$category}");
-
-        return Cache::remember($cacheKey, 1800, function () use ($animeEpisodeId, $server, $category) {
-            try {
-                $response = Http::timeout(8)
-                    ->withHeaders(['User-Agent' => 'Mozilla/5.0'])
-                    ->get("{$this->baseUrl}/api/v2/hianime/episode/sources", [
-                        'animeEpisodeId' => $animeEpisodeId,
-                        'server' => $server,
-                        'category' => $category,
-                    ]);
-
-                if ($response->successful()) {
-                    $data = $response->json()['data'] ?? null;
-                    if ($data && !empty($data['sources'])) {
-                        return $data;
-                    }
-                }
-            } catch (\Throwable $e) {
-                Log::warning("HiAnime sources error for Episode '{$animeEpisodeId}': " . $e->getMessage());
-            }
-
-            return null;
-        });
-    }
-
-    /**
-     * Resolve streaming data for an anime title and episode number
-     */
-    public function resolveStream(string $title, int $episodeNumber = 1, ?string $romaji = null): ?array
-    {
-        // 1. Find anime ID on HiAnime
         $animeId = $this->searchAnime($title) ?: ($romaji ? $this->searchAnime($romaji) : null);
-        if (!$animeId) return null;
-
-        // 2. Find episode ID
-        $episodes = $this->getEpisodes($animeId);
         $targetEpisodeId = null;
 
-        foreach ($episodes as $ep) {
-            if ((int)($ep['number'] ?? 0) === $episodeNumber) {
-                $targetEpisodeId = $ep['episodeId'] ?? null;
-                break;
+        if ($animeId) {
+            $episodes = $this->getEpisodes($animeId);
+            foreach ($episodes as $ep) {
+                if ((int)($ep['episodeNumber'] ?? $ep['number'] ?? 0) === $episodeNumber) {
+                    $targetEpisodeId = $ep['id'] ?? $ep['episodeId'] ?? null;
+                    break;
+                }
             }
         }
 
-        if (!$targetEpisodeId && isset($episodes[$episodeNumber - 1]['episodeId'])) {
-            $targetEpisodeId = $episodes[$episodeNumber - 1]['episodeId'];
+        if ($targetEpisodeId) {
+            // Replace :: with ?ep= if formatted by hianime-api
+            $cleanEpId = str_replace('::', '?ep=', $targetEpisodeId);
+            return "https://megacloud.tv/embed-2/e-1/{$cleanEpId}";
         }
 
-        if (!$targetEpisodeId) {
-            $targetEpisodeId = "{$animeId}?ep={$episodeNumber}";
-        }
-
-        // 3. Resolve direct sources (m3u8 + subtitles)
-        $sourcesData = $this->getEpisodeSources($targetEpisodeId);
-        if ($sourcesData && !empty($sourcesData['sources'])) {
-            $bestM3u8 = $sourcesData['sources'][0]['url'] ?? null;
-            return [
-                'type' => 'hls',
-                'streamUrl' => $bestM3u8,
-                'sources' => $sourcesData['sources'],
-                'tracks' => $sourcesData['tracks'] ?? [],
-                'intro' => $sourcesData['intro'] ?? null,
-                'outro' => $sourcesData['outro'] ?? null,
-                'embedUrl' => "https://megacloud.tv/embed-2/e-1/{$targetEpisodeId}",
-            ];
-        }
-
-        // 4. Return MegaCloud / HiAnime direct embed player
-        return [
-            'type' => 'iframe',
-            'streamUrl' => "https://megacloud.tv/embed-2/e-1/{$targetEpisodeId}",
-            'embedUrl' => "https://megacloud.tv/embed-2/e-1/{$targetEpisodeId}",
-            'sources' => [],
-            'tracks' => [],
-        ];
+        // Standard developer fallback
+        $targetId = $malId ?: 1;
+        return "https://2embed.cc/embed/anime/{$targetId}/{$episodeNumber}";
     }
 }

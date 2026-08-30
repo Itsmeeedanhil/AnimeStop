@@ -22,15 +22,17 @@ class StreamingService
         $status = $animeDetails['status'] ?? 'FINISHED';
         $isUnreleased = ($status === 'NOT_YET_RELEASED' || $totalEpisodes === 0 || empty($animeDetails['episodes']));
 
+        // Extract MyAnimeList ID (idMal)
+        $targetId = !empty($animeDetails['idMal']) ? $animeDetails['idMal'] : $animeId;
+
         // Resolve stream via HiAnime API scraper
-        $hiAnimeData = $this->hiAnimeService->resolveStream(
+        $streamUrl = $this->hiAnimeService->resolveStream(
             $englishTitle ?? $romajiTitle ?? 'anime',
             $episode,
-            $romajiTitle
+            $romajiTitle,
+            $targetId
         );
 
-        $streamUrl = $hiAnimeData['streamUrl'] ?? "https://megacloud.tv/embed-2/e-1/{$animeId}?ep={$episode}";
-        $embedUrl = $hiAnimeData['embedUrl'] ?? $streamUrl;
         $trailerEmbedUrl = $trailerId ? "https://www.youtube.com/embed/{$trailerId}?autoplay=1&rel=0" : null;
 
         // Build list of episodes
@@ -55,17 +57,7 @@ class StreamingService
             'status' => $status,
             'isUnreleased' => $isUnreleased,
             'title' => $title,
-            'streamUrl' => $embedUrl,
-            'directHls' => $hiAnimeData['type'] === 'hls' ? $streamUrl : null,
-            'tracks' => $hiAnimeData['tracks'] ?? [],
-            'intro' => $hiAnimeData['intro'] ?? [
-                'start' => 0,
-                'end' => 85,
-            ],
-            'outro' => $hiAnimeData['outro'] ?? [
-                'start' => 1350,
-                'end' => 1440,
-            ],
+            'streamUrl' => $streamUrl,
             'trailerEmbedUrl' => $trailerEmbedUrl,
             'navigation' => [
                 'hasPrevious' => $episode > 1,

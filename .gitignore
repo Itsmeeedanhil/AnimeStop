@@ -23,6 +23,7 @@
 /vendor
 /database/*.sqlite
 /database/*.sqlite-journal
+/hianime-scraper-core
 _ide_helper.php
 Homestead.json
 Homestead.yaml
