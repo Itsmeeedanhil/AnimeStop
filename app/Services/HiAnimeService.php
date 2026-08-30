@@ -39,7 +39,7 @@ class HiAnimeService
                     }
                 }
             } catch (\Throwable $e) {
-                Log::info("HiAnime API not available locally on {$this->baseUrl}");
+                Log::info("HiAnime API not available on {$this->baseUrl}");
             }
 
             return null;
@@ -72,9 +72,9 @@ class HiAnimeService
     }
 
     /**
-     * Resolve streaming player URL using dynamic parameters from API and the official 4animo player embed
+     * Resolve streaming servers list including 4animo, VidSrc, and 2Embed
      */
-    public function resolveStream(string $title, int $episodeNumber = 1, ?string $romaji = null, ?int $malId = null): string
+    public function resolveServers(string $title, int $episodeNumber = 1, ?string $romaji = null, ?int $malId = null): array
     {
         $animeId = $this->searchAnime($title) ?: ($romaji ? $this->searchAnime($romaji) : null);
         $targetEpisodeId = null;
@@ -89,11 +89,8 @@ class HiAnimeService
             }
         }
 
-        $server = 'hd-1';
-        $category = 'sub';
         $targetId = $targetEpisodeId ?: ($malId ?: $episodeNumber);
 
-        // Clean target ID if slug format
         if (is_string($targetId) && str_contains($targetId, '?ep=')) {
             $parts = explode('?ep=', $targetId);
             $targetId = $parts[1] ?? $targetId;
@@ -102,7 +99,27 @@ class HiAnimeService
             $targetId = $parts[1] ?? $targetId;
         }
 
-        // Official 4animo external player embed
-        return "{$this->embedBaseUrl}/{$server}/{$targetId}/{$category}?k=1&autoPlay=1&skipIntro=1&skipOutro=1";
+        $realMalId = $malId ?: $episodeNumber;
+
+        return [
+            [
+                'id' => '4animo',
+                'name' => 'Server 1 (4Animo HD)',
+                'badge' => 'HiAnime HD',
+                'url' => "{$this->embedBaseUrl}/hd-1/{$targetId}/sub?k=1&autoPlay=1&skipIntro=1&skipOutro=1",
+            ],
+            [
+                'id' => 'vidsrc',
+                'name' => 'Server 2 (VidSrc)',
+                'badge' => '1080p',
+                'url' => "https://vidsrc.me/embed/anime?id={$realMalId}&ep={$episodeNumber}",
+            ],
+            [
+                'id' => 'twoembed',
+                'name' => 'Server 3 (2Embed)',
+                'badge' => 'Multi-Sub',
+                'url' => "https://2embed.cc/embed/anime/{$realMalId}/{$episodeNumber}",
+            ],
+        ];
     }
 }

@@ -5,7 +5,10 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
     const isUnreleased = streamData?.isUnreleased;
     const animeTitle = anime?.title?.english || anime?.title?.romaji || 'Anime';
     const trailerUrl = streamData?.trailerEmbedUrl;
-    const directStreamUrl = streamData?.streamUrl;
+    const servers = streamData?.servers || [];
+
+    const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || '4animo');
+    const [selectedServerId, setSelectedServerId] = useState(defaultServerId);
     const [reloadKey, setReloadKey] = useState(0);
 
     // Auto-save watch progress to library
@@ -29,21 +32,62 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         return () => clearInterval(interval);
     }, [anime, currentEpisode, animeTitle]);
 
+    // Synchronize mode when episode changes
+    useEffect(() => {
+        if (isUnreleased && trailerUrl) {
+            setSelectedServerId('trailer');
+        } else if (servers.length > 0 && !servers.some(s => s.id === selectedServerId)) {
+            setSelectedServerId(servers[0].id);
+        }
+        setReloadKey(prev => prev + 1);
+    }, [currentEpisode, streamData, isUnreleased, trailerUrl]);
+
     const handleReload = () => {
         setReloadKey(prev => prev + 1);
     };
 
-    const currentUrl = (isUnreleased && trailerUrl) ? trailerUrl : directStreamUrl;
+    const activeServer = servers.find(s => s.id === selectedServerId) || servers[0] || {};
+    const currentUrl = (selectedServerId === 'trailer' && trailerUrl)
+        ? trailerUrl
+        : (activeServer.url || streamData?.streamUrl || '');
 
     return (
         <div className="flex flex-col w-full bg-[#0d0f0f]">
             {/* Clean Player Header Toolbar */}
-            <div className="bg-[#1a1c1c] border-b border-[#4d4635]/40 px-4 md:px-6 py-2.5 flex justify-between items-center gap-3">
+            <div className="bg-[#1a1c1c] border-b border-[#4d4635]/40 px-4 md:px-6 py-2.5 flex flex-wrap justify-between items-center gap-3">
                 <div className="flex items-center gap-3">
                     <span className="text-xs font-bold text-[#ffe9b0] flex items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        {isUnreleased ? 'Official PV Trailer' : `Playing Episode ${currentEpisode}`}
+                        {selectedServerId === 'trailer' ? 'Official PV Trailer' : `Playing Episode ${currentEpisode}`}
                     </span>
+
+                    {/* Server Mirror Pills */}
+                    {!isUnreleased && servers.length > 1 && (
+                        <div className="flex items-center gap-1.5 bg-[#121414] p-1 rounded-lg border border-[#4d4635]/40 text-xs overflow-x-auto hide-scrollbar">
+                            {servers.map((srv) => (
+                                <button
+                                    key={srv.id}
+                                    onClick={() => setSelectedServerId(srv.id)}
+                                    className={`px-2.5 py-1 rounded text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 ${
+                                        selectedServerId === srv.id
+                                            ? 'bg-[#ffe9b0] text-[#241a00] font-bold shadow-[0_0_10px_rgba(255,233,176,0.3)]'
+                                            : 'text-[#d0c5af] hover:text-[#ffe9b0]'
+                                    }`}
+                                >
+                                    <span>{srv.name}</span>
+                                    {srv.badge && (
+                                        <span className={`text-[9px] px-1 py-0.2 rounded uppercase ${
+                                            selectedServerId === srv.id
+                                                ? 'bg-[#241a00]/20 text-[#241a00]'
+                                                : 'bg-white/10 text-[#d0c5af]'
+                                        }`}>
+                                            {srv.badge}
+                                        </span>
+                                    )}
+                                </button>
+                            ))}
+                        </div>
+                    )}
 
                     <button
                         onClick={handleReload}
@@ -107,7 +151,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             <div className="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden shadow-2xl">
                 {currentUrl ? (
                     <iframe
-                        key={`direct-player-${currentEpisode}-${reloadKey}`}
+                        key={`direct-player-${currentEpisode}-${selectedServerId}-${reloadKey}`}
                         src={currentUrl}
                         title={`Streaming ${animeTitle} Episode ${currentEpisode}`}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
@@ -127,7 +171,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             <div className="bg-[#121414] px-4 py-2 border-t border-[#4d4635]/30 flex flex-wrap justify-between items-center text-xs text-[#99907c]">
                 <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <span>Direct Stream: <strong className="text-[#e2e2e2] uppercase">{isUnreleased ? 'OFFICIAL HD TRAILER' : 'DIRECT HD STREAM'}</strong></span>
+                    <span>Direct Stream: <strong className="text-[#e2e2e2] uppercase">{isUnreleased ? 'OFFICIAL HD TRAILER' : (activeServer.name || 'DIRECT HD STREAM')}</strong></span>
                 </div>
                 <div>
                     <span>Progress auto-saves to your library</span>

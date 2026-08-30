@@ -9,7 +9,7 @@ class StreamingService
     ) {}
 
     /**
-     * Resolve single direct streaming player exclusively via HiAnime API (ryanwtf7/hianime-api)
+     * Resolve streaming player data with 4animo player integration and trailer fallback
      */
     public function getStreamData(int $animeId, int $episode = 1, ?array $animeDetails = null): array
     {
@@ -25,19 +25,20 @@ class StreamingService
         // Extract MyAnimeList ID (idMal)
         $targetId = !empty($animeDetails['idMal']) ? $animeDetails['idMal'] : $animeId;
 
-        $trailerEmbedUrl = $trailerId ? "https://www.youtube.com/embed/{$trailerId}?autoplay=1&rel=0" : null;
+        // Fallback trailer for unreleased/upcoming titles
+        $trailerEmbedUrl = $trailerId
+            ? "https://www.youtube.com/embed/{$trailerId}?autoplay=1&rel=0"
+            : "https://www.youtube.com/embed?listType=search&list=" . urlencode("{$title} anime official trailer");
 
-        // Resolve stream via HiAnime API scraper or direct anime CDN
-        if ($isUnreleased && $trailerEmbedUrl) {
-            $streamUrl = $trailerEmbedUrl;
-        } else {
-            $streamUrl = $this->hiAnimeService->resolveStream(
-                $englishTitle ?? $romajiTitle ?? 'anime',
-                $episode,
-                $romajiTitle,
-                $targetId
-            );
-        }
+        // Resolve streaming servers from 4animo and mirrors
+        $servers = $this->hiAnimeService->resolveServers(
+            $englishTitle ?? $romajiTitle ?? 'anime',
+            $episode,
+            $romajiTitle,
+            $targetId
+        );
+
+        $defaultStreamUrl = $isUnreleased ? $trailerEmbedUrl : ($servers[0]['url'] ?? '');
 
         // Build list of episodes
         $episodesList = [];
@@ -61,7 +62,8 @@ class StreamingService
             'status' => $status,
             'isUnreleased' => $isUnreleased,
             'title' => $title,
-            'streamUrl' => $streamUrl,
+            'streamUrl' => $defaultStreamUrl,
+            'servers' => $servers,
             'trailerEmbedUrl' => $trailerEmbedUrl,
             'navigation' => [
                 'hasPrevious' => $episode > 1,
