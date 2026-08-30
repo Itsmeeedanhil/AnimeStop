@@ -428,7 +428,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         </div>
       )}
 
-      {/* Direct Video Player Display Container with Ad-Shield Sandbox & High-Contrast Custom Subtitle Overlay */}
+      {/* Direct Video Player Display Container with No-Referrer Policy */}
       <div className="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden shadow-2xl">
         {currentUrl ? (
           <iframe
@@ -438,7 +438,6 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
             allowFullScreen
             referrerPolicy="no-referrer"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
             className="w-full h-full border-0 absolute inset-0 z-10"
           />
         ) : (
@@ -464,6 +463,37 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             </div>
           </div>
         )}
+      </div>
+
+      {/* Stream Recovery Quick-Switch Bar */}
+      <div className="bg-[#161818] border-t border-white/5 px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div className="flex items-center gap-2">
+          <span className="text-[11px] text-[#99907c]">Encountering an error?</span>
+          <button
+            onClick={handleAutoRecover}
+            className="px-2.5 py-1 rounded bg-[#ffe9b0]/15 hover:bg-[#ffe9b0]/25 text-[#ffe9b0] text-[11px] font-bold border border-[#ffe9b0]/30 transition-all cursor-pointer flex items-center gap-1"
+            title="Auto-recover and switch to next server"
+          >
+            <span>⚡ Fix: Switch Server</span>
+          </button>
+        </div>
+
+        <div className="flex items-center gap-1.5 text-[11px] text-[#99907c]">
+          <span>Fast Mirrors:</span>
+          {servers.map((srv) => (
+            <button
+              key={srv.id}
+              onClick={() => setSelectedServerId(srv.id)}
+              className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-all cursor-pointer ${
+                selectedServerId === srv.id
+                  ? 'bg-[#ffe9b0] text-[#241a00] font-bold'
+                  : 'bg-[#121414] text-[#d0c5af] hover:text-[#ffe9b0] border border-white/5'
+              }`}
+            >
+              {srv.name.split(' (')[0]}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Bottom Stream Status */}
