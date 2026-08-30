@@ -151,7 +151,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         </div>
       )}
 
-      {/* Direct Video Player Display Container with HTML5 Sandbox Popup Blocker */}
+      {/* Video Player Display Container */}
       <div className="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden shadow-2xl">
         {currentUrl ? (
           <iframe
@@ -160,7 +160,6 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             title={`Streaming ${animeTitle} Episode ${currentEpisode}`}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
             allowFullScreen
-            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
             className="w-full h-full border-0 absolute inset-0 z-10"
           />
         ) : (
