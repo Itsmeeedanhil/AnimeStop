@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { LibraryApi } from '@/lib/api';
-import { RefreshCw, ExternalLink, SkipBack, SkipForward, AlertCircle, VideoOff, Subtitles } from 'lucide-react';
+import { RefreshCw, ExternalLink, SkipBack, SkipForward, AlertCircle, VideoOff, Subtitles, Zap } from 'lucide-react';
 
 export default function VideoPlayer({ streamData, anime, currentEpisode, onNextEpisode, onPrevEpisode }) {
   const isUnreleased = streamData?.isUnreleased;
@@ -10,7 +10,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
   const trailerUrl = streamData?.trailerUrl;
   const servers = streamData?.servers || [];
 
-  const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || '4animo-ani');
+  const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || 'vidlink-sub');
   const [selectedServerId, setSelectedServerId] = useState(defaultServerId);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -59,6 +59,13 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
     setReloadKey(prev => prev + 1);
   };
 
+  const handleNextServer = () => {
+    if (servers.length <= 1) return;
+    const currentIdx = servers.findIndex(s => s.id === selectedServerId);
+    const nextIdx = (currentIdx + 1) % servers.length;
+    setSelectedServerId(servers[nextIdx].id);
+  };
+
   const activeServer = servers.find(s => s.id === selectedServerId) || servers[0] || {};
   const currentUrl = (selectedServerId === 'trailer' && trailerUrl)
     ? trailerUrl
@@ -66,30 +73,30 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
 
   return (
     <div className="flex flex-col w-full bg-[#0d0f0f]">
-      {/* Clean Player Header Toolbar */}
-      <div className="bg-[#1a1c1c] border-b border-[#4d4635]/40 px-4 md:px-6 py-2.5 flex flex-wrap justify-between items-center gap-3">
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-bold text-[#ffe9b0] flex items-center gap-1.5">
+      {/* Responsive Player Header Toolbar */}
+      <div className="bg-[#1a1c1c] border-b border-[#4d4635]/40 px-3 sm:px-6 py-2.5 flex flex-wrap justify-between items-center gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+          <span className="text-xs font-bold text-[#ffe9b0] flex items-center gap-1.5 shrink-0">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            {selectedServerId === 'trailer' ? 'Official PV Trailer' : `Playing Episode ${currentEpisode}`}
+            {selectedServerId === 'trailer' ? 'Official PV' : `Ep ${currentEpisode}`}
           </span>
 
-          {/* Server Mirror Switcher with Subtitle Badges */}
+          {/* Touch-Friendly Server Mirror Switcher */}
           {!isUnreleased && servers.length > 1 && (
-            <div className="flex items-center gap-1.5 bg-[#121414] p-1 rounded-lg border border-[#4d4635]/40 text-xs overflow-x-auto hide-scrollbar">
+            <div className="flex items-center gap-1.5 bg-[#121414] p-1 rounded-lg border border-[#4d4635]/40 text-xs overflow-x-auto custom-scrollbar max-w-full">
               {servers.map((srv) => (
                 <button
                   key={srv.id}
                   onClick={() => setSelectedServerId(srv.id)}
-                  className={`px-2.5 py-1 rounded text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 ${
+                  className={`px-2.5 py-1 rounded-md text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 ${
                     selectedServerId === srv.id
                       ? 'bg-[#ffe9b0] text-[#241a00] font-bold shadow-[0_0_10px_rgba(255,233,176,0.3)]'
                       : 'text-[#d0c5af] hover:text-[#ffe9b0]'
                   }`}
                 >
-                  <span>{srv.name}</span>
+                  <span>{srv.name.replace('Server ', 'S')}</span>
                   {srv.badge && (
-                    <span className={`text-[9px] px-1.5 py-0.2 rounded uppercase font-bold ${
+                    <span className={`hidden sm:inline text-[9px] px-1 py-0.2 rounded uppercase font-bold ${
                       selectedServerId === srv.id
                         ? 'bg-[#241a00]/20 text-[#241a00]'
                         : 'bg-[#ffe9b0]/15 text-[#ffe9b0]'
@@ -104,23 +111,23 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
 
           <button
             onClick={handleReload}
-            className="p-1 rounded text-[#99907c] hover:text-[#ffe9b0] hover:bg-[#282a2a] transition-colors cursor-pointer"
-            title="Reload video player"
+            className="p-1.5 rounded-lg text-[#99907c] hover:text-[#ffe9b0] hover:bg-[#282a2a] transition-colors cursor-pointer shrink-0"
+            title="Reload video stream"
           >
             <RefreshCw className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-[#d0c5af]">
+        <div className="flex items-center gap-2 sm:gap-3 text-xs text-[#d0c5af] shrink-0">
           {currentUrl && (
             <a
               href={currentUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#ffe9b0] hover:text-white flex items-center gap-1 bg-[#282a2a] px-2.5 py-1 rounded border border-[#4d4635]/40 transition-colors cursor-pointer text-[11px]"
+              className="text-[#ffe9b0] hover:text-white hidden sm:flex items-center gap-1 bg-[#282a2a] px-2.5 py-1 rounded border border-[#4d4635]/40 transition-colors cursor-pointer text-[11px]"
               title="Open in new window"
             >
-              <span>Open in New Tab</span>
+              <span>Popout</span>
               <ExternalLink className="w-3 h-3" />
             </a>
           )}
@@ -128,17 +135,17 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           {onPrevEpisode && (
             <button
               onClick={onPrevEpisode}
-              className="hover:text-[#ffe9b0] flex items-center gap-1 transition-colors cursor-pointer"
+              className="px-2 py-1 rounded bg-[#282a2a] sm:bg-transparent hover:text-[#ffe9b0] flex items-center gap-1 transition-colors cursor-pointer text-xs"
             >
               <SkipBack className="w-3.5 h-3.5" />
-              <span>Prev</span>
+              <span className="hidden sm:inline">Prev</span>
             </button>
           )}
 
           {onNextEpisode && (
             <button
               onClick={onNextEpisode}
-              className="hover:text-[#ffe9b0] flex items-center gap-1 transition-colors cursor-pointer"
+              className="px-2 py-1 rounded bg-[#282a2a] sm:bg-transparent hover:text-[#ffe9b0] flex items-center gap-1 transition-colors cursor-pointer text-xs font-semibold text-[#ffe9b0]"
             >
               <span>Next</span>
               <SkipForward className="w-3.5 h-3.5" />
@@ -147,18 +154,23 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         </div>
       </div>
 
-      {/* Subtitle / CC Helper Banner */}
+      {/* Failover / Error Recovery & Subtitle Quick Helper Banner */}
       {!isUnreleased && (
-        <div className="bg-[#121414] border-b border-[#4d4635]/30 px-4 md:px-6 py-2 flex items-center justify-between gap-2 text-xs text-[#d0c5af]">
+        <div className="bg-[#121414] border-b border-[#4d4635]/30 px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2 text-xs text-[#d0c5af]">
           <div className="flex items-center gap-2">
             <Subtitles className="w-4 h-4 text-[#ffe9b0] shrink-0" />
-            <span>
-              <strong className="text-[#ffe9b0]">Subtitles:</strong> To turn on English subtitles, click the <strong className="text-white bg-white/10 px-1 py-0.2 rounded">CC</strong> / <strong className="text-white bg-white/10 px-1 py-0.2 rounded">⚙️ Settings</strong> icon at the bottom-right corner of the video player.
+            <span className="text-[11px] sm:text-xs">
+              <strong className="text-[#ffe9b0]">Tip:</strong> If video shows <span className="text-red-400 font-mono">Error 233429</span> or buffers, click <strong>Switch Server</strong> or switch to <strong>Server 2 / 3</strong> above!
             </span>
           </div>
-          <span className="hidden sm:inline text-[11px] text-[#99907c]">
-            If subs are missing on this server, switch to Server 2 or 3 above!
-          </span>
+
+          <button
+            onClick={handleNextServer}
+            className="px-2.5 py-1 rounded-lg bg-[#ffe9b0]/15 hover:bg-[#ffe9b0]/30 text-[#ffe9b0] border border-[#ffe9b0]/40 font-bold text-[11px] flex items-center gap-1.5 transition-all cursor-pointer active:scale-95 ml-auto sm:ml-0"
+          >
+            <Zap className="w-3 h-3 text-[#f2ca50]" />
+            <span>Switch Next Server ⚡</span>
+          </button>
         </div>
       )}
 
@@ -191,20 +203,20 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           <div className="flex flex-col items-center justify-center text-center p-6 text-[#d0c5af]">
             <VideoOff className="w-10 h-10 text-[#ffe9b0] mb-2" />
             <p className="text-sm font-semibold">Video Stream Unavailable</p>
-            <p className="text-xs text-[#99907c] mt-1">Please check back later.</p>
+            <p className="text-xs text-[#99907c] mt-1">Please switch to Server 2 or Server 3 above.</p>
           </div>
         )}
       </div>
 
       {/* Bottom Stream Status */}
-      <div className="bg-[#121414] px-4 py-2 border-t border-[#4d4635]/30 flex flex-wrap justify-between items-center text-xs text-[#99907c]">
+      <div className="bg-[#121414] px-3 sm:px-4 py-2 border-t border-[#4d4635]/30 flex flex-wrap justify-between items-center text-[11px] sm:text-xs text-[#99907c] gap-2">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span>Direct Stream: <strong className="text-[#e2e2e2] uppercase">{isUnreleased ? 'OFFICIAL HD TRAILER' : (activeServer.name || 'DIRECT HD STREAM')}</strong></span>
-          <span className="text-[10px] text-[#2ebd85] font-semibold bg-[#2ebd85]/10 px-1.5 py-0.5 rounded">Ad-Shield Active</span>
+          <span>Source: <strong className="text-[#e2e2e2] uppercase">{isUnreleased ? 'OFFICIAL HD TRAILER' : (activeServer.name || 'DIRECT HD STREAM')}</strong></span>
+          <span className="text-[10px] text-[#2ebd85] font-semibold bg-[#2ebd85]/10 px-1.5 py-0.2 rounded">Ad-Shield Active</span>
         </div>
         <div>
-          <span>Progress auto-saves to your library</span>
+          <span>Progress auto-saves to library</span>
         </div>
       </div>
     </div>
