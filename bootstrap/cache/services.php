@@ -57,9 +57,8 @@
     15 => 'Illuminate\\Auth\\AuthServiceProvider',
     16 => 'Illuminate\\Filesystem\\FilesystemServiceProvider',
     17 => 'Carbon\\Laravel\\ServiceProvider',
-    18 => 'NunoMaduro\\Collision\\Adapters\\Laravel\\CollisionServiceProvider',
-    19 => 'Termwind\\Laravel\\TermwindServiceProvider',
-    20 => 'App\\Providers\\AppServiceProvider',
+    18 => 'Termwind\\Laravel\\TermwindServiceProvider',
+    19 => 'App\\Providers\\AppServiceProvider',
   ),
   'deferred' => 
   array (
