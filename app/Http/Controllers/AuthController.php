@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\WatchHistory;
 use App\Models\Watchlist;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -33,6 +34,124 @@ class AuthController extends Controller
         }
 
         return null;
+    }
+
+    /**
+     * Standard Google OAuth 2.0 Flow: Redirect to Google
+     */
+    public function redirectToGoogle(Request $request): RedirectResponse
+    {
+        $clientId = config('services.google.client_id') ?: env('GOOGLE_CLIENT_ID');
+        $redirectUri = url('/auth/google/callback');
+
+        // Store guest session ID in cookie so we can merge library on return
+        $sessionId = $request->query('session_id') ?? $request->header('X-Session-ID') ?? $request->cookie('anime_session_id');
+        if ($sessionId) {
+            cookie()->queue('anime_session_id', $sessionId, 60 * 24 * 30);
+        }
+
+        if (empty($clientId)) {
+            return redirect('/?auth_error=' . urlencode('Google Client ID is not configured yet in .env. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.'));
+        }
+
+        $state = Str::random(40);
+        session(['google_oauth_state' => $state]);
+
+        $query = http_build_query([
+            'client_id' => $clientId,
+            'redirect_uri' => $redirectUri,
+            'response_type' => 'code',
+            'scope' => 'openid profile email',
+            'state' => $state,
+            'access_type' => 'online',
+            'prompt' => 'select_account',
+        ]);
+
+        return redirect('https://accounts.google.com/o/oauth2/v2/auth?' . $query);
+    }
+
+    /**
+     * Standard Google OAuth 2.0 Flow: Handle Callback from Google
+     */
+    public function handleGoogleCallback(Request $request): RedirectResponse
+    {
+        $code = $request->input('code');
+        $error = $request->input('error');
+
+        if ($error || empty($code)) {
+            return redirect('/?auth_error=' . urlencode($error ?: 'Google authentication was cancelled.'));
+        }
+
+        $clientId = config('services.google.client_id') ?: env('GOOGLE_CLIENT_ID');
+        $clientSecret = config('services.google.client_secret') ?: env('GOOGLE_CLIENT_SECRET');
+        $redirectUri = url('/auth/google/callback');
+
+        try {
+            // Exchange code for Google Access Token
+            $tokenResponse = Http::asForm()->post('https://oauth2.googleapis.com/token', [
+                'code' => $code,
+                'client_id' => $clientId,
+                'client_secret' => $clientSecret,
+                'redirect_uri' => $redirectUri,
+                'grant_type' => 'authorization_code',
+            ]);
+
+            if (! $tokenResponse->successful()) {
+                Log::error('Google OAuth token exchange failed', $tokenResponse->json() ?? []);
+                return redirect('/?auth_error=' . urlencode('Failed to authenticate with Google. Please check your Google OAuth credentials.'));
+            }
+
+            $accessToken = $tokenResponse->json('access_token');
+
+            // Fetch user details from Google
+            $userInfoResponse = Http::withToken($accessToken)->get('https://www.googleapis.com/oauth2/v3/userinfo');
+
+            if (! $userInfoResponse->successful()) {
+                return redirect('/?auth_error=' . urlencode('Failed to fetch user profile from Google.'));
+            }
+
+            $googleUser = $userInfoResponse->json();
+            $googleId = $googleUser['sub'];
+            $email = strtolower(trim($googleUser['email']));
+            $name = $googleUser['name'] ?? explode('@', $email)[0];
+            $avatarUrl = $googleUser['picture'] ?? null;
+
+            $apiToken = Str::random(64);
+
+            // Find or create user
+            $user = User::where('google_id', $googleId)
+                ->orWhere('email', $email)
+                ->first();
+
+            if ($user) {
+                $user->google_id = $googleId;
+                $user->api_token = $apiToken;
+                if ($avatarUrl && empty($user->avatar_url)) {
+                    $user->avatar_url = $avatarUrl;
+                }
+                $user->save();
+            } else {
+                $user = User::create([
+                    'name' => $name,
+                    'email' => $email,
+                    'google_id' => $googleId,
+                    'avatar_url' => $avatarUrl ?: 'https://api.dicebear.com/7.x/bottts/svg?seed=' . urlencode($email),
+                    'password' => Hash::make(Str::random(32)),
+                    'api_token' => $apiToken,
+                ]);
+            }
+
+            // Merge guest session library
+            $guestSessionId = $request->cookie('anime_session_id');
+            if ($guestSessionId) {
+                $this->mergeGuestLibrary($guestSessionId, $user->id);
+            }
+
+            return redirect('/?token=' . $apiToken . '&auth=google_success');
+        } catch (\Throwable $e) {
+            Log::error('Google OAuth Exception: ' . $e->getMessage());
+            return redirect('/?auth_error=' . urlencode('An unexpected error occurred during Google sign in.'));
+        }
     }
 
     /**
@@ -118,7 +237,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Authenticate or Sign Up with Google / Gmail
+     * Authenticate or Sign Up with Google / Gmail (API endpoint for popup / token flow)
      */
     public function google(Request $request): JsonResponse
     {
@@ -127,7 +246,7 @@ class AuthController extends Controller
         $googleId = null;
         $avatarUrl = null;
 
-        // Option 1: Verify Google ID Token (Google Identity Services)
+        // Verify Google ID Token (Google Identity Services)
         if ($request->filled('credential')) {
             try {
                 $response = Http::timeout(5)->get('https://oauth2.googleapis.com/tokeninfo', [
@@ -146,7 +265,6 @@ class AuthController extends Controller
             }
         }
 
-        // Option 2: Direct verified Google OAuth payload
         if (! $email) {
             $email = $request->input('email');
             $name = $request->input('name') ?: (explode('@', $email ?? 'user@gmail.com')[0]);

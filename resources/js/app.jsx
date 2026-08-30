@@ -28,15 +28,36 @@ function App() {
         return () => window.removeEventListener('popstate', handlePopState);
     }, []);
 
-    // Load authenticated user on app mount
+    // Load authenticated user on app mount & handle Google OAuth 2.0 redirects
     useEffect(() => {
-        AuthApi.getMe()
-            .then((userData) => {
-                if (userData) setUser(userData);
-            })
-            .catch(() => {
-                setUser(null);
-            });
+        const searchParams = new URLSearchParams(window.location.search);
+        const token = searchParams.get('token');
+        const authParam = searchParams.get('auth');
+        const authError = searchParams.get('auth_error');
+
+        if (token) {
+            setAuthToken(token);
+            AuthApi.getMe()
+                .then((userData) => {
+                    if (userData) {
+                        setUser(userData);
+                        showNotification(`Welcome to AnimeStop, ${userData.name}!`);
+                    }
+                })
+                .catch(() => setUser(null));
+            window.history.replaceState({}, '', window.location.pathname);
+        } else if (authError) {
+            showNotification(decodeURIComponent(authError));
+            window.history.replaceState({}, '', window.location.pathname);
+        } else {
+            AuthApi.getMe()
+                .then((userData) => {
+                    if (userData) setUser(userData);
+                })
+                .catch(() => {
+                    setUser(null);
+                });
+        }
     }, []);
 
     const navigate = (url) => {
