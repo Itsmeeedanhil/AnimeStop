@@ -105,15 +105,11 @@ export default function AnimeCard({ anime, navigate, progress = null, onWatchlis
                 </h3>
                 <div className="flex justify-between items-center mt-1 text-xs text-[#99907c]">
                     <span>{episodes ? `${episodes} Episodes` : 'Ongoing'}</span>
-                    {anime.nextAiringEpisode ? (
-                        <span className="text-[#f2ca50] bg-[#f2ca50]/10 border border-[#f2ca50]/30 px-1.5 py-0.5 rounded text-[10px] font-bold">
-                            ⏳ Ep {anime.nextAiringEpisode.episode}
-                        </span>
-                    ) : progress?.episode_number ? (
+                    {progress?.episode_number && (
                         <span className="text-[#ffe9b0] text-[11px] font-medium">
                             Ep {progress.episode_number}
                         </span>
-                    ) : null}
+                    )}
                 </div>
             </div>
         </div>

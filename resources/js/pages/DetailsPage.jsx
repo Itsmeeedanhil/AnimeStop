@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AnimeApi, LibraryApi } from '../services/api';
 import AnimeCard from '../components/AnimeCard';
-import CountdownTimer from '../components/CountdownTimer';
 
 export default function DetailsPage({ id, navigate, showNotification }) {
     const [anime, setAnime] = useState(null);
@@ -60,10 +59,9 @@ export default function DetailsPage({ id, navigate, showNotification }) {
             <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 text-center px-4">
                 <span className="material-symbols-outlined text-5xl text-[#ffe9b0]/50">error</span>
                 <h2 className="font-['Bodoni_Moda'] text-2xl text-[#e2e2e2]">Anime Not Found</h2>
-                <p className="text-sm text-[#99907c]">The anime you are looking for does not exist or could not be loaded.</p>
                 <button
                     onClick={() => navigate('/')}
-                    className="px-6 py-2.5 rounded-lg bg-[#ffe9b0] text-[#241a00] font-semibold text-sm hover:bg-[#f2ca50]"
+                    className="px-6 py-2 rounded-xl bg-[#ffe9b0] text-[#241a00] font-bold text-xs hover:bg-[#f2ca50]"
                 >
                     Back to Home
                 </button>
@@ -71,19 +69,41 @@ export default function DetailsPage({ id, navigate, showNotification }) {
         );
     }
 
-    const title = anime.title?.english || anime.title?.romaji;
-    const banner = anime.bannerImage || anime.coverImage?.extraLarge;
+    const title = anime.title?.english || anime.title?.romaji || 'Anime Details';
+    const romaji = anime.title?.romaji;
+    const native = anime.title?.native;
+    const banner = anime.bannerImage || anime.coverImage?.extraLarge || anime.coverImage?.large;
+    const cover = anime.coverImage?.extraLarge || anime.coverImage?.large;
     const score = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : '8.5';
     const totalEpisodes = anime.episodes || 0;
-    const isUnreleased = anime.status === 'NOT_YET_RELEASED' || totalEpisodes === 0;
+    const nextAiring = anime.nextAiringEpisode;
+    const isReleasing = anime.status === 'RELEASING';
+
+    // Calculate exact released/aired episodes count (exclude future unreleased episodes)
+    let releasedEpisodesCount = 0;
+    if (anime.status === 'NOT_YET_RELEASED') {
+        releasedEpisodesCount = 0;
+    } else if (isReleasing) {
+        if (nextAiring?.episode) {
+            releasedEpisodesCount = Math.max(0, nextAiring.episode - 1);
+        } else if (totalEpisodes > 0) {
+            releasedEpisodesCount = totalEpisodes;
+        } else {
+            releasedEpisodesCount = 1;
+        }
+    } else {
+        releasedEpisodesCount = totalEpisodes > 0 ? totalEpisodes : 12;
+    }
+
+    const isUnreleased = anime.status === 'NOT_YET_RELEASED' || releasedEpisodesCount === 0;
     const trailer = anime.trailer;
 
-    // Episode list setup
+    // Episode list setup based ONLY on released episodes
     const batchSize = 25;
-    const displayEpisodes = totalEpisodes > 0 ? totalEpisodes : (isUnreleased ? 0 : 24);
+    const displayEpisodes = releasedEpisodesCount;
     const totalBatches = Math.max(1, Math.ceil(displayEpisodes / batchSize));
 
-    // Full array of episode numbers
+    // Full array of released episode numbers
     const allEpisodes = Array.from({ length: displayEpisodes }, (_, i) => i + 1);
 
     // Filter by search or batch
@@ -116,339 +136,417 @@ export default function DetailsPage({ id, navigate, showNotification }) {
                                 {g}
                             </span>
                         ))}
-                        <span className="text-xs text-[#d0c5af] ml-2">
-                            {anime.seasonYear || '2024'} • {anime.format || 'TV'} • {isUnreleased ? 'Upcoming / Unreleased' : anime.status} • ★ {score}
+                        <span className="px-2.5 py-1 bg-[#282a2a]/60 backdrop-blur-md rounded text-[11px] font-bold text-[#e2e2e2] uppercase">
+                            {anime.format || 'TV'}
                         </span>
+                        <span className={`px-2.5 py-1 backdrop-blur-md rounded text-[11px] font-bold uppercase ${
+                            anime.status === 'RELEASING'
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                : anime.status === 'NOT_YET_RELEASED'
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                : 'bg-[#1E2020]/70 text-[#d0c5af]'
+                        }`}>
+                            {anime.status?.replace('_', ' ') || 'FINISHED'}
+                        </span>
+                        {anime.seasonYear && (
+                            <span className="text-xs text-[#d0c5af]/80 font-semibold ml-1">
+                                {anime.season ? `${anime.season} ` : ''}{anime.seasonYear}
+                            </span>
+                        )}
                     </div>
 
                     {/* Title */}
-                    <h1 className="font-['Bodoni_Moda'] text-3xl md:text-5xl lg:text-6xl font-bold text-[#e2e2e2] mb-2 leading-tight">
+                    <h1 className="font-['Bodoni_Moda'] text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight text-white leading-tight drop-shadow-lg mb-2">
                         {title}
                     </h1>
-                    {anime.title?.romaji && anime.title?.romaji !== title && (
-                        <p className="text-sm font-['Hanken_Grotesk'] text-[#99907c] italic mb-4">
-                            {anime.title.romaji}
+
+                    {/* Subtitle / Alternate Titles */}
+                    {(romaji && romaji !== title) && (
+                        <p className="font-['Hanken_Grotesk'] text-sm md:text-base text-[#d0c5af]/80 italic mb-4">
+                            {romaji} {native && `• ${native}`}
                         </p>
                     )}
 
-                    {/* Synopsis */}
-                    <p className="font-['Hanken_Grotesk'] text-sm md:text-base text-[#d0c5af] mb-6 max-w-2xl leading-relaxed line-clamp-3 md:line-clamp-4">
-                        {anime.description || 'No description available.'}
-                    </p>
-
-                    {/* Buttons */}
-                    <div className="flex flex-wrap gap-3 items-center">
-                        {!isUnreleased ? (
+                    {/* Action Buttons */}
+                    <div className="flex flex-wrap items-center gap-4 mt-2">
+                        {!isUnreleased && (
                             <button
                                 onClick={() => navigate(`/watch/${anime.id}/1`)}
-                                className="px-8 py-3.5 bg-[#ffe9b0] text-[#241a00] font-['Hanken_Grotesk'] text-sm md:text-base font-bold rounded-xl hover:bg-[#f2ca50] transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(255,233,176,0.4)] cursor-pointer"
+                                className="px-7 py-3 rounded-xl bg-gradient-to-r from-[#f2ca50] to-[#af8d11] text-[#241a00] font-['Hanken_Grotesk'] font-bold text-sm flex items-center gap-2.5 shadow-[0_0_20px_rgba(242,202,80,0.3)] hover:brightness-110 transition-all hover:scale-105 active:scale-95 cursor-pointer"
                             >
-                                <span className="material-symbols-outlined text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>
-                                    play_arrow
-                                </span>
-                                Stream Episode 1
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => navigate(`/watch/${anime.id}/1`)}
-                                className="px-8 py-3.5 bg-[#ffe9b0] text-[#241a00] font-['Hanken_Grotesk'] text-sm md:text-base font-bold rounded-xl hover:bg-[#f2ca50] transition-all flex items-center gap-2 shadow-[0_0_20px_rgba(255,233,176,0.4)] cursor-pointer"
-                            >
-                                <span className="material-symbols-outlined text-2xl">
-                                    smart_display
-                                </span>
-                                Watch Official PV Trailer
+                                <span className="material-symbols-outlined text-xl">play_arrow</span>
+                                <span>Start Watching (Ep 1)</span>
                             </button>
                         )}
 
                         <button
                             onClick={handleWatchlistToggle}
-                            className={`px-6 py-3.5 border rounded-xl font-['Hanken_Grotesk'] text-sm font-semibold transition-all flex items-center gap-2 cursor-pointer ${
+                            className={`px-5 py-3 rounded-xl font-['Hanken_Grotesk'] font-semibold text-sm flex items-center gap-2 backdrop-blur-md border transition-all cursor-pointer ${
                                 isBookmarked
-                                    ? 'bg-[#ffe9b0]/20 border-[#ffe9b0] text-[#ffe9b0]'
-                                    : 'bg-[#1E2020]/70 border-white/20 text-[#e2e2e2] hover:bg-[#1E2020] hover:border-[#ffe9b0]/50'
+                                    ? 'bg-[#ffe9b0]/20 text-[#ffe9b0] border-[#ffe9b0]'
+                                    : 'bg-[#1E2020]/70 text-[#e2e2e2] border-white/20 hover:bg-[#282a2a]'
                             }`}
                         >
-                            <span className="material-symbols-outlined text-xl" style={{ fontVariationSettings: isBookmarked ? "'FILL' 1" : "'FILL' 0" }}>
-                                {isBookmarked ? 'bookmark_added' : 'bookmark_add'}
+                            <span className="material-symbols-outlined text-lg">
+                                {isBookmarked ? 'bookmark' : 'bookmark_border'}
                             </span>
-                            {isBookmarked ? 'In Watchlist' : 'Add to List'}
+                            <span>{isBookmarked ? 'In Watchlist' : 'Add to Watchlist'}</span>
                         </button>
 
                         {trailer?.id && (
                             <button
                                 onClick={() => setIsTrailerModalOpen(true)}
-                                className="px-5 py-3.5 border border-white/20 bg-[#121414]/60 text-[#e2e2e2] hover:text-[#ffe9b0] hover:bg-[#121414] font-['Hanken_Grotesk'] text-sm font-semibold rounded-xl transition-all flex items-center gap-2 cursor-pointer"
+                                className="px-5 py-3 rounded-xl bg-[#1E2020]/70 hover:bg-[#282a2a] text-[#e2e2e2] hover:text-[#ffe9b0] font-['Hanken_Grotesk'] font-semibold text-sm flex items-center gap-2 backdrop-blur-md border border-white/20 transition-all cursor-pointer"
                             >
-                                <span className="material-symbols-outlined text-xl">play_circle</span>
-                                Trailer Preview
+                                <span className="material-symbols-outlined text-lg">movie</span>
+                                <span>Trailer</span>
                             </button>
                         )}
                     </div>
                 </div>
             </section>
 
-            {/* Trailer Modal */}
-            {isTrailerModalOpen && trailer?.id && (
-                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-                    <div className="relative w-full max-w-4xl aspect-video bg-black rounded-2xl overflow-hidden border border-[#ffe9b0]/30 shadow-2xl">
-                        <button
-                            onClick={() => setIsTrailerModalOpen(false)}
-                            className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-[#121414]/80 text-white hover:text-[#ffe9b0] flex items-center justify-center cursor-pointer"
-                        >
-                            <span className="material-symbols-outlined">close</span>
-                        </button>
-                        <iframe
-                            src={`https://www.youtube.com/embed/${trailer.id}?autoplay=1`}
-                            title="Anime Trailer"
-                            allow="autoplay; encrypted-media; fullscreen"
-                            className="w-full h-full"
+            {/* Main Content Layout: Details + Sidebar */}
+            <div className="max-w-[1920px] mx-auto px-6 md:px-16 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-10">
+                {/* Left Column: Synopsis, Characters, Recommendations, Episodes (8 cols) */}
+                <div className="lg:col-span-8 flex flex-col gap-10">
+                    {/* Synopsis */}
+                    <div className="flex flex-col gap-3">
+                        <h2 className="font-['Bodoni_Moda'] text-2xl font-bold text-[#e2e2e2] flex items-center gap-2">
+                            <span>Synopsis</span>
+                        </h2>
+                        <div
+                            className="font-['Hanken_Grotesk'] text-[#d0c5af] leading-relaxed text-sm md:text-base space-y-3"
+                            dangerouslySetInnerHTML={{
+                                __html: anime.description || 'No description available for this anime.',
+                            }}
                         />
                     </div>
-                </div>
-            )}
 
-            {/* Main Details Grid: Episodes Column + Cast/Characters Column */}
-            <div className="px-6 md:px-16 py-10 flex flex-col lg:flex-row gap-10">
-                {/* Episodes Column (Left / Main) */}
-                <div className="w-full lg:w-2/3 flex flex-col gap-6">
-                    {anime.nextAiringEpisode && (
-                        <CountdownTimer
-                            airingAt={anime.nextAiringEpisode.airingAt}
-                            timeUntilAiring={anime.nextAiringEpisode.timeUntilAiring}
-                            episode={anime.nextAiringEpisode.episode}
-                        />
-                    )}
-
-                    <div className="flex flex-wrap justify-between items-center border-b border-[#4d4635]/40 pb-3 gap-3">
-                        <h2 className="font-['Bodoni_Moda'] text-2xl font-bold text-[#e2e2e2] flex items-center gap-2">
-                            <span className="material-symbols-outlined text-[#ffe9b0]">video_library</span>
-                            Episodes ({isUnreleased ? 'Upcoming' : totalEpisodes})
-                        </h2>
-
-                        <div className="flex items-center gap-3">
-                            {/* Search / Jump input */}
-                            {!isUnreleased && totalEpisodes > 12 && (
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        placeholder="Jump to Ep #..."
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="bg-[#1E2020] border border-[#4d4635]/50 text-xs text-[#e2e2e2] rounded-lg pl-7 pr-2.5 py-1.5 focus:border-[#ffe9b0] outline-none w-32 sm:w-36"
-                                    />
-                                    <span className="material-symbols-outlined absolute left-2 top-1.5 text-sm text-[#99907c]">
-                                        search
+                    {/* Episodes Section */}
+                    <div className="flex flex-col gap-4">
+                        <div className="flex flex-wrap justify-between items-center gap-4 border-b border-[#4d4635]/30 pb-3">
+                            <div>
+                                <h2 className="font-['Bodoni_Moda'] text-2xl font-bold text-[#e2e2e2] flex items-center gap-2">
+                                    <span>Episodes</span>
+                                </h2>
+                                <p className="text-xs text-[#ffe9b0] mt-0.5 flex items-center gap-2">
+                                    <span>
+                                        {isUnreleased ? 'Upcoming Series' : `${displayEpisodes} Released Episode${displayEpisodes === 1 ? '' : 's'}`}
+                                        {isReleasing && totalEpisodes > displayEpisodes && ` (${totalEpisodes} Planned)`}
                                     </span>
-                                </div>
-                            )}
+                                    {isReleasing && nextAiring?.episode && (
+                                        <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold text-[10px] uppercase">
+                                            Ep {nextAiring.episode} Airing Soon
+                                        </span>
+                                    )}
+                                </p>
+                            </div>
 
-                            {/* View Mode Toggle */}
-                            <div className="flex bg-[#1E2020] rounded-lg p-0.5 border border-[#4d4635]/50">
-                                <button
-                                    onClick={() => setViewMode('grid')}
-                                    className={`p-1.5 rounded text-xs transition-colors ${
-                                        viewMode === 'grid' ? 'bg-[#ffe9b0] text-[#241a00]' : 'text-[#99907c] hover:text-[#ffe9b0]'
-                                    }`}
-                                    title="Grid View"
-                                >
-                                    <span className="material-symbols-outlined text-base">grid_view</span>
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('detail')}
-                                    className={`p-1.5 rounded text-xs transition-colors ${
-                                        viewMode === 'detail' ? 'bg-[#ffe9b0] text-[#241a00]' : 'text-[#99907c] hover:text-[#ffe9b0]'
-                                    }`}
-                                    title="List View"
-                                >
-                                    <span className="material-symbols-outlined text-base">view_list</span>
-                                </button>
+                            {/* Batch & View controls */}
+                            <div className="flex items-center gap-3">
+                                {/* Search / Jump input */}
+                                {!isUnreleased && displayEpisodes > 12 && (
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            placeholder="Jump to Ep #..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="bg-[#1E2020] border border-[#4d4635]/50 text-xs text-[#e2e2e2] rounded-lg pl-7 pr-2.5 py-1.5 focus:border-[#ffe9b0] outline-none w-32 sm:w-36"
+                                        />
+                                        <span className="material-symbols-outlined absolute left-2 top-1.5 text-sm text-[#99907c]">
+                                            search
+                                        </span>
+                                    </div>
+                                )}
+
+                                {/* View Mode Toggle */}
+                                <div className="flex bg-[#1E2020] rounded-lg p-0.5 border border-[#4d4635]/50">
+                                    <button
+                                        onClick={() => setViewMode('grid')}
+                                        className={`p-1.5 rounded text-xs transition-colors ${
+                                            viewMode === 'grid' ? 'bg-[#ffe9b0] text-[#241a00]' : 'text-[#99907c] hover:text-[#ffe9b0]'
+                                        }`}
+                                        title="Grid View"
+                                    >
+                                        <span className="material-symbols-outlined text-base">grid_view</span>
+                                    </button>
+                                    <button
+                                        onClick={() => setViewMode('detail')}
+                                        className={`p-1.5 rounded text-xs transition-colors ${
+                                            viewMode === 'detail' ? 'bg-[#ffe9b0] text-[#241a00]' : 'text-[#99907c] hover:text-[#ffe9b0]'
+                                        }`}
+                                        title="List View"
+                                    >
+                                        <span className="material-symbols-outlined text-base">view_list</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
+
+                        {/* Batch Range Selector (if > 25 episodes) */}
+                        {!isUnreleased && totalBatches > 1 && !searchQuery && (
+                            <div className="flex items-center gap-2 overflow-x-auto pb-2 hide-scrollbar">
+                                {Array.from({ length: totalBatches }).map((_, idx) => {
+                                    const from = idx * batchSize + 1;
+                                    const to = Math.min((idx + 1) * batchSize, displayEpisodes);
+                                    const isCurrentBatch = selectedBatch === idx;
+
+                                    return (
+                                        <button
+                                            key={idx}
+                                            onClick={() => setSelectedBatch(idx)}
+                                            className={`px-3 py-1 text-xs rounded font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                                                isCurrentBatch
+                                                    ? 'bg-[#ffe9b0] text-[#241a00] font-bold shadow'
+                                                    : 'bg-[#1E2020] text-[#d0c5af] hover:text-[#ffe9b0] border border-white/5'
+                                            }`}
+                                        >
+                                            {from} - {to}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* Unreleased Notice or Episode List */}
+                        {isUnreleased ? (
+                            <div className="p-8 rounded-2xl bg-[#1E2020] border border-[#f2ca50]/30 flex flex-col items-center justify-center text-center gap-3">
+                                <span className="material-symbols-outlined text-4xl text-[#f2ca50]">schedule</span>
+                                <h3 className="font-['Bodoni_Moda'] text-xl text-[#e2e2e2]">Upcoming Season</h3>
+                                <p className="text-xs text-[#d0c5af] max-w-md">
+                                    Episodes for this anime have not aired yet. Add this title to your Watchlist to stay tuned when it releases!
+                                </p>
+                                <button
+                                    onClick={handleWatchlistToggle}
+                                    className="mt-2 px-6 py-2.5 rounded-xl bg-[#ffe9b0] text-[#241a00] font-bold text-xs hover:bg-[#f2ca50] cursor-pointer"
+                                >
+                                    {isBookmarked ? '✓ In Your Watchlist' : '+ Add to Watchlist'}
+                                </button>
+                            </div>
+                        ) : episodesToDisplay.length === 0 ? (
+                            <div className="p-8 rounded-xl bg-[#1E2020] text-center text-[#99907c] text-xs">
+                                No episodes found matching "{searchQuery}"
+                            </div>
+                        ) : viewMode === 'grid' ? (
+                            /* Grid Number Mode */
+                            <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5">
+                                {episodesToDisplay.map((epNum) => (
+                                    <button
+                                        key={epNum}
+                                        onClick={() => navigate(`/watch/${anime.id}/${epNum}`)}
+                                        className="h-12 rounded-xl bg-[#1E2020] hover:bg-[#282a2a] text-[#e2e2e2] hover:text-[#ffe9b0] border border-[#4d4635]/40 hover:border-[#ffe9b0] font-['Hanken_Grotesk'] text-sm font-bold transition-all flex items-center justify-center cursor-pointer shadow hover:scale-105"
+                                    >
+                                        {epNum}
+                                    </button>
+                                ))}
+                            </div>
+                        ) : (
+                            /* Detailed List Mode */
+                            <div className="flex flex-col gap-3">
+                                {episodesToDisplay.map((epNum) => (
+                                    <div
+                                        key={epNum}
+                                        onClick={() => navigate(`/watch/${anime.id}/${epNum}`)}
+                                        className="group flex gap-4 p-3.5 rounded-xl bg-[#1E2020] hover:bg-[#282a2a] transition-all cursor-pointer border border-transparent hover:border-[#ffe9b0]/30 shadow"
+                                    >
+                                        <div className="relative w-36 sm:w-44 aspect-video flex-shrink-0 rounded-lg overflow-hidden bg-[#121414]">
+                                            <img
+                                                src={banner}
+                                                alt={`Episode ${epNum}`}
+                                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                            />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <span className="material-symbols-outlined text-[#ffe9b0] text-3xl font-bold">
+                                                    play_circle
+                                                </span>
+                                            </div>
+                                            <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/80 text-[10px] text-white/90">
+                                                24m
+                                            </div>
+                                        </div>
+
+                                        <div className="flex flex-col justify-center min-w-0">
+                                            <span className="text-xs font-bold text-[#ffe9b0] uppercase tracking-wider">
+                                                Episode {epNum}
+                                            </span>
+                                            <h4 className="font-['Hanken_Grotesk'] text-sm font-semibold text-[#e2e2e2] group-hover:text-white truncate">
+                                                Episode {epNum}
+                                            </h4>
+                                            <p className="text-xs text-[#99907c] line-clamp-2 mt-1 hidden sm:block">
+                                                Follow the progression, encounters, and character development in this released episode.
+                                            </p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Batch Range Selector (if > 25 episodes) */}
-                    {!searchQuery && totalBatches > 1 && (
-                        <div className="flex gap-1.5 overflow-x-auto hide-scrollbar pb-1">
-                            {Array.from({ length: totalBatches }).map((_, idx) => {
-                                const from = idx * batchSize + 1;
-                                const to = Math.min(displayEpisodes, (idx + 1) * batchSize);
-                                const isCurrentBatch = selectedBatch === idx;
-                                return (
-                                    <button
-                                        key={idx}
-                                        onClick={() => setSelectedBatch(idx)}
-                                        className={`px-3 py-1 text-xs rounded font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                                            isCurrentBatch
-                                                ? 'bg-[#ffe9b0] text-[#241a00] font-bold shadow'
-                                                : 'bg-[#1E2020] text-[#d0c5af] hover:text-[#ffe9b0] border border-white/5'
-                                        }`}
-                                    >
-                                        {from} - {to}
-                                    </button>
-                                );
-                            })}
+                    {/* Characters & Voice Actors */}
+                    {anime.characters?.edges?.length > 0 && (
+                        <div className="flex flex-col gap-4">
+                            <h2 className="font-['Bodoni_Moda'] text-2xl font-bold text-[#e2e2e2]">
+                                Characters & Cast
+                            </h2>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                                {anime.characters.edges.map(({ role, node, voiceActors }) => {
+                                    const va = voiceActors?.[0];
+                                    return (
+                                        <div
+                                            key={node.id}
+                                            className="flex gap-3 p-3 rounded-xl bg-[#1E2020] border border-white/5 items-center justify-between"
+                                        >
+                                            <div className="flex items-center gap-2.5 min-w-0">
+                                                <img
+                                                    src={node.image?.large || node.image?.medium}
+                                                    alt={node.name.full}
+                                                    className="w-11 h-11 rounded-lg object-cover flex-shrink-0"
+                                                />
+                                                <div className="flex flex-col min-w-0">
+                                                    <span className="text-xs font-bold text-[#e2e2e2] truncate">
+                                                        {node.name.full}
+                                                    </span>
+                                                    <span className="text-[10px] text-[#99907c] uppercase">
+                                                        {role}
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {va && (
+                                                <div className="flex items-center gap-2 flex-shrink-0 text-right">
+                                                    <div className="flex flex-col min-w-0">
+                                                        <span className="text-[11px] font-semibold text-[#ffe9b0] truncate max-w-[80px]">
+                                                            {va.name.full}
+                                                        </span>
+                                                        <span className="text-[9px] text-[#99907c]">Japanese</span>
+                                                    </div>
+                                                    <img
+                                                        src={va.image?.large || va.image?.medium}
+                                                        alt={va.name.full}
+                                                        className="w-9 h-9 rounded-full object-cover"
+                                                    />
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </div>
                     )}
 
-                    {/* Unreleased Notice or Episode List */}
-                    {isUnreleased ? (
-                        <div className="p-8 rounded-2xl bg-[#1E2020] border border-[#f2ca50]/30 flex flex-col items-center justify-center text-center gap-3">
-                            <span className="material-symbols-outlined text-4xl text-[#f2ca50]">schedule</span>
-                            <h3 className="font-['Bodoni_Moda'] text-xl text-[#e2e2e2]">Upcoming Season</h3>
-                            <p className="text-xs text-[#d0c5af] max-w-md">
-                                Episodes for this anime have not aired yet. Add this title to your Watchlist to stay tuned when it releases!
-                            </p>
-                            <button
-                                onClick={handleWatchlistToggle}
-                                className="mt-2 px-6 py-2.5 rounded-xl bg-[#ffe9b0] text-[#241a00] font-bold text-xs hover:bg-[#f2ca50] cursor-pointer"
-                            >
-                                {isBookmarked ? '✓ In Your Watchlist' : '+ Add to Watchlist'}
-                            </button>
-                        </div>
-                    ) : episodesToDisplay.length === 0 ? (
-                        <div className="p-8 rounded-xl bg-[#1E2020] text-center text-[#99907c] text-xs">
-                            No episodes found matching "{searchQuery}"
-                        </div>
-                    ) : viewMode === 'grid' ? (
-                        /* Grid Number Mode */
-                        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5">
-                            {episodesToDisplay.map((epNum) => (
-                                <button
-                                    key={epNum}
-                                    onClick={() => navigate(`/watch/${anime.id}/${epNum}`)}
-                                    className="h-12 rounded-xl bg-[#1E2020] hover:bg-[#282a2a] text-[#e2e2e2] hover:text-[#ffe9b0] border border-[#4d4635]/40 hover:border-[#ffe9b0] font-['Hanken_Grotesk'] text-sm font-bold transition-all flex items-center justify-center cursor-pointer shadow hover:scale-105"
-                                >
-                                    {epNum}
-                                </button>
-                            ))}
-                        </div>
-                    ) : (
-                        /* Detailed List Mode */
-                        <div className="flex flex-col gap-3">
-                            {episodesToDisplay.map((epNum) => (
-                                <div
-                                    key={epNum}
-                                    onClick={() => navigate(`/watch/${anime.id}/${epNum}`)}
-                                    className="group flex gap-4 p-3.5 rounded-xl bg-[#1E2020] hover:bg-[#282a2a] transition-all cursor-pointer border border-transparent hover:border-[#ffe9b0]/30 shadow"
-                                >
-                                    <div className="relative w-36 sm:w-44 aspect-video flex-shrink-0 rounded-lg overflow-hidden bg-[#121414]">
-                                        <img
-                                            src={banner}
-                                            alt={`Episode ${epNum}`}
-                                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    {/* Recommended Anime */}
+                    {anime.recommendations?.nodes?.length > 0 && (
+                        <div className="flex flex-col gap-4">
+                            <h2 className="font-['Bodoni_Moda'] text-2xl font-bold text-[#e2e2e2]">
+                                You Might Also Like
+                            </h2>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                {anime.recommendations.nodes.map((node) => {
+                                    const rec = node.mediaRecommendation;
+                                    if (!rec) return null;
+                                    return (
+                                        <AnimeCard
+                                            key={rec.id}
+                                            anime={rec}
+                                            onClick={() => navigate(`/anime/${rec.id}`)}
                                         />
-                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                            <span className="material-symbols-outlined text-[#ffe9b0] text-3xl font-bold">
-                                                play_circle
-                                            </span>
-                                        </div>
-                                        <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/80 text-[10px] text-white/90">
-                                            24m
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col justify-center flex-grow">
-                                        <div className="flex justify-between items-baseline mb-1">
-                                            <h3 className="font-['Hanken_Grotesk'] text-sm md:text-base font-semibold text-[#e2e2e2] group-hover:text-[#ffe9b0] transition-colors">
-                                                Episode {epNum}
-                                            </h3>
-                                            <span className="text-xs text-[#ffe9b0] font-semibold opacity-0 group-hover:opacity-100 transition-opacity">
-                                                Stream Now →
-                                            </span>
-                                        </div>
-                                        <p className="text-xs text-[#99907c] line-clamp-2 leading-relaxed">
-                                            Episode {epNum} follows the narrative progression, encounters, and character development in this episode.
-                                        </p>
-                                    </div>
-                                </div>
-                            ))}
+                                    );
+                                })}
+                            </div>
                         </div>
                     )}
                 </div>
 
-                {/* Cast & Characters Column (Right) */}
-                <div className="w-full lg:w-1/3 flex flex-col gap-6">
-                    <h2 className="font-['Bodoni_Moda'] text-2xl font-bold text-[#e2e2e2] border-b border-[#4d4635]/40 pb-3 flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[#ffe9b0]">groups</span>
-                        Characters & Cast
-                    </h2>
+                {/* Right Column: Metadata Sidebar (4 cols) */}
+                <div className="lg:col-span-4 flex flex-col gap-6">
+                    {/* Poster Card */}
+                    <div className="rounded-2xl bg-[#1E2020] border border-[#4d4635]/40 p-5 flex flex-col gap-5 shadow-xl">
+                        <div className="aspect-[3/4] w-full rounded-xl overflow-hidden shadow-md">
+                            <img
+                                src={cover}
+                                alt={title}
+                                className="w-full h-full object-cover"
+                            />
+                        </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        {anime.characters?.edges?.slice(0, 6).map((edge) => {
-                            const char = edge.node;
-                            const va = edge.voiceActors?.[0];
-                            return (
-                                <div key={char.id} className="flex flex-col items-center text-center p-3 rounded-xl bg-[#1E2020] border border-[#4d4635]/30 group hover:border-[#ffe9b0]/50 transition-colors">
-                                    <div className="w-16 h-16 rounded-full overflow-hidden mb-2 border-2 border-transparent group-hover:border-[#ffe9b0] transition-colors bg-[#121414]">
-                                        <img
-                                            src={char.image?.large || char.image?.medium}
-                                            alt={char.name?.full}
-                                            className="w-full h-full object-cover"
-                                        />
-                                    </div>
-                                    <p className="font-['Hanken_Grotesk'] text-xs font-semibold text-[#e2e2e2] group-hover:text-[#ffe9b0] transition-colors truncate w-full">
-                                        {char.name?.full}
-                                    </p>
-                                    {va && (
-                                        <p className="text-[11px] text-[#99907c] truncate w-full mt-0.5">
-                                            VA: {va.name?.full}
-                                        </p>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
+                        {/* Quick Stats Grid */}
+                        <div className="grid grid-cols-2 gap-3 border-t border-b border-[#4d4635]/30 py-4">
+                            <div>
+                                <span className="text-[10px] text-[#99907c] uppercase font-semibold">Score</span>
+                                <p className="text-lg font-bold text-[#ffe9b0] flex items-center gap-1">
+                                    <span className="material-symbols-outlined text-sm text-[#f2ca50]">star</span>
+                                    {score}
+                                </p>
+                            </div>
+                            <div>
+                                <span className="text-[10px] text-[#99907c] uppercase font-semibold">Format</span>
+                                <p className="text-sm font-bold text-[#e2e2e2]">{anime.format || 'TV'}</p>
+                            </div>
+                            <div>
+                                <span className="text-[10px] text-[#99907c] uppercase font-semibold">Released Episodes</span>
+                                <p className="text-sm font-bold text-[#e2e2e2]">
+                                    {isUnreleased ? '0' : displayEpisodes}
+                                    {isReleasing && totalEpisodes > displayEpisodes && ` / ${totalEpisodes}`}
+                                </p>
+                            </div>
+                            <div>
+                                <span className="text-[10px] text-[#99907c] uppercase font-semibold">Duration</span>
+                                <p className="text-sm font-bold text-[#e2e2e2]">{anime.duration ? `${anime.duration}m` : '24m'}</p>
+                            </div>
+                        </div>
 
-                    {/* Anime Information Box */}
-                    <div className="mt-4 p-4 rounded-xl bg-[#1E2020] border border-[#4d4635]/40 flex flex-col gap-2.5 text-xs text-[#d0c5af]">
-                        <h3 className="font-['Bodoni_Moda'] text-base font-bold text-[#ffe9b0] mb-1">
-                            Anime Details
-                        </h3>
-                        <div className="flex justify-between border-b border-white/5 pb-1.5">
-                            <span className="text-[#99907c]">Studio:</span>
-                            <span className="text-[#e2e2e2] font-medium">{anime.studios?.nodes?.[0]?.name || 'N/A'}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-white/5 pb-1.5">
-                            <span className="text-[#99907c]">Aired:</span>
-                            <span className="text-[#e2e2e2] font-medium">{anime.startDate?.year || '2024'}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-white/5 pb-1.5">
-                            <span className="text-[#99907c]">Status:</span>
-                            <span className="text-[#e2e2e2] font-medium">{anime.status || 'Finished'}</span>
-                        </div>
-                        <div className="flex justify-between border-b border-white/5 pb-1.5">
-                            <span className="text-[#99907c]">Duration:</span>
-                            <span className="text-[#e2e2e2] font-medium">{anime.duration ? `${anime.duration} mins/ep` : '24 mins'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-[#99907c]">Favorites:</span>
-                            <span className="text-[#ffe9b0] font-bold">{anime.favourites?.toLocaleString() || 'N/A'}</span>
+                        {/* Additional Information */}
+                        <div className="flex flex-col gap-3 text-xs text-[#d0c5af]">
+                            <div>
+                                <span className="text-[10px] text-[#99907c] uppercase font-semibold block">Studios</span>
+                                <span className="text-[#e2e2e2] font-medium">
+                                    {anime.studios?.nodes?.map(s => s.name).join(', ') || 'Unknown'}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="text-[10px] text-[#99907c] uppercase font-semibold block">Status</span>
+                                <span className="text-[#ffe9b0] font-medium capitalize">
+                                    {anime.status?.replace('_', ' ').toLowerCase() || 'Finished'}
+                                </span>
+                            </div>
+                            <div>
+                                <span className="text-[10px] text-[#99907c] uppercase font-semibold block">Genres</span>
+                                <span className="text-[#e2e2e2] font-medium">
+                                    {anime.genres?.join(', ') || 'N/A'}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Recommendations Row */}
-            {anime.recommendations?.nodes?.length > 0 && (
-                <section className="px-6 md:px-16 pt-8">
-                    <h2 className="font-['Bodoni_Moda'] text-2xl md:text-3xl font-bold text-[#e2e2e2] mb-4 flex items-center gap-2">
-                        <span className="material-symbols-outlined text-[#ffe9b0]">recommend</span>
-                        You Might Also Like
-                    </h2>
-                    <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 snap-x scroll-smooth">
-                        {anime.recommendations.nodes
-                            .filter(n => n.mediaRecommendation)
-                            .slice(0, 8)
-                            .map((rec) => (
-                                <div key={rec.mediaRecommendation.id} className="min-w-[160px] sm:min-w-[190px] md:min-w-[220px] snap-start">
-                                    <AnimeCard
-                                        anime={rec.mediaRecommendation}
-                                        navigate={navigate}
-                                    />
-                                </div>
-                            ))}
+            {/* Trailer Modal */}
+            {isTrailerModalOpen && trailer?.id && (
+                <div
+                    className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+                    onClick={() => setIsTrailerModalOpen(false)}
+                >
+                    <div
+                        className="relative w-full max-w-4xl aspect-video bg-black rounded-2xl overflow-hidden shadow-2xl border border-[#ffe9b0]/30"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <button
+                            onClick={() => setIsTrailerModalOpen(false)}
+                            className="absolute top-3 right-3 z-10 w-9 h-9 rounded-full bg-black/70 text-[#ffe9b0] hover:text-white flex items-center justify-center transition-colors"
+                        >
+                            <span className="material-symbols-outlined text-lg">close</span>
+                        </button>
+                        <iframe
+                            src={`https://www.youtube.com/embed/${trailer.id}?autoplay=1`}
+                            title="Trailer"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            className="w-full h-full border-0"
+                        ></iframe>
                     </div>
-                </section>
+                </div>
             )}
         </div>
     );

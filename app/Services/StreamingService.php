@@ -9,11 +9,11 @@ class StreamingService
     ) {}
 
     /**
-     * Resolve streaming player data with exact 4animo AniList/MAL integration and nextAiringEpisode timer
+     * Resolve streaming player data with exact aired episode counts
      */
     public function getStreamData(int $animeId, int $episode = 1, ?array $animeDetails = null): array
     {
-        $totalEpisodes = $animeDetails['episodes'] ?? 24;
+        $totalEpisodes = $animeDetails['episodes'] ?? null;
         $englishTitle = $animeDetails['title']['english'] ?? null;
         $romajiTitle = $animeDetails['title']['romaji'] ?? null;
         $title = $englishTitle ?? $romajiTitle ?? "Episode {$episode}";
@@ -21,7 +21,28 @@ class StreamingService
         $trailerId = $animeDetails['trailer']['id'] ?? null;
         $status = $animeDetails['status'] ?? 'FINISHED';
         $nextAiring = $animeDetails['nextAiringEpisode'] ?? null;
-        $isUnreleased = ($status === 'NOT_YET_RELEASED' || $totalEpisodes === 0 || empty($animeDetails['episodes']));
+
+        // Calculate exact released/aired episode count
+        $releasedEpisodesCount = 0;
+
+        if ($status === 'NOT_YET_RELEASED') {
+            $releasedEpisodesCount = 0;
+        } elseif ($status === 'RELEASING') {
+            if (!empty($nextAiring['episode'])) {
+                // Next airing episode minus 1 equals the number of currently released episodes
+                $releasedEpisodesCount = max(0, (int)$nextAiring['episode'] - 1);
+            } elseif (!empty($totalEpisodes)) {
+                $releasedEpisodesCount = (int)$totalEpisodes;
+            } else {
+                $releasedEpisodesCount = max(1, $episode);
+            }
+        } elseif ($status === 'FINISHED') {
+            $releasedEpisodesCount = (int)($totalEpisodes ?: 12);
+        } else {
+            $releasedEpisodesCount = (int)($totalEpisodes ?: 12);
+        }
+
+        $isUnreleased = ($status === 'NOT_YET_RELEASED' || $releasedEpisodesCount === 0);
 
         // Extract MyAnimeList ID (idMal)
         $targetId = !empty($animeDetails['idMal']) ? $animeDetails['idMal'] : $animeId;
@@ -40,20 +61,18 @@ class StreamingService
 
         $defaultStreamUrl = $isUnreleased ? $trailerEmbedUrl : ($servers[0]['url'] ?? '');
 
-        // Build list of episodes
+        // Build list of ONLY actually released episodes (never unreleased future episodes)
         $episodesList = [];
-        $episodeCount = $totalEpisodes > 0 ? min($totalEpisodes, 2000) : ($isUnreleased ? 0 : 24);
+        $episodeCount = min($releasedEpisodesCount, 2000);
         
         for ($i = 1; $i <= $episodeCount; $i++) {
-            $isUpcomingEp = $nextAiring && ((int)$nextAiring['episode'] <= $i);
             $episodesList[] = [
                 'number' => $i,
                 'title' => "Episode {$i}",
                 'duration' => '24m',
                 'thumbnail' => $banner,
-                'synopsis' => "Episode {$i} follows the story progression, encounters, and character development in this episode.",
+                'synopsis' => "Episode {$i} follows the story progression and encounters in this released episode.",
                 'isCurrent' => $i === $episode,
-                'isUpcoming' => $isUpcomingEp,
             ];
         }
 
@@ -61,9 +80,10 @@ class StreamingService
             'animeId' => $animeId,
             'currentEpisode' => $episode,
             'totalEpisodes' => $totalEpisodes,
+            'releasedEpisodesCount' => $releasedEpisodesCount,
             'status' => $status,
-            'isUnreleased' => $isUnreleased,
             'nextAiringEpisode' => $nextAiring,
+            'isUnreleased' => $isUnreleased,
             'title' => $title,
             'streamUrl' => $defaultStreamUrl,
             'servers' => $servers,
@@ -71,8 +91,8 @@ class StreamingService
             'navigation' => [
                 'hasPrevious' => $episode > 1,
                 'previousEpisode' => $episode > 1 ? $episode - 1 : null,
-                'hasNext' => $totalEpisodes ? $episode < $totalEpisodes : true,
-                'nextEpisode' => $episode + 1,
+                'hasNext' => $episode < $releasedEpisodesCount,
+                'nextEpisode' => ($episode < $releasedEpisodesCount) ? $episode + 1 : null,
             ],
             'episodes' => $episodesList,
         ];

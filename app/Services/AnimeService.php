@@ -8,44 +8,43 @@ use Illuminate\Support\Facades\Log;
 
 class AnimeService
 {
-    protected string $graphqlUrl = 'https://graphql.anilist.co';
+    protected string $apiUrl = 'https://graphql.anilist.co';
 
     /**
      * Execute a GraphQL query against AniList API with caching
      */
-    public function query(string $query, array $variables = [], int $ttl = 3600): array
+    public function query(string $query, array $variables = [], int $cacheTtl = 3600): array
     {
         $cacheKey = 'anilist_' . md5($query . serialize($variables));
 
-        return Cache::remember($cacheKey, $ttl, function () use ($query, $variables) {
+        return Cache::remember($cacheKey, $cacheTtl, function () use ($query, $variables) {
             try {
                 $response = Http::timeout(10)
                     ->withHeaders([
                         'Content-Type' => 'application/json',
                         'Accept' => 'application/json',
                     ])
-                    ->post($this->graphqlUrl, [
+                    ->post($this->apiUrl, [
                         'query' => $query,
                         'variables' => $variables,
                     ]);
 
                 if ($response->successful()) {
-                    return $response->json()['data'] ?? [];
+                    $json = $response->json();
+                    return $json['data'] ?? [];
                 }
 
-                Log::warning('AniList API non-200 response: ' . $response->status(), [
-                    'body' => $response->body(),
-                ]);
-            } catch (\Throwable $e) {
-                Log::error('AniList API Exception: ' . $e->getMessage());
+                Log::error('AniList API Error: ' . $response->body());
+                return [];
+            } catch (\Exception $e) {
+                Log::error('AniList Connection Error: ' . $e->getMessage());
+                return [];
             }
-
-            return [];
         });
     }
 
     /**
-     * Get home page dataset with nextAiringEpisode schedules
+     * Get aggregated home page feed
      */
     public function getHomeFeed(): array
     {
@@ -67,12 +66,8 @@ class AnimeService
                     status
                     format
                     genres
+                    nextAiringEpisode { episode airingAt timeUntilAiring }
                     trailer { id site thumbnail }
-                    nextAiringEpisode {
-                        airingAt
-                        timeUntilAiring
-                        episode
-                    }
                 }
             }
             trending: Page(page: 1, perPage: 16) {
@@ -88,11 +83,7 @@ class AnimeService
                     format
                     seasonYear
                     genres
-                    nextAiringEpisode {
-                        airingAt
-                        timeUntilAiring
-                        episode
-                    }
+                    nextAiringEpisode { episode airingAt timeUntilAiring }
                 }
             }
             topAiring: Page(page: 1, perPage: 16) {
@@ -108,11 +99,7 @@ class AnimeService
                     format
                     seasonYear
                     genres
-                    nextAiringEpisode {
-                        airingAt
-                        timeUntilAiring
-                        episode
-                    }
+                    nextAiringEpisode { episode airingAt timeUntilAiring }
                 }
             }
             popularAllTime: Page(page: 1, perPage: 16) {
@@ -128,11 +115,7 @@ class AnimeService
                     format
                     seasonYear
                     genres
-                    nextAiringEpisode {
-                        airingAt
-                        timeUntilAiring
-                        episode
-                    }
+                    nextAiringEpisode { episode airingAt timeUntilAiring }
                 }
             }
             actionHighlights: Page(page: 1, perPage: 12) {
@@ -148,6 +131,7 @@ class AnimeService
                     format
                     seasonYear
                     genres
+                    nextAiringEpisode { episode airingAt timeUntilAiring }
                 }
             }
             fantasyHighlights: Page(page: 1, perPage: 12) {
@@ -163,11 +147,12 @@ class AnimeService
                     format
                     seasonYear
                     genres
+                    nextAiringEpisode { episode airingAt timeUntilAiring }
                 }
             }
         }';
 
-        $data = $this->query($query, [], 900);
+        $data = $this->query($query, [], 900); // 15 mins cache for fresh trending data
 
         return [
             'spotlight' => $data['spotlight']['media'] ?? [],
@@ -180,7 +165,7 @@ class AnimeService
     }
 
     /**
-     * Get detailed information for a single anime including nextAiringEpisode
+     * Get detailed information for a single anime
      */
     public function getAnimeDetails(int $id): ?array
     {
@@ -206,15 +191,11 @@ class AnimeService
                 endDate { year month day }
                 format
                 genres
+                nextAiringEpisode { episode airingAt timeUntilAiring }
                 studios(isMain: true) {
                     nodes { id name siteUrl }
                 }
                 trailer { id site thumbnail }
-                nextAiringEpisode {
-                    airingAt
-                    timeUntilAiring
-                    episode
-                }
                 characters(sort: ROLE, perPage: 8) {
                     edges {
                         role
@@ -241,27 +222,10 @@ class AnimeService
                             bannerImage
                             averageScore
                             episodes
+                            status
                             format
                             genres
-                            nextAiringEpisode {
-                                airingAt
-                                timeUntilAiring
-                                episode
-                            }
-                        }
-                    }
-                }
-                relations {
-                    edges {
-                        relationType
-                        node {
-                            id
-                            idMal
-                            title { romaji english }
-                            coverImage { medium large }
-                            format
-                            status
-                            averageScore
+                            nextAiringEpisode { episode airingAt timeUntilAiring }
                         }
                     }
                 }
@@ -269,17 +233,16 @@ class AnimeService
         }';
 
         $data = $this->query($query, ['id' => $id], 3600);
-
         return $data['Media'] ?? null;
     }
 
     /**
-     * Search anime with filters including nextAiringEpisode
+     * Search and filter anime catalog
      */
     public function search(array $filters = []): array
     {
         $query = '
-        query ($page: Int, $perPage: Int, $search: String, $genre: String, $status: MediaStatus, $format: MediaFormat, $sort: [MediaSort]) {
+        query ($page: Int, $perPage: Int, $search: String, $genre: String, $year: Int, $season: MediaSeason, $format: MediaFormat, $status: MediaStatus, $sort: [MediaSort]) {
             Page(page: $page, perPage: $perPage) {
                 pageInfo {
                     total
@@ -288,10 +251,10 @@ class AnimeService
                     lastPage
                     hasNextPage
                 }
-                media(search: $search, genre: $genre, status: $status, format: $format, sort: $sort, type: ANIME, isAdult: false) {
+                media(search: $search, genre: $genre, seasonYear: $year, season: $season, format: $format, status: $status, sort: $sort, type: ANIME, isAdult: false) {
                     id
                     idMal
-                    title { romaji english }
+                    title { romaji english native }
                     coverImage { extraLarge large }
                     bannerImage
                     averageScore
@@ -299,12 +262,9 @@ class AnimeService
                     status
                     format
                     seasonYear
+                    season
                     genres
-                    nextAiringEpisode {
-                        airingAt
-                        timeUntilAiring
-                        episode
-                    }
+                    nextAiringEpisode { episode airingAt timeUntilAiring }
                 }
             }
         }';
@@ -312,41 +272,41 @@ class AnimeService
         $variables = [
             'page' => (int) ($filters['page'] ?? 1),
             'perPage' => min((int) ($filters['per_page'] ?? 24), 50),
-            'search' => ! empty($filters['q']) ? $filters['q'] : null,
-            'genre' => ! empty($filters['genre']) ? $filters['genre'] : null,
-            'status' => ! empty($filters['status']) ? $filters['status'] : null,
-            'format' => ! empty($filters['format']) ? $filters['format'] : null,
-            'sort' => ! empty($filters['sort']) ? [$filters['sort']] : ['TRENDING_DESC'],
+            'search' => !empty($filters['q']) ? $filters['q'] : null,
+            'genre' => !empty($filters['genre']) ? $filters['genre'] : null,
+            'year' => !empty($filters['year']) ? (int) $filters['year'] : null,
+            'season' => !empty($filters['season']) ? strtoupper($filters['season']) : null,
+            'format' => !empty($filters['format']) ? strtoupper($filters['format']) : null,
+            'status' => !empty($filters['status']) ? strtoupper($filters['status']) : null,
+            'sort' => !empty($filters['sort']) ? [$filters['sort']] : ['TRENDING_DESC'],
         ];
 
-        $variables = array_filter($variables, fn ($val) => ! is_null($val));
+        // Clean out null variables
+        $variables = array_filter($variables, fn($v) => !is_null($v));
 
-        $data = $this->query($query, $variables, 1800);
+        $data = $this->query($query, $variables, 900);
 
         return [
+            'pageInfo' => $data['Page']['pageInfo'] ?? [],
             'items' => $data['Page']['media'] ?? [],
-            'pageInfo' => $data['Page']['pageInfo'] ?? [
-                'total' => 0,
-                'perPage' => $variables['perPage'],
-                'currentPage' => $variables['page'],
-                'lastPage' => 1,
-                'hasNextPage' => false,
-            ],
         ];
     }
 
     /**
-     * Get list of genres
+     * Get genre list with cached counts
      */
     public function getGenres(): array
     {
-        $query = 'query { GenreCollection }';
-        $data = $this->query($query, [], 86400 * 7);
+        $query = '
+        query {
+            GenreCollection
+        }';
 
+        $data = $this->query($query, [], 86400);
         return $data['GenreCollection'] ?? [
             'Action', 'Adventure', 'Comedy', 'Drama', 'Ecchi', 'Fantasy',
             'Horror', 'Mahou Shoujo', 'Mecha', 'Music', 'Mystery', 'Psychological',
-            'Romance', 'Sci-Fi', 'Slice of Life', 'Sports', 'Supernatural', 'Thriller',
+            'Romance', 'Sci-Fi', 'Slice of Life', 'Sports', 'Supernatural', 'Thriller'
         ];
     }
 }

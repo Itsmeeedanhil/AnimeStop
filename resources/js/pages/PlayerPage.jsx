@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { AnimeApi, LibraryApi } from '../services/api';
 import VideoPlayer from '../components/VideoPlayer';
-import CountdownTimer from '../components/CountdownTimer';
 
 export default function PlayerPage({ id, episode = 1, navigate, showNotification }) {
     const [data, setData] = useState(null);
@@ -77,69 +76,46 @@ export default function PlayerPage({ id, episode = 1, navigate, showNotification
 
     if (isLoading) {
         return (
-            <div className="min-h-[85vh] flex flex-col items-center justify-center gap-4 bg-[#0d0f0f] text-[#ffe9b0]">
+            <div className="min-h-[80vh] flex flex-col items-center justify-center gap-4 text-[#ffe9b0]">
                 <span className="w-12 h-12 border-3 border-[#ffe9b0] border-t-transparent rounded-full animate-spin"></span>
-                <p className="text-sm font-['Hanken_Grotesk'] text-[#d0c5af]">Connecting to Anime Stream Servers...</p>
+                <p className="text-sm text-[#d0c5af]">Preparing high-speed stream...</p>
             </div>
         );
     }
 
     if (!data?.anime) {
         return (
-            <div className="h-screen w-full flex flex-col items-center justify-center gap-4 bg-[#0d0f0f] text-center p-4">
+            <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 text-center px-4">
                 <span className="material-symbols-outlined text-5xl text-[#ffe9b0]/50">error</span>
                 <h2 className="font-['Bodoni_Moda'] text-2xl text-[#e2e2e2]">Anime Stream Unavailable</h2>
                 <button
                     onClick={() => navigate('/')}
-                    className="px-6 py-2.5 rounded-lg bg-[#ffe9b0] text-[#241a00] font-semibold text-sm hover:bg-[#f2ca50]"
+                    className="px-6 py-2 rounded-xl bg-[#ffe9b0] text-[#241a00] font-bold text-xs hover:bg-[#f2ca50]"
                 >
-                    Back to Browse
+                    Back to Home
                 </button>
             </div>
         );
     }
 
     const { anime, stream } = data;
-    const animeTitle = anime.title?.english || anime.title?.romaji;
-    const episodes = stream.episodes || [];
-    const totalEpisodesCount = anime.episodes || episodes.length;
+    const animeTitle = anime.title?.english || anime.title?.romaji || 'Anime';
+    const allEpisodes = stream?.episodes || [];
+    const totalEpisodesCount = stream?.releasedEpisodesCount || allEpisodes.length;
+    const nextAiring = stream?.nextAiringEpisode;
+    const isOngoing = stream?.status === 'RELEASING';
+    const totalBatches = Math.max(1, Math.ceil(allEpisodes.length / batchSize));
 
-    // Filter episodes by search query or by batch
-    const totalBatches = Math.max(1, Math.ceil(episodes.length / batchSize));
-    
+    // Filter by search query or current batch
     const filteredEpisodes = searchQuery.trim()
-        ? episodes.filter(ep => 
-            ep.number.toString().includes(searchQuery.trim()) || 
-            `episode ${ep.number}`.includes(searchQuery.toLowerCase().trim())
-          )
-        : episodes.slice(selectedBatch * batchSize, (selectedBatch + 1) * batchSize);
+        ? allEpisodes.filter(ep => ep.number.toString().includes(searchQuery.trim()))
+        : allEpisodes.slice(selectedBatch * batchSize, (selectedBatch + 1) * batchSize);
 
     return (
-        <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-61px)] w-full relative bg-[#0d0f0f] overflow-hidden">
-            {/* Left: Video Player Section */}
-            <div className="flex-1 flex flex-col justify-start bg-black overflow-y-auto custom-scrollbar">
-                {/* Back to Details Header */}
-                <div className="bg-[#121414] px-4 md:px-6 py-3 border-b border-[#4d4635]/40 flex items-center justify-between">
-                    <button
-                        onClick={() => navigate(`/anime/${id}`)}
-                        className="text-[#ffe9b0] hover:text-white transition-colors flex items-center gap-2 group text-sm font-semibold cursor-pointer"
-                    >
-                        <span className="material-symbols-outlined text-xl group-hover:-translate-x-1 transition-transform">
-                            arrow_back
-                        </span>
-                        <span className="font-['Hanken_Grotesk'] uppercase tracking-wider text-xs">
-                            Back to Overview
-                        </span>
-                    </button>
-
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs text-[#99907c] font-medium hidden sm:inline">
-                            {animeTitle} • Episode {epNumber}
-                        </span>
-                    </div>
-                </div>
-
-                {/* Video Player Component */}
+        <div className="w-full flex flex-col lg:flex-row min-h-[calc(100vh-64px)] mt-14 md:mt-0 bg-[#0d0f0f]">
+            {/* Left / Top: Cinema Player + Meta (Main Area) */}
+            <div className="flex-1 flex flex-col overflow-y-auto">
+                {/* Embedded Video Player Component */}
                 <VideoPlayer
                     streamData={stream}
                     anime={anime}
@@ -149,43 +125,65 @@ export default function PlayerPage({ id, episode = 1, navigate, showNotification
                     navigate={navigate}
                 />
 
-                {/* Quick Info Below Player */}
-                <div className="p-4 md:p-6 bg-[#121414] border-t border-[#4d4635]/30 flex flex-col gap-4">
-                    {(stream?.nextAiringEpisode || anime?.nextAiringEpisode) && (
-                        <CountdownTimer
-                            airingAt={(stream?.nextAiringEpisode || anime?.nextAiringEpisode).airingAt}
-                            timeUntilAiring={(stream?.nextAiringEpisode || anime?.nextAiringEpisode).timeUntilAiring}
-                            episode={(stream?.nextAiringEpisode || anime?.nextAiringEpisode).episode}
-                        />
-                    )}
-
+                {/* Meta Header Under Player */}
+                <div className="p-6 md:p-8 bg-[#121414] border-b border-[#4d4635]/30">
                     <div className="flex flex-wrap justify-between items-start gap-4">
-                        <div>
-                            <h1 className="font-['Bodoni_Moda'] text-xl md:text-2xl font-bold text-[#e2e2e2]">
+                        <div className="flex flex-col gap-2 max-w-3xl">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className="px-2.5 py-0.5 rounded bg-[#ffe9b0] text-[#241a00] font-bold text-xs">
+                                    Episode {epNumber}
+                                </span>
+                                <span className="px-2.5 py-0.5 rounded bg-[#1E2020] text-[#d0c5af] text-xs border border-white/10">
+                                    {anime.format || 'TV'}
+                                </span>
+                                <span className="px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs font-semibold">
+                                    {anime.status?.replace('_', ' ') || 'FINISHED'}
+                                </span>
+                                {isOngoing && nextAiring?.episode && (
+                                    <span className="px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-xs font-semibold">
+                                        Ep {nextAiring.episode} Airing Soon
+                                    </span>
+                                )}
+                            </div>
+
+                            <h1 className="font-['Bodoni_Moda'] text-2xl md:text-3xl font-bold text-[#e2e2e2]">
                                 {animeTitle}
                             </h1>
-                            <p className="text-sm font-semibold text-[#ffe9b0] mt-0.5">
-                                Episode {epNumber} of {totalEpisodesCount}
+
+                            <p className="font-['Hanken_Grotesk'] text-sm text-[#ffe9b0]">
+                                Playing Episode {epNumber} • {totalEpisodesCount} Released Episode{totalEpisodesCount === 1 ? '' : 's'}
                             </p>
                         </div>
 
-                        <button
-                            onClick={handleWatchlistToggle}
-                            className={`px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-all cursor-pointer ${
-                                isBookmarked
-                                    ? 'bg-[#ffe9b0]/20 border-[#ffe9b0] text-[#ffe9b0]'
-                                    : 'bg-[#1E2020] border-white/20 text-[#d0c5af] hover:text-[#ffe9b0]'
-                            }`}
-                        >
-                            <span className="material-symbols-outlined text-base" style={{ fontVariationSettings: isBookmarked ? "'FILL' 1" : "'FILL' 0" }}>
-                                {isBookmarked ? 'bookmark_added' : 'bookmark_add'}
-                            </span>
-                            <span>{isBookmarked ? 'In Watchlist' : 'Add to List'}</span>
-                        </button>
+                        {/* Action Buttons */}
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={handleWatchlistToggle}
+                                className={`px-4 py-2.5 rounded-xl font-['Hanken_Grotesk'] font-semibold text-xs flex items-center gap-2 border transition-all cursor-pointer ${
+                                    isBookmarked
+                                        ? 'bg-[#ffe9b0]/20 text-[#ffe9b0] border-[#ffe9b0]'
+                                        : 'bg-[#1E2020] text-[#e2e2e2] border-white/10 hover:bg-[#282a2a]'
+                                }`}
+                            >
+                                <span className="material-symbols-outlined text-base">
+                                    {isBookmarked ? 'bookmark' : 'bookmark_border'}
+                                </span>
+                                <span>{isBookmarked ? 'In Watchlist' : 'Add to List'}</span>
+                            </button>
+
+                            <button
+                                onClick={() => navigate(`/anime/${id}`)}
+                                className="px-4 py-2.5 rounded-xl bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] text-xs font-semibold border border-white/10 transition-colors flex items-center gap-1 cursor-pointer"
+                            >
+                                <span>Overview</span>
+                                <span className="material-symbols-outlined text-base">arrow_forward</span>
+                            </button>
+                        </div>
                     </div>
 
-                    <p className="text-xs text-[#99907c] mt-3 leading-relaxed max-w-3xl">
-                        {anime.description || 'Watch high-quality streaming on AnimeStop with multi-server playback.'}
+                    {/* Synopsis snippet */}
+                    <p className="mt-4 text-xs md:text-sm text-[#99907c] leading-relaxed line-clamp-3">
+                        {anime.description?.replace(/<[^>]*>?/gm, '') || 'No synopsis available.'}
                     </p>
                 </div>
             </div>
@@ -199,8 +197,13 @@ export default function PlayerPage({ id, episode = 1, navigate, showNotification
                             <h2 className="font-['Bodoni_Moda'] text-lg font-bold text-[#e2e2e2] truncate">
                                 {animeTitle}
                             </h2>
-                            <p className="font-['Hanken_Grotesk'] text-xs text-[#ffe9b0]">
-                                Playing Episode {epNumber} of {totalEpisodesCount}
+                            <p className="font-['Hanken_Grotesk'] text-xs text-[#ffe9b0] flex items-center gap-1.5">
+                                <span>Playing Episode {epNumber} of {totalEpisodesCount}</span>
+                                {isOngoing && (
+                                    <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded font-bold uppercase">
+                                        Released
+                                    </span>
+                                )}
                             </p>
                         </div>
                     </div>
@@ -258,18 +261,19 @@ export default function PlayerPage({ id, episode = 1, navigate, showNotification
                         </div>
                     </div>
 
-                    {/* Batch Range Pills (if > 25 episodes and not actively searching) */}
-                    {!searchQuery && totalBatches > 1 && (
-                        <div className="flex gap-1.5 overflow-x-auto hide-scrollbar pb-1">
+                    {/* Batch Range Selector Pill Row (if > 25 episodes) */}
+                    {totalBatches > 1 && !searchQuery && (
+                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
                             {Array.from({ length: totalBatches }).map((_, idx) => {
                                 const from = idx * batchSize + 1;
-                                const to = Math.min(episodes.length, (idx + 1) * batchSize);
+                                const to = Math.min((idx + 1) * batchSize, allEpisodes.length);
                                 const isCurrentBatch = selectedBatch === idx;
+
                                 return (
                                     <button
                                         key={idx}
                                         onClick={() => setSelectedBatch(idx)}
-                                        className={`px-2.5 py-1 text-[11px] rounded font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                                        className={`px-2.5 py-1 text-[11px] font-semibold rounded whitespace-nowrap transition-all cursor-pointer ${
                                             isCurrentBatch
                                                 ? 'bg-[#ffe9b0] text-[#241a00] font-bold shadow'
                                                 : 'bg-[#121414] text-[#d0c5af] hover:text-[#ffe9b0] border border-white/5'
@@ -283,16 +287,15 @@ export default function PlayerPage({ id, episode = 1, navigate, showNotification
                     )}
                 </div>
 
-                {/* Scrollable Episode Area */}
-                <div className="flex-1 overflow-y-auto p-3 custom-scrollbar">
+                {/* Episode Items Scrollable Queue */}
+                <div className="flex-1 overflow-y-auto p-3 hide-scrollbar">
                     {filteredEpisodes.length === 0 ? (
-                        <div className="py-12 flex flex-col items-center justify-center text-center text-[#99907c]">
-                            <span className="material-symbols-outlined text-3xl mb-1 text-[#ffe9b0]">search_off</span>
-                            <p className="text-xs">No episode matched "{searchQuery}"</p>
+                        <div className="p-8 text-center text-[#99907c] text-xs">
+                            No episodes found matching "{searchQuery}"
                         </div>
                     ) : viewMode === 'grid' ? (
-                        /* Compact Number Grid View (100+ episodes fast navigation) */
-                        <div className="grid grid-cols-5 sm:grid-cols-6 gap-2">
+                        /* Compact Grid Mode */
+                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                             {filteredEpisodes.map((ep) => {
                                 const isActive = ep.number === epNumber;
                                 return (
@@ -300,20 +303,24 @@ export default function PlayerPage({ id, episode = 1, navigate, showNotification
                                         key={ep.number}
                                         ref={isActive ? activeEpisodeRef : null}
                                         onClick={() => navigate(`/watch/${id}/${ep.number}`)}
-                                        className={`h-11 rounded-lg font-['Hanken_Grotesk'] text-xs font-bold transition-all flex items-center justify-center cursor-pointer border ${
+                                        className={`h-11 rounded-lg text-xs font-bold transition-all flex flex-col items-center justify-center cursor-pointer border ${
                                             isActive
-                                                ? 'bg-[#ffe9b0] text-[#241a00] border-[#ffe9b0] shadow-[0_0_12px_rgba(255,233,176,0.4)] transform scale-105'
-                                                : 'bg-[#121414]/80 text-[#d0c5af] border-[#4d4635]/40 hover:border-[#ffe9b0] hover:text-[#ffe9b0] hover:bg-[#282a2a]'
+                                                ? 'bg-[#ffe9b0] text-[#241a00] border-[#ffe9b0] shadow-[0_0_12px_rgba(255,233,176,0.3)] scale-105'
+                                                : 'bg-[#121414] text-[#e2e2e2] border-white/5 hover:border-[#ffe9b0]/50 hover:bg-[#282a2a]'
                                         }`}
-                                        title={`Episode ${ep.number}`}
                                     >
-                                        {ep.number}
+                                        <span>{ep.number}</span>
+                                        {isActive && (
+                                            <span className="text-[9px] uppercase tracking-wider font-extrabold">
+                                                Active
+                                            </span>
+                                        )}
                                     </button>
                                 );
                             })}
                         </div>
                     ) : (
-                        /* Detailed Cards View */
+                        /* Detailed List Mode */
                         <div className="flex flex-col gap-2">
                             {filteredEpisodes.map((ep) => {
                                 const isActive = ep.number === epNumber;
@@ -322,49 +329,47 @@ export default function PlayerPage({ id, episode = 1, navigate, showNotification
                                         key={ep.number}
                                         ref={isActive ? activeEpisodeRef : null}
                                         onClick={() => navigate(`/watch/${id}/${ep.number}`)}
-                                        className={`flex gap-3 p-2 rounded-xl transition-all cursor-pointer border relative overflow-hidden group ${
+                                        className={`group flex items-center gap-3 p-2 rounded-xl transition-all cursor-pointer border ${
                                             isActive
-                                                ? 'bg-[#282a2a] border-[#ffe9b0]/50 shadow-md'
-                                                : 'bg-[#121414]/60 hover:bg-[#282a2a] border-transparent hover:border-[#4d4635]/40'
+                                                ? 'bg-[#282a2a] border-[#ffe9b0] shadow-[0_0_15px_rgba(255,233,176,0.15)]'
+                                                : 'bg-[#161818] border-transparent hover:border-white/10 hover:bg-[#202222]'
                                         }`}
                                     >
-                                        {isActive && <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#ffe9b0]"></div>}
-
-                                        {/* Thumbnail */}
-                                        <div className="w-24 aspect-video bg-[#0d0f0f] rounded-lg flex-shrink-0 relative overflow-hidden">
+                                        <div className="relative w-20 aspect-video rounded-lg overflow-hidden bg-[#121414] flex-shrink-0">
                                             <img
-                                                src={ep.thumbnail || anime.bannerImage || anime.coverImage?.large}
-                                                alt={ep.title}
-                                                className={`w-full h-full object-cover transition-opacity ${
-                                                    isActive ? 'opacity-70' : 'opacity-60 group-hover:opacity-90'
-                                                }`}
+                                                src={ep.thumbnail}
+                                                alt={`Episode ${ep.number}`}
+                                                className="w-full h-full object-cover"
                                             />
-                                            <div className="absolute inset-0 flex items-center justify-center bg-black/40">
-                                                {isActive ? (
-                                                    <span className="material-symbols-outlined text-[#ffe9b0] text-2xl animate-pulse">
+                                            {isActive ? (
+                                                <div className="absolute inset-0 bg-[#ffe9b0]/30 flex items-center justify-center">
+                                                    <span className="material-symbols-outlined text-[#ffe9b0] text-xl font-bold animate-pulse">
                                                         equalizer
                                                     </span>
-                                                ) : (
-                                                    <span className="material-symbols-outlined text-white/80 opacity-0 group-hover:opacity-100 text-2xl transition-opacity">
-                                                        play_circle
+                                                </div>
+                                            ) : (
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <span className="material-symbols-outlined text-white text-lg">
+                                                        play_arrow
                                                     </span>
-                                                )}
-                                            </div>
+                                                </div>
+                                            )}
                                         </div>
 
-                                        {/* Episode Info */}
-                                        <div className="flex flex-col justify-center min-w-0 flex-1">
-                                            <span className={`text-[10px] font-bold tracking-wider uppercase mb-0.5 ${
-                                                isActive ? 'text-[#ffe9b0]' : 'text-[#99907c] group-hover:text-[#ffe9b0]'
-                                            }`}>
-                                                EPISODE {ep.number}
-                                            </span>
-                                            <h3 className={`text-xs font-semibold truncate ${
-                                                isActive ? 'text-white' : 'text-[#d0c5af] group-hover:text-white'
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between gap-1">
+                                                <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                                                    isActive ? 'text-[#ffe9b0]' : 'text-[#99907c]'
+                                                }`}>
+                                                    Episode {ep.number}
+                                                </span>
+                                            </div>
+                                            <h4 className={`text-xs font-semibold truncate ${
+                                                isActive ? 'text-white font-bold' : 'text-[#d0c5af] group-hover:text-white'
                                             }`}>
                                                 Episode {ep.number}
-                                            </h3>
-                                            <span className="text-[10px] text-[#99907c] mt-0.5">24m</span>
+                                            </h4>
+                                            <span className="text-[10px] text-[#99907c]">24m</span>
                                         </div>
                                     </div>
                                 );
