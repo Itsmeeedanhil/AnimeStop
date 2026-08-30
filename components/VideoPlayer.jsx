@@ -168,6 +168,45 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
     return () => clearInterval(interval);
   }, [anime, currentEpisode, animeTitle, streamData, animeId]);
 
+  const [autoRecoverNotice, setAutoRecoverNotice] = useState('');
+
+  const handleAutoRecover = () => {
+    if (servers.length > 1) {
+      const currentIndex = servers.findIndex((s) => s.id === selectedServerId);
+      const nextIndex = (currentIndex + 1) % servers.length;
+      const nextServer = servers[nextIndex];
+      setSelectedServerId(nextServer.id);
+      setAutoRecoverNotice(`Auto-recovered: Switched to ${nextServer.name}`);
+      setTimeout(() => setAutoRecoverNotice(''), 4000);
+    }
+    setReloadKey((prev) => prev + 1);
+  };
+
+  // Listen for iframe / JW Player postMessage error signals to auto-recover
+  useEffect(() => {
+    const handleMessage = (e) => {
+      const data = e.data;
+      if (!data) return;
+      try {
+        const str = typeof data === 'string' ? data : JSON.stringify(data);
+        if (
+          str.includes('233429') ||
+          str.includes('jwplayerError') ||
+          str.includes('Error Code') ||
+          str.includes('hlsError') ||
+          str.includes('MEDIA_ELEMENT_ERROR') ||
+          (data.event === 'error' && data.code)
+        ) {
+          console.warn('Playback error detected via embed signal, auto-refreshing...');
+          handleAutoRecover();
+        }
+      } catch (err) {}
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [selectedServerId, servers]);
+
   // Synchronize server when episode changes
   useEffect(() => {
     if (isUnreleased && trailerUrl) {
@@ -216,7 +255,21 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             >
               <RefreshCw className="w-3.5 h-3.5" />
             </button>
+
+            <button
+              onClick={handleAutoRecover}
+              className="px-2 py-0.5 rounded bg-[#ffe9b0]/15 hover:bg-[#ffe9b0]/25 text-[#ffe9b0] text-[10px] font-bold border border-[#ffe9b0]/30 transition-all cursor-pointer shrink-0 flex items-center gap-1"
+              title="Fix playback error & switch to next server"
+            >
+              <span>⚡ Auto-Fix</span>
+            </button>
           </div>
+
+          {autoRecoverNotice && (
+            <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30 animate-pulse">
+              {autoRecoverNotice}
+            </span>
+          )}
 
           <div className="flex items-center gap-2 sm:gap-3 text-xs text-[#d0c5af] shrink-0">
             {/* Custom SRT Subtitle Button */}
