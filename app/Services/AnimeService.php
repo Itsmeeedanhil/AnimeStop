@@ -269,16 +269,28 @@ class AnimeService
             }
         }';
 
+        // Map friendly sort values to AniList GraphQL enum values
+        $sortMap = [
+            'trending' => ['TRENDING_DESC'],
+            'popular' => ['POPULARITY_DESC'],
+            'score' => ['SCORE_DESC'],
+            'newest' => ['START_DATE_DESC'],
+            'favorites' => ['FAVOURITES_DESC'],
+        ];
+
+        $rawSort = strtolower($filters['sort'] ?? 'trending');
+        $resolvedSort = $sortMap[$rawSort] ?? ['TRENDING_DESC'];
+
         $variables = [
             'page' => (int) ($filters['page'] ?? 1),
             'perPage' => min((int) ($filters['per_page'] ?? 24), 50),
-            'search' => !empty($filters['q']) ? $filters['q'] : null,
-            'genre' => !empty($filters['genre']) ? $filters['genre'] : null,
+            'search' => !empty($filters['q']) ? trim($filters['q']) : null,
+            'genre' => !empty($filters['genre']) ? trim($filters['genre']) : null,
             'year' => !empty($filters['year']) ? (int) $filters['year'] : null,
             'season' => !empty($filters['season']) ? strtoupper($filters['season']) : null,
             'format' => !empty($filters['format']) ? strtoupper($filters['format']) : null,
             'status' => !empty($filters['status']) ? strtoupper($filters['status']) : null,
-            'sort' => !empty($filters['sort']) ? [$filters['sort']] : ['TRENDING_DESC'],
+            'sort' => $resolvedSort,
         ];
 
         // Clean out null variables
@@ -287,26 +299,41 @@ class AnimeService
         $data = $this->query($query, $variables, 900);
 
         return [
-            'pageInfo' => $data['Page']['pageInfo'] ?? [],
+            'pageInfo' => $data['Page']['pageInfo'] ?? [
+                'total' => 0,
+                'perPage' => 24,
+                'currentPage' => 1,
+                'lastPage' => 1,
+                'hasNextPage' => false,
+            ],
             'items' => $data['Page']['media'] ?? [],
         ];
     }
 
     /**
-     * Get genre list with cached counts
+     * Get genre list with rich metadata and counts
      */
     public function getGenres(): array
     {
-        $query = '
-        query {
-            GenreCollection
-        }';
-
-        $data = $this->query($query, [], 86400);
-        return $data['GenreCollection'] ?? [
-            'Action', 'Adventure', 'Comedy', 'Drama', 'Ecchi', 'Fantasy',
-            'Horror', 'Mahou Shoujo', 'Mecha', 'Music', 'Mystery', 'Psychological',
-            'Romance', 'Sci-Fi', 'Slice of Life', 'Sports', 'Supernatural', 'Thriller'
+        return [
+            ['name' => 'Action', 'count' => '1,800+', 'icon' => 'sports_martial_arts'],
+            ['name' => 'Adventure', 'count' => '1,400+', 'icon' => 'explore'],
+            ['name' => 'Comedy', 'count' => '2,200+', 'icon' => 'sentiment_very_satisfied'],
+            ['name' => 'Drama', 'count' => '1,600+', 'icon' => 'theater_comedy'],
+            ['name' => 'Ecchi', 'count' => '600+', 'icon' => 'favorite'],
+            ['name' => 'Fantasy', 'count' => '2,100+', 'icon' => 'auto_awesome'],
+            ['name' => 'Horror', 'count' => '450+', 'icon' => 'dark_mode'],
+            ['name' => 'Mahou Shoujo', 'count' => '300+', 'icon' => 'magic_button'],
+            ['name' => 'Mecha', 'count' => '550+', 'icon' => 'precision_manufacturing'],
+            ['name' => 'Music', 'count' => '500+', 'icon' => 'music_note'],
+            ['name' => 'Mystery', 'count' => '900+', 'icon' => 'visibility'],
+            ['name' => 'Psychological', 'count' => '750+', 'icon' => 'psychology'],
+            ['name' => 'Romance', 'count' => '1,700+', 'icon' => 'volunteer_activism'],
+            ['name' => 'Sci-Fi', 'count' => '1,300+', 'icon' => 'rocket_launch'],
+            ['name' => 'Slice of Life', 'count' => '1,100+', 'icon' => 'coffee'],
+            ['name' => 'Sports', 'count' => '650+', 'icon' => 'sports_soccer'],
+            ['name' => 'Supernatural', 'count' => '1,500+', 'icon' => 'cruelty_free'],
+            ['name' => 'Thriller', 'count' => '600+', 'icon' => 'warning'],
         ];
     }
 }

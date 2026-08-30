@@ -42,8 +42,8 @@ export default function SearchPage({ initialParams = {}, navigate, showNotificat
                 page: targetPage,
                 per_page: 24,
             });
-            setResults(data.items || []);
-            setPagination(data.pagination || { total: 0, currentPage: 1, lastPage: 1, hasNextPage: false });
+            setResults(data?.items || []);
+            setPagination(data?.pageInfo || data?.pagination || { total: 0, currentPage: 1, lastPage: 1, hasNextPage: false });
             setPage(targetPage);
         } catch (err) {
             console.error('Search failed', err);
@@ -53,7 +53,7 @@ export default function SearchPage({ initialParams = {}, navigate, showNotificat
     };
 
     useEffect(() => {
-        performSearch(page);
+        performSearch(1);
     }, [genre, format, sort]);
 
     const handleSearchSubmit = (e) => {
@@ -110,7 +110,7 @@ export default function SearchPage({ initialParams = {}, navigate, showNotificat
                     </div>
                     <button
                         type="submit"
-                        className="px-7 py-3.5 bg-[#ffe9b0] text-[#241a00] font-bold rounded-xl text-sm hover:bg-[#f2ca50] transition-colors shadow"
+                        className="px-7 py-3.5 bg-[#ffe9b0] text-[#241a00] font-bold rounded-xl text-sm hover:bg-[#f2ca50] transition-colors shadow cursor-pointer"
                     >
                         Search
                     </button>
@@ -124,12 +124,13 @@ export default function SearchPage({ initialParams = {}, navigate, showNotificat
                         <select
                             value={genre}
                             onChange={(e) => setGenre(e.target.value)}
-                            className="bg-[#1E2020] border border-[#4d4635] text-[#e2e2e2] text-xs rounded-lg px-3 py-2 focus:border-[#ffe9b0] focus:outline-none"
+                            className="bg-[#1E2020] border border-[#4d4635] text-[#e2e2e2] text-xs rounded-lg px-3 py-2 focus:border-[#ffe9b0] focus:outline-none cursor-pointer"
                         >
                             <option value="">All Genres</option>
-                            {genresList.map((g) => (
-                                <option key={g.name} value={g.name}>{g.name}</option>
-                            ))}
+                            {genresList.map((g) => {
+                                const gName = typeof g === 'string' ? g : g.name;
+                                return <option key={gName} value={gName}>{gName}</option>;
+                            })}
                         </select>
                     </div>
 
@@ -139,32 +140,34 @@ export default function SearchPage({ initialParams = {}, navigate, showNotificat
                         <select
                             value={format}
                             onChange={(e) => setFormat(e.target.value)}
-                            className="bg-[#1E2020] border border-[#4d4635] text-[#e2e2e2] text-xs rounded-lg px-3 py-2 focus:border-[#ffe9b0] focus:outline-none"
+                            className="bg-[#1E2020] border border-[#4d4635] text-[#e2e2e2] text-xs rounded-lg px-3 py-2 focus:border-[#ffe9b0] focus:outline-none cursor-pointer"
                         >
                             <option value="">All Formats</option>
                             <option value="TV">TV Series</option>
                             <option value="MOVIE">Movie</option>
                             <option value="OVA">OVA</option>
+                            <option value="ONA">ONA</option>
                             <option value="SPECIAL">Special</option>
                         </select>
                     </div>
 
-                    {/* Sort Filter */}
+                    {/* Sort Order */}
                     <div className="flex items-center gap-2">
                         <label className="text-xs text-[#99907c]">Sort by:</label>
                         <select
                             value={sort}
                             onChange={(e) => setSort(e.target.value)}
-                            className="bg-[#1E2020] border border-[#4d4635] text-[#e2e2e2] text-xs rounded-lg px-3 py-2 focus:border-[#ffe9b0] focus:outline-none"
+                            className="bg-[#1E2020] border border-[#4d4635] text-[#e2e2e2] text-xs rounded-lg px-3 py-2 focus:border-[#ffe9b0] focus:outline-none cursor-pointer"
                         >
                             <option value="trending">Trending</option>
                             <option value="popular">Most Popular</option>
                             <option value="score">Highest Rated</option>
-                            <option value="newest">Release Date</option>
+                            <option value="newest">Recently Added</option>
+                            <option value="favorites">Most Favorited</option>
                         </select>
                     </div>
 
-                    {/* Reset Filters */}
+                    {/* Reset Filters button */}
                     {(query || genre || format || sort !== 'trending') && (
                         <button
                             onClick={() => {
@@ -173,69 +176,66 @@ export default function SearchPage({ initialParams = {}, navigate, showNotificat
                                 setFormat('');
                                 setSort('trending');
                             }}
-                            className="text-xs text-[#ffe9b0] hover:underline ml-auto"
+                            className="text-xs text-[#ffe9b0] hover:underline ml-auto cursor-pointer"
                         >
-                            Reset Filters
+                            Clear Filters
                         </button>
                     )}
                 </div>
             </div>
 
-            {/* Results Grid */}
-            <div>
-                {isLoading ? (
-                    <div className="py-24 flex flex-col items-center justify-center gap-4 text-[#ffe9b0]">
-                        <span className="w-12 h-12 border-3 border-[#ffe9b0] border-t-transparent rounded-full animate-spin"></span>
-                        <p className="text-sm text-[#d0c5af]">Searching anime database...</p>
+            {/* Results Grid / Loading / Empty State */}
+            {isLoading ? (
+                <div className="min-h-[40vh] flex flex-col items-center justify-center gap-4 text-[#ffe9b0]">
+                    <span className="w-12 h-12 border-3 border-[#ffe9b0] border-t-transparent rounded-full animate-spin"></span>
+                    <p className="text-sm text-[#d0c5af]">Searching library...</p>
+                </div>
+            ) : results.length === 0 ? (
+                <div className="min-h-[40vh] flex flex-col items-center justify-center gap-4 text-center px-4">
+                    <span className="material-symbols-outlined text-5xl text-[#ffe9b0]/40">search_off</span>
+                    <h3 className="font-['Bodoni_Moda'] text-2xl text-[#e2e2e2]">No anime found</h3>
+                    <p className="text-xs text-[#99907c] max-w-md">
+                        Try adjusting your search query, clearing genre filters, or searching by Japanese/English titles.
+                    </p>
+                </div>
+            ) : (
+                <div className="flex flex-col gap-8">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
+                        {results.map((anime) => (
+                            <AnimeCard
+                                key={anime.id}
+                                anime={anime}
+                                isBookmarked={watchlistIds.has(anime.id)}
+                                onBookmarkToggle={handleWatchlistToggle}
+                                onClick={() => navigate(`/anime/${anime.id}`)}
+                            />
+                        ))}
                     </div>
-                ) : results.length === 0 ? (
-                    <div className="py-24 flex flex-col items-center justify-center text-center gap-3">
-                        <span className="material-symbols-outlined text-5xl text-[#ffe9b0]/40">search_off</span>
-                        <h3 className="font-['Bodoni_Moda'] text-2xl text-[#e2e2e2]">No anime found</h3>
-                        <p className="text-xs text-[#99907c] max-w-md">
-                            Try adjusting your search query, clearing genre filters, or searching by Japanese/English titles.
-                        </p>
-                    </div>
-                ) : (
-                    <div className="flex flex-col gap-8">
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-5">
-                            {results.map((anime) => (
-                                <AnimeCard
-                                    key={anime.id}
-                                    anime={anime}
-                                    navigate={navigate}
-                                    onWatchlistToggle={handleWatchlistToggle}
-                                    isBookmarked={watchlistIds.has(anime.id)}
-                                />
-                            ))}
-                        </div>
 
-                        {/* Pagination Bar */}
-                        <div className="flex justify-between items-center border-t border-[#4d4635]/40 pt-6">
+                    {/* Pagination Controls */}
+                    {pagination.lastPage > 1 && (
+                        <div className="flex justify-center items-center gap-4 pt-8 border-t border-[#4d4635]/30">
                             <button
-                                disabled={page <= 1}
                                 onClick={() => performSearch(page - 1)}
-                                className="px-5 py-2.5 rounded-lg bg-[#1E2020] border border-[#4d4635] text-xs font-semibold text-[#d0c5af] disabled:opacity-40 disabled:cursor-not-allowed hover:border-[#ffe9b0] hover:text-[#ffe9b0] transition-colors"
+                                disabled={page <= 1}
+                                className="px-4 py-2 rounded-xl bg-[#1E2020] border border-[#4d4635] text-xs font-semibold text-[#e2e2e2] disabled:opacity-40 disabled:cursor-not-allowed hover:border-[#ffe9b0] transition-all cursor-pointer"
                             >
-                                ← Previous Page
+                                Previous Page
                             </button>
-
-                            <span className="text-xs text-[#99907c]">
-                                Page <strong className="text-[#ffe9b0]">{page}</strong>
+                            <span className="text-xs text-[#d0c5af]">
+                                Page <strong className="text-[#ffe9b0]">{pagination.currentPage}</strong> of {pagination.lastPage}
                             </span>
-
                             <button
-                                disabled={!pagination.hasNextPage}
                                 onClick={() => performSearch(page + 1)}
-                                className="px-5 py-2.5 rounded-lg bg-[#1E2020] border border-[#4d4635] text-xs font-semibold text-[#d0c5af] disabled:opacity-40 disabled:cursor-not-allowed hover:border-[#ffe9b0] hover:text-[#ffe9b0] transition-colors"
+                                disabled={!pagination.hasNextPage && page >= pagination.lastPage}
+                                className="px-4 py-2 rounded-xl bg-[#1E2020] border border-[#4d4635] text-xs font-semibold text-[#e2e2e2] disabled:opacity-40 disabled:cursor-not-allowed hover:border-[#ffe9b0] transition-all cursor-pointer"
                             >
-                                Next Page →
+                                Next Page
                             </button>
                         </div>
-                    </div>
-                )}
-            </div>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
-
