@@ -21,16 +21,24 @@ $app = Application::configure(basePath: dirname(__DIR__))
         );
     })->create();
 
-// Always use writable /tmp storage in serverless environments (Vercel, AWS Lambda)
-if (PHP_SAPI !== 'cli' || isset($_SERVER['LAMBDA_TASK_ROOT']) || isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL']) || env('VERCEL') || env('APP_ENV') === 'production') {
-    $storagePath = '/tmp/storage';
-    if (! is_dir($storagePath . '/framework/views')) {
-        @mkdir($storagePath . '/framework/views', 0777, true);
-        @mkdir($storagePath . '/framework/cache', 0777, true);
-        @mkdir($storagePath . '/framework/sessions', 0777, true);
-        @mkdir($storagePath . '/logs', 0777, true);
-    }
-    $app->useStoragePath($storagePath);
+// Explicitly register and boot essential serverless providers to ensure immediate container availability
+$app->register(\Illuminate\Events\EventServiceProvider::class);
+$app->register(\Illuminate\Routing\RoutingServiceProvider::class);
+$app->register(\Illuminate\View\ViewServiceProvider::class);
+$app->register(\Illuminate\Filesystem\FilesystemServiceProvider::class);
+$app->register(\Illuminate\Session\SessionServiceProvider::class);
+$app->register(\Illuminate\Cookie\CookieServiceProvider::class);
+$app->register(\Illuminate\Database\DatabaseServiceProvider::class);
+$app->register(\Illuminate\Auth\AuthServiceProvider::class);
+
+// Always use writable /tmp storage in serverless environments
+$storagePath = '/tmp/storage';
+if (! is_dir($storagePath . '/framework/views')) {
+    @mkdir($storagePath . '/framework/views', 0777, true);
+    @mkdir($storagePath . '/framework/cache', 0777, true);
+    @mkdir($storagePath . '/framework/sessions', 0777, true);
+    @mkdir($storagePath . '/logs', 0777, true);
 }
+$app->useStoragePath($storagePath);
 
 return $app;
