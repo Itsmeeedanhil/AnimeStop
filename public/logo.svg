@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80">
+  <defs>
+    <linearGradient id="logoGoldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe9b0" />
+      <stop offset="50%" stop-color="#f2ca50" />
+      <stop offset="100%" stop-color="#af8d11" />
+    </linearGradient>
+    <linearGradient id="logoDarkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#282a2a" />
+      <stop offset="100%" stop-color="#121414" />
+    </linearGradient>
+    <filter id="logoGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="2" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Emblem Box -->
+  <g transform="translate(10, 10)">
+    <rect x="0" y="0" width="60" height="60" rx="16" fill="url(#logoGoldGrad)" filter="url(#logoGlow)" />
+    <!-- Play Triangle -->
+    <path d="M22 17 L44 30 L22 43 Z" fill="#1e1805" stroke="#1e1805" stroke-width="1.5" stroke-linejoin="round" />
+    <polygon points="24,21 37,29 24,29" fill="#ffe9b0" opacity="0.4" />
+  </g>
+
+  <!-- Typography -->
+  <text x="85" y="47" font-family="'Bodoni Moda', 'Playfair Display', serif" font-size="34" font-weight="800" fill="url(#logoGoldGrad)" letter-spacing="-0.5">
+    Anime<tspan fill="#ffffff">Stop</tspan>
+  </text>
+  
+  <text x="88" y="63" font-family="'Hanken Grotesk', sans-serif" font-size="9" font-weight="700" fill="#99907c" letter-spacing="2.5">
+    PREMIUM STREAMING
+  </text>
+</svg>

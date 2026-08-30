@@ -56,9 +56,11 @@ export default function Navbar({ navigate, currentRoute }) {
                         onClick={() => navigate('/')}
                         className="flex items-center gap-2.5 group text-left focus:outline-none"
                     >
-                        <span className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#f2ca50] to-[#af8d11] flex items-center justify-center text-[#241a00] shadow-[0_0_15px_rgba(255,233,176,0.3)] group-hover:scale-105 transition-transform">
-                            <span className="material-symbols-outlined text-2xl font-bold">play_arrow</span>
-                        </span>
+                        <img
+                            src="/favicon.svg"
+                            alt="AnimeStop Logo"
+                            className="w-9 h-9 rounded-lg shadow-[0_0_15px_rgba(255,233,176,0.35)] group-hover:scale-105 transition-transform"
+                        />
                         <div className="flex flex-col">
                             <span className="font-['Bodoni_Moda'] text-2xl md:text-3xl font-bold tracking-tight text-[#ffe9b0] group-hover:text-white transition-colors">
                                 AnimeStop

@@ -6,6 +6,11 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>AnimeStop — Premium Anime Streaming</title>
     
+    <!-- Custom Logo & Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="alternate icon" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/favicon.svg">
+    
     <!-- Google Fonts: Bodoni Moda (Headlines) & Hanken Grotesk (Body) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,4 +26,3 @@
     <div id="root"></div>
 </body>
 </html>
-

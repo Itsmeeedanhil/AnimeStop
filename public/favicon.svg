@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffe9b0" />
+      <stop offset="45%" stop-color="#f2ca50" />
+      <stop offset="100%" stop-color="#af8d11" />
+    </linearGradient>
+    <linearGradient id="darkGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e2020" />
+      <stop offset="100%" stop-color="#0d0f0f" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background Base with subtle border -->
+  <rect x="5" y="5" width="90" height="90" rx="24" fill="url(#darkGrad)" stroke="url(#goldGrad)" stroke-width="3" />
+
+  <!-- Gold Emblem Container -->
+  <rect x="16" y="16" width="68" height="68" rx="18" fill="url(#goldGrad)" filter="url(#glow)" />
+
+  <!-- Sharp Dark Play Icon -->
+  <path d="M40 32 L70 50 L40 68 Z" fill="#181408" stroke="#181408" stroke-width="2" stroke-linejoin="round" />
+
+  <!-- Play Inner Highlight Notch -->
+  <polygon points="43,38 60,49 43,49" fill="#ffe9b0" opacity="0.35" />
+</svg>
