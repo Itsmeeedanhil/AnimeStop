@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="google-client-id" content="{{ config('services.google.client_id', '') }}">
     <title>AnimeStop — Premium Anime Streaming</title>
     
     <!-- Custom Logo & Favicon -->
@@ -18,6 +19,9 @@
     
     <!-- Material Symbols Outlined -->
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+    
+    <!-- Official Google Identity Services SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     @viteReactRefresh
     @vite(['resources/css/app.css', 'resources/js/app.jsx'])
