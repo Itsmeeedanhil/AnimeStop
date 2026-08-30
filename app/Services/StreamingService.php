@@ -9,7 +9,7 @@ class StreamingService
     ) {}
 
     /**
-     * Resolve streaming player data with exact 4animo AniList/MAL integration
+     * Resolve streaming player data with exact 4animo AniList/MAL integration and nextAiringEpisode timer
      */
     public function getStreamData(int $animeId, int $episode = 1, ?array $animeDetails = null): array
     {
@@ -20,6 +20,7 @@ class StreamingService
         $banner = $animeDetails['bannerImage'] ?? $animeDetails['coverImage']['extraLarge'] ?? null;
         $trailerId = $animeDetails['trailer']['id'] ?? null;
         $status = $animeDetails['status'] ?? 'FINISHED';
+        $nextAiring = $animeDetails['nextAiringEpisode'] ?? null;
         $isUnreleased = ($status === 'NOT_YET_RELEASED' || $totalEpisodes === 0 || empty($animeDetails['episodes']));
 
         // Extract MyAnimeList ID (idMal)
@@ -44,6 +45,7 @@ class StreamingService
         $episodeCount = $totalEpisodes > 0 ? min($totalEpisodes, 2000) : ($isUnreleased ? 0 : 24);
         
         for ($i = 1; $i <= $episodeCount; $i++) {
+            $isUpcomingEp = $nextAiring && ((int)$nextAiring['episode'] <= $i);
             $episodesList[] = [
                 'number' => $i,
                 'title' => "Episode {$i}",
@@ -51,6 +53,7 @@ class StreamingService
                 'thumbnail' => $banner,
                 'synopsis' => "Episode {$i} follows the story progression, encounters, and character development in this episode.",
                 'isCurrent' => $i === $episode,
+                'isUpcoming' => $isUpcomingEp,
             ];
         }
 
@@ -60,6 +63,7 @@ class StreamingService
             'totalEpisodes' => $totalEpisodes,
             'status' => $status,
             'isUnreleased' => $isUnreleased,
+            'nextAiringEpisode' => $nextAiring,
             'title' => $title,
             'streamUrl' => $defaultStreamUrl,
             'servers' => $servers,

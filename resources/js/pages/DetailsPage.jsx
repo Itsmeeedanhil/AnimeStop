@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AnimeApi, LibraryApi } from '../services/api';
 import AnimeCard from '../components/AnimeCard';
+import CountdownTimer from '../components/CountdownTimer';
 
 export default function DetailsPage({ id, navigate, showNotification }) {
     const [anime, setAnime] = useState(null);
@@ -210,6 +211,14 @@ export default function DetailsPage({ id, navigate, showNotification }) {
             <div className="px-6 md:px-16 py-10 flex flex-col lg:flex-row gap-10">
                 {/* Episodes Column (Left / Main) */}
                 <div className="w-full lg:w-2/3 flex flex-col gap-6">
+                    {anime.nextAiringEpisode && (
+                        <CountdownTimer
+                            airingAt={anime.nextAiringEpisode.airingAt}
+                            timeUntilAiring={anime.nextAiringEpisode.timeUntilAiring}
+                            episode={anime.nextAiringEpisode.episode}
+                        />
+                    )}
+
                     <div className="flex flex-wrap justify-between items-center border-b border-[#4d4635]/40 pb-3 gap-3">
                         <h2 className="font-['Bodoni_Moda'] text-2xl font-bold text-[#e2e2e2] flex items-center gap-2">
                             <span className="material-symbols-outlined text-[#ffe9b0]">video_library</span>

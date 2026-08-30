@@ -45,7 +45,7 @@ class AnimeService
     }
 
     /**
-     * Get home page dataset: Spotlight/Hero, Trending This Month, Top Airing, Popular, and Genres
+     * Get home page dataset with nextAiringEpisode schedules
      */
     public function getHomeFeed(): array
     {
@@ -68,6 +68,11 @@ class AnimeService
                     format
                     genres
                     trailer { id site thumbnail }
+                    nextAiringEpisode {
+                        airingAt
+                        timeUntilAiring
+                        episode
+                    }
                 }
             }
             trending: Page(page: 1, perPage: 16) {
@@ -83,6 +88,11 @@ class AnimeService
                     format
                     seasonYear
                     genres
+                    nextAiringEpisode {
+                        airingAt
+                        timeUntilAiring
+                        episode
+                    }
                 }
             }
             topAiring: Page(page: 1, perPage: 16) {
@@ -98,6 +108,11 @@ class AnimeService
                     format
                     seasonYear
                     genres
+                    nextAiringEpisode {
+                        airingAt
+                        timeUntilAiring
+                        episode
+                    }
                 }
             }
             popularAllTime: Page(page: 1, perPage: 16) {
@@ -113,6 +128,11 @@ class AnimeService
                     format
                     seasonYear
                     genres
+                    nextAiringEpisode {
+                        airingAt
+                        timeUntilAiring
+                        episode
+                    }
                 }
             }
             actionHighlights: Page(page: 1, perPage: 12) {
@@ -147,7 +167,7 @@ class AnimeService
             }
         }';
 
-        $data = $this->query($query, [], 900); // 15 mins cache for fresh trending data
+        $data = $this->query($query, [], 900);
 
         return [
             'spotlight' => $data['spotlight']['media'] ?? [],
@@ -160,7 +180,7 @@ class AnimeService
     }
 
     /**
-     * Get detailed information for a single anime
+     * Get detailed information for a single anime including nextAiringEpisode
      */
     public function getAnimeDetails(int $id): ?array
     {
@@ -190,6 +210,11 @@ class AnimeService
                     nodes { id name siteUrl }
                 }
                 trailer { id site thumbnail }
+                nextAiringEpisode {
+                    airingAt
+                    timeUntilAiring
+                    episode
+                }
                 characters(sort: ROLE, perPage: 8) {
                     edges {
                         role
@@ -218,6 +243,11 @@ class AnimeService
                             episodes
                             format
                             genres
+                            nextAiringEpisode {
+                                airingAt
+                                timeUntilAiring
+                                episode
+                            }
                         }
                     }
                 }
@@ -244,64 +274,61 @@ class AnimeService
     }
 
     /**
-     * Search anime with filters
+     * Search anime with filters including nextAiringEpisode
      */
     public function search(array $filters = []): array
     {
         $query = '
-        query ($search: String, $page: Int, $perPage: Int, $genre: String, $sort: [MediaSort], $season: MediaSeason, $seasonYear: Int, $format: MediaFormat) {
+        query ($page: Int, $perPage: Int, $search: String, $genre: String, $status: MediaStatus, $format: MediaFormat, $sort: [MediaSort]) {
             Page(page: $page, perPage: $perPage) {
                 pageInfo {
                     total
+                    perPage
                     currentPage
                     lastPage
                     hasNextPage
-                    perPage
                 }
-                media(search: $search, genre: $genre, sort: $sort, season: $season, seasonYear: $seasonYear, format: $format, type: ANIME, isAdult: false) {
+                media(search: $search, genre: $genre, status: $status, format: $format, sort: $sort, type: ANIME, isAdult: false) {
                     id
                     idMal
                     title { romaji english }
                     coverImage { extraLarge large }
                     bannerImage
-                    description(asHtml: false)
                     averageScore
                     episodes
                     status
                     format
                     seasonYear
                     genres
+                    nextAiringEpisode {
+                        airingAt
+                        timeUntilAiring
+                        episode
+                    }
                 }
             }
         }';
 
         $variables = [
-            'search' => !empty($filters['q']) ? (string) $filters['q'] : null,
             'page' => (int) ($filters['page'] ?? 1),
             'perPage' => min((int) ($filters['per_page'] ?? 24), 50),
-            'genre' => !empty($filters['genre']) ? (string) $filters['genre'] : null,
-            'format' => !empty($filters['format']) ? (string) $filters['format'] : null,
-            'season' => !empty($filters['season']) ? (string) $filters['season'] : null,
-            'seasonYear' => !empty($filters['year']) ? (int) $filters['year'] : null,
-            'sort' => match ($filters['sort'] ?? 'trending') {
-                'popular' => ['POPULARITY_DESC'],
-                'score' => ['SCORE_DESC'],
-                'newest' => ['START_DATE_DESC'],
-                'favorites' => ['FAVOURITES_DESC'],
-                default => ['TRENDING_DESC'],
-            },
+            'search' => ! empty($filters['q']) ? $filters['q'] : null,
+            'genre' => ! empty($filters['genre']) ? $filters['genre'] : null,
+            'status' => ! empty($filters['status']) ? $filters['status'] : null,
+            'format' => ! empty($filters['format']) ? $filters['format'] : null,
+            'sort' => ! empty($filters['sort']) ? [$filters['sort']] : ['TRENDING_DESC'],
         ];
 
-        // Remove null variables
-        $variables = array_filter($variables, fn ($v) => !is_null($v));
+        $variables = array_filter($variables, fn ($val) => ! is_null($val));
 
         $data = $this->query($query, $variables, 1800);
 
         return [
             'items' => $data['Page']['media'] ?? [],
-            'pagination' => $data['Page']['pageInfo'] ?? [
+            'pageInfo' => $data['Page']['pageInfo'] ?? [
                 'total' => 0,
-                'currentPage' => 1,
+                'perPage' => $variables['perPage'],
+                'currentPage' => $variables['page'],
                 'lastPage' => 1,
                 'hasNextPage' => false,
             ],
@@ -309,26 +336,17 @@ class AnimeService
     }
 
     /**
-     * Get genres list with metadata
+     * Get list of genres
      */
     public function getGenres(): array
     {
-        return [
-            ['name' => 'Action', 'icon' => 'swords', 'count' => '3.5k+'],
-            ['name' => 'Adventure', 'icon' => 'explore', 'count' => '2.8k+'],
-            ['name' => 'Comedy', 'icon' => 'sentiment_very_satisfied', 'count' => '4.1k+'],
-            ['name' => 'Drama', 'icon' => 'theater_comedy', 'count' => '3.2k+'],
-            ['name' => 'Fantasy', 'icon' => 'auto_fix_high', 'count' => '3.9k+'],
-            ['name' => 'Horror', 'icon' => 'skull', 'count' => '1.1k+'],
-            ['name' => 'Mecha', 'icon' => 'smart_toy', 'count' => '900+'],
-            ['name' => 'Mystery', 'icon' => 'visibility', 'count' => '1.7k+'],
-            ['name' => 'Psychological', 'icon' => 'psychology', 'count' => '1.4k+'],
-            ['name' => 'Romance', 'icon' => 'favorite', 'count' => '2.9k+'],
-            ['name' => 'Sci-Fi', 'icon' => 'rocket_launch', 'count' => '2.6k+'],
-            ['name' => 'Slice of Life', 'icon' => 'coffee', 'count' => '2.2k+'],
-            ['name' => 'Sports', 'icon' => 'sports_soccer', 'count' => '850+'],
-            ['name' => 'Supernatural', 'icon' => 'flare', 'count' => '2.4k+'],
-            ['name' => 'Thriller', 'icon' => 'warning', 'count' => '1.3k+'],
+        $query = 'query { GenreCollection }';
+        $data = $this->query($query, [], 86400 * 7);
+
+        return $data['GenreCollection'] ?? [
+            'Action', 'Adventure', 'Comedy', 'Drama', 'Ecchi', 'Fantasy',
+            'Horror', 'Mahou Shoujo', 'Mecha', 'Music', 'Mystery', 'Psychological',
+            'Romance', 'Sci-Fi', 'Slice of Life', 'Sports', 'Supernatural', 'Thriller',
         ];
     }
 }
