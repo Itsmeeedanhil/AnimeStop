@@ -39,6 +39,8 @@ export function AuthProvider({ children }) {
       if (data?.watchlist && Array.isArray(data.watchlist)) {
         const ids = new Set(data.watchlist.map(item => Number(item.anime_id || item.id)));
         setWatchlistIds(ids);
+      } else {
+        setWatchlistIds(new Set());
       }
     } catch (err) {
       console.error('Failed to load library:', err);
@@ -54,6 +56,9 @@ export function AuthProvider({ children }) {
     setUser(userData);
     setIsAuthModalOpen(false);
     refreshLibrary();
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('animestop_library_updated'));
+    }
   };
 
   const logout = async () => {
@@ -62,7 +67,11 @@ export function AuthProvider({ children }) {
     } catch (e) {}
     setAuthToken(null);
     setUser(null);
+    setWatchlistIds(new Set());
     refreshLibrary();
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('animestop_library_updated'));
+    }
   };
 
   const openAuthModal = (mode = 'signin') => {
@@ -81,7 +90,6 @@ export function AuthProvider({ children }) {
 
   const toggleBookmark = async (anime) => {
     const animeId = Number(anime.id || anime.anime_id);
-    // Optimistically update UI
     setWatchlistIds(prev => {
       const next = new Set(prev);
       if (next.has(animeId)) {
