@@ -12,8 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('api_token', 80)->unique()->nullable()->after('password');
-            $table->string('avatar_url')->nullable()->after('api_token');
+            $table->string('google_id')->nullable()->unique()->after('email');
         });
     }
 
@@ -23,8 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['api_token', 'avatar_url']);
+            $table->dropColumn(['google_id']);
         });
     }
 };
-

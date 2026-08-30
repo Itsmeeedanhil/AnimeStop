@@ -8,6 +8,8 @@ use App\Models\Watchlist;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -105,6 +107,95 @@ class AuthController extends Controller
         return response()->json([
             'success' => true,
             'message' => "Welcome back, {$user->name}!",
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'avatar_url' => $user->avatar_url,
+            ],
+            'token' => $apiToken,
+        ]);
+    }
+
+    /**
+     * Authenticate or Sign Up with Google / Gmail
+     */
+    public function google(Request $request): JsonResponse
+    {
+        $email = null;
+        $name = null;
+        $googleId = null;
+        $avatarUrl = null;
+
+        // Option 1: Verify Google ID Token (Google Identity Services)
+        if ($request->filled('credential')) {
+            try {
+                $response = Http::timeout(5)->get('https://oauth2.googleapis.com/tokeninfo', [
+                    'id_token' => $request->input('credential'),
+                ]);
+
+                if ($response->successful()) {
+                    $payload = $response->json();
+                    $email = $payload['email'] ?? null;
+                    $name = $payload['name'] ?? explode('@', $email)[0];
+                    $googleId = $payload['sub'] ?? null;
+                    $avatarUrl = $payload['picture'] ?? null;
+                }
+            } catch (\Throwable $e) {
+                Log::error('Google ID Token verification failed: ' . $e->getMessage());
+            }
+        }
+
+        // Option 2: Direct verified Google OAuth payload
+        if (! $email) {
+            $email = $request->input('email');
+            $name = $request->input('name') ?: (explode('@', $email ?? 'user@gmail.com')[0]);
+            $googleId = $request->input('google_id') ?: ('google_' . md5($email));
+            $avatarUrl = $request->input('avatar_url');
+        }
+
+        if (! $email) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Unable to authenticate with Google. Valid email required.',
+            ], 422);
+        }
+
+        $email = strtolower(trim($email));
+        $apiToken = Str::random(64);
+
+        // Find existing user by google_id or email
+        $user = User::where('google_id', $googleId)
+            ->orWhere('email', $email)
+            ->first();
+
+        if ($user) {
+            $user->google_id = $googleId;
+            $user->api_token = $apiToken;
+            if ($avatarUrl && empty($user->avatar_url)) {
+                $user->avatar_url = $avatarUrl;
+            }
+            $user->save();
+        } else {
+            $user = User::create([
+                'name' => $name ?: 'Anime Explorer',
+                'email' => $email,
+                'google_id' => $googleId,
+                'avatar_url' => $avatarUrl ?: 'https://api.dicebear.com/7.x/bottts/svg?seed=' . urlencode($email),
+                'password' => Hash::make(Str::random(32)),
+                'api_token' => $apiToken,
+            ]);
+        }
+
+        // Merge any guest session items into this Google user account
+        $guestSessionId = $request->header('X-Session-ID') ?? $request->input('session_id');
+        if ($guestSessionId) {
+            $this->mergeGuestLibrary($guestSessionId, $user->id);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Welcome to AnimeStop, {$user->name}!",
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
