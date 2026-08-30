@@ -1,6 +1,7 @@
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
+import LayoutWrapper from '@/components/LayoutWrapper';
 import Footer from '@/components/Footer';
 import AuthModal from '@/components/AuthModal';
 
@@ -29,7 +30,7 @@ export default function RootLayout({ children }) {
       <body className="bg-[#121414] text-[#e2e2e2] min-h-screen flex flex-col selection:bg-[#ffe9b0] selection:text-[#241a00] antialiased">
         <AuthProvider>
           <Navbar />
-          <main className="flex-grow pt-16">{children}</main>
+          <LayoutWrapper>{children}</LayoutWrapper>
           <Footer />
           <AuthModal />
         </AuthProvider>
@@ -37,4 +38,3 @@ export default function RootLayout({ children }) {
     </html>
   );
 }
-
