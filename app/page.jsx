@@ -6,51 +6,74 @@ import { useRouter } from 'next/navigation';
 import { AnimeApi, LibraryApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import AnimeCard from '@/components/AnimeCard';
-import { Play, Bookmark, ChevronLeft, ChevronRight, Flame, Tv, Sparkles, Star, Info } from 'lucide-react';
+import {
+  Play,
+  Bookmark,
+  ChevronLeft,
+  ChevronRight,
+  Flame,
+  Tv,
+  Star,
+  Sparkles,
+  Info,
+} from 'lucide-react';
 
 export default function HomePage() {
   const router = useRouter();
   const { isBookmarked, toggleBookmark } = useAuth();
+
   const [feed, setFeed] = useState(null);
   const [continueWatching, setContinueWatching] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeHeroIndex, setActiveHeroIndex] = useState(0);
   const [activeCategoryFilter, setActiveCategoryFilter] = useState('trending');
 
+  // Load home feed and continue watching queue
   useEffect(() => {
     const loadHomeData = async () => {
       try {
         const [homeFeed, libraryData] = await Promise.all([
           AnimeApi.getHome(),
-          LibraryApi.getLibrary().catch(() => null),
+          LibraryApi.getLibrary().catch(() => ({ continueWatching: [] })),
         ]);
+
         setFeed(homeFeed);
-        if (libraryData?.continueWatching) {
-          setContinueWatching(libraryData.continueWatching);
-        }
+        setContinueWatching(libraryData?.continueWatching || []);
       } catch (err) {
-        console.error('Failed to load home feed', err);
+        console.error('Failed to load home page feed:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
     loadHomeData();
+
+    const handleUpdate = () => {
+      LibraryApi.getLibrary().then(lib => {
+        setContinueWatching(lib?.continueWatching || []);
+      }).catch(() => {});
+    };
+
+    window.addEventListener('animestop_library_updated', handleUpdate);
+    return () => window.removeEventListener('animestop_library_updated', handleUpdate);
   }, []);
 
-  // Auto rotate hero spotlight every 8 seconds
+  // Auto-rotate hero spotlight every 7 seconds
   useEffect(() => {
-    if (!feed?.spotlight?.length) return;
+    if (!feed?.spotlight || feed.spotlight.length <= 1) return;
+
     const interval = setInterval(() => {
       setActiveHeroIndex((prev) => (prev + 1) % feed.spotlight.length);
-    }, 8000);
-    return () => clearInterval(interval);
-  }, [feed?.spotlight]);
+    }, 7000);
 
-  const scrollRow = (elementId, direction) => {
-    const el = document.getElementById(elementId);
-    if (el) {
-      el.scrollBy({ left: direction === 'left' ? -600 : 600, behavior: 'smooth' });
+    return () => clearInterval(interval);
+  }, [feed]);
+
+  const scrollRow = (rowId, direction) => {
+    const row = document.getElementById(rowId);
+    if (row) {
+      const scrollAmount = direction === 'left' ? -600 : 600;
+      row.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
 
@@ -58,45 +81,51 @@ export default function HomePage() {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center gap-4 text-[#ffe9b0]">
         <div className="w-12 h-12 border-4 border-[#ffe9b0] border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-sm text-[#d0c5af] animate-pulse">Loading AnimeStop cinematic archives...</p>
+        <p className="text-sm text-[#d0c5af]">Preparing curated anime stream...</p>
       </div>
     );
   }
 
   const heroAnime = feed?.spotlight?.[activeHeroIndex] || feed?.spotlight?.[0];
   const heroTitle = heroAnime?.title?.english || heroAnime?.title?.romaji || 'Featured Anime';
-  const heroScore = heroAnime?.averageScore ? (heroAnime.averageScore / 10).toFixed(1) : '9.0';
-  const heroBanner = heroAnime?.bannerImage || heroAnime?.coverImage?.extraLarge;
   const isHeroBookmarked = heroAnime ? isBookmarked(heroAnime.id) : false;
 
   return (
-    <div className="w-full flex flex-col pb-16">
-      {/* Dynamic Hero Spotlight */}
+    <div className="w-full flex flex-col pb-20">
+      {/* Dynamic Hero Spotlight Banner */}
       {heroAnime && (
-        <section className="relative w-full h-[75vh] min-h-[520px] max-h-[720px] flex items-end pb-12 px-6 md:px-16 overflow-hidden group">
-          {/* Background Banner */}
+        <section className="relative w-full h-[65vh] md:h-[75vh] min-h-[480px] max-h-[750px] overflow-hidden">
+          {/* Background Poster/Banner Image with Dual Luxury Vignette Gradients */}
           <div
-            className="absolute inset-0 bg-cover bg-center transition-all duration-1000 transform scale-100 group-hover:scale-105"
-            style={{ backgroundImage: `url(${heroBanner})` }}
-          ></div>
-
-          {/* Luxury Gradient Overlays */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#121414] via-[#121414]/60 to-transparent"></div>
-          <div className="absolute inset-0 bg-gradient-to-r from-[#121414] via-[#121414]/50 to-transparent"></div>
+            className="absolute inset-0 bg-cover bg-center transition-all duration-1000 transform scale-105"
+            style={{
+              backgroundImage: `url(${heroAnime.bannerImage || heroAnime.coverImage?.extraLarge || heroAnime.coverImage?.large})`,
+            }}
+          >
+            <div className="absolute inset-0 bg-gradient-to-t from-[#121414] via-[#121414]/70 to-black/40" />
+            <div className="absolute inset-0 bg-gradient-to-r from-[#121414] via-[#121414]/80 to-transparent" />
+          </div>
 
           {/* Hero Content Overlay */}
-          <div className="relative z-10 max-w-3xl flex flex-col">
+          <div className="relative z-10 h-full max-w-[1920px] mx-auto px-6 md:px-16 flex flex-col justify-end pb-12 md:pb-16 max-w-3xl">
             {/* Meta Tags */}
-            <div className="flex flex-wrap items-center gap-2.5 mb-3">
-              <span className="px-2.5 py-1 bg-[#121414]/80 backdrop-blur-md rounded border border-[#ffe9b0]/30 text-[11px] font-bold text-[#ffe9b0] uppercase tracking-wider">
-                {heroAnime.format || 'TV Series'}
+            <div className="flex flex-wrap items-center gap-2 mb-3">
+              <span className="px-2.5 py-0.5 rounded-full bg-[#ffe9b0] text-[#241a00] text-xs font-extrabold uppercase tracking-wider">
+                Spotlight #{activeHeroIndex + 1}
               </span>
-              <span className="px-2.5 py-1 bg-[#121414]/80 backdrop-blur-md rounded border border-white/10 text-[11px] font-semibold text-[#e2e2e2] flex items-center gap-1">
-                <Star className="w-3 h-3 fill-current text-[#ffe9b0]" />
-                {heroScore} Rating
+              <span className="px-2.5 py-0.5 rounded-full bg-[#1E2020]/80 backdrop-blur-md border border-white/10 text-xs font-semibold text-[#e2e2e2]">
+                {heroAnime.format || 'TV'}
               </span>
+              {heroAnime.genres?.slice(0, 3).map((g) => (
+                <span
+                  key={g}
+                  className="px-2.5 py-0.5 rounded-full bg-[#1E2020]/60 backdrop-blur-md border border-white/10 text-xs text-[#d0c5af]"
+                >
+                  {g}
+                </span>
+              ))}
               {heroAnime.episodes && (
-                <span className="text-xs text-[#d0c5af]">
+                <span className="text-xs text-[#99907c] font-medium ml-1">
                   {heroAnime.episodes} Episodes • {heroAnime.seasonYear || '2024'}
                 </span>
               )}
@@ -109,7 +138,7 @@ export default function HomePage() {
 
             {/* Description */}
             <p className="text-sm md:text-base text-[#d0c5af] mb-6 drop-shadow max-w-2xl line-clamp-3 leading-relaxed">
-              {heroAnime.description || 'Step into an epic anime journey filled with high-stakes battles, profound mysteries, and unforgettable companions.'}
+              {heroAnime.description?.replace(/<[^>]*>?/gm, '') || 'Step into an epic anime journey filled with high-stakes battles, profound mysteries, and unforgettable companions.'}
             </p>
 
             {/* Hero CTA Buttons */}
@@ -194,7 +223,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Continue Watching Shelf (if user has active history) */}
+      {/* Continue Watching Shelf (Compact 16:9 Landscape Cards) */}
       {continueWatching.length > 0 && (
         <section className="py-6 px-6 md:px-16">
           <div className="flex justify-between items-center mb-4">
@@ -208,19 +237,52 @@ export default function HomePage() {
           </div>
 
           <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 snap-x scroll-smooth">
-            {continueWatching.map((item) => (
-              <div key={item.id} className="min-w-[160px] sm:min-w-[190px] md:min-w-[220px] snap-start">
-                <AnimeCard
-                  anime={{
-                    id: item.anime_id,
-                    title: { english: item.anime_title },
-                    coverImage: { extraLarge: item.anime_image },
-                    bannerImage: item.anime_banner,
-                  }}
-                  progress={item}
-                />
-              </div>
-            ))}
+            {continueWatching.map((item) => {
+              const percent = Math.min(100, Math.round(((item.progress_seconds || 15) / (item.duration_seconds || 1440)) * 100));
+              return (
+                <div
+                  key={item.id || item.anime_id}
+                  onClick={() => router.push(`/watch/${item.anime_id}?ep=${item.episode_number}`)}
+                  className="group relative w-[240px] sm:w-[270px] shrink-0 snap-start rounded-xl bg-[#1E2020] border border-[#4d4635]/40 hover:border-[#ffe9b0]/70 overflow-hidden transition-all duration-300 shadow-md hover:shadow-xl cursor-pointer flex flex-col"
+                >
+                  <div className="relative aspect-video w-full overflow-hidden bg-[#121414]">
+                    <img
+                      src={item.anime_banner || item.anime_image}
+                      alt={item.anime_title}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+
+                    <div className="absolute top-2 left-2 px-2 py-0.5 rounded bg-black/80 text-[10px] font-bold text-[#ffe9b0]">
+                      Ep {item.episode_number}
+                    </div>
+
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="w-10 h-10 rounded-full bg-[#ffe9b0] text-[#241a00] flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform">
+                        <Play className="w-5 h-5 fill-current ml-0.5" />
+                      </span>
+                    </div>
+
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
+                      <div
+                        className="h-full bg-gradient-to-r from-[#f2ca50] to-[#af8d11]"
+                        style={{ width: `${Math.max(5, percent)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div className="p-3 flex flex-col gap-0.5">
+                    <h4 className="text-xs font-semibold text-[#e2e2e2] group-hover:text-[#ffe9b0] transition-colors truncate">
+                      {item.anime_title}
+                    </h4>
+                    <div className="flex justify-between text-[11px] text-[#99907c]">
+                      <span>Episode {item.episode_number}</span>
+                      <span>{percent}% watched</span>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </section>
       )}
@@ -235,22 +297,22 @@ export default function HomePage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => scrollRow('trending-row', 'left')}
-              className="w-9 h-9 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => scrollRow('trending-row', 'right')}
-              className="w-9 h-9 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
 
         <div id="trending-row" className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 snap-x scroll-smooth">
           {feed?.trending?.map((anime) => (
-            <div key={anime.id} className="min-w-[160px] sm:min-w-[190px] md:min-w-[220px] snap-start">
+            <div key={anime.id} className="w-[145px] sm:w-[165px] md:w-[180px] shrink-0 snap-start">
               <AnimeCard anime={anime} />
             </div>
           ))}
@@ -267,22 +329,22 @@ export default function HomePage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => scrollRow('airing-row', 'left')}
-              className="w-9 h-9 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => scrollRow('airing-row', 'right')}
-              className="w-9 h-9 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
 
         <div id="airing-row" className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 snap-x scroll-smooth">
           {feed?.topAiring?.map((anime) => (
-            <div key={anime.id} className="min-w-[160px] sm:min-w-[190px] md:min-w-[220px] snap-start">
+            <div key={anime.id} className="w-[145px] sm:w-[165px] md:w-[180px] shrink-0 snap-start">
               <AnimeCard anime={anime} />
             </div>
           ))}
@@ -299,22 +361,22 @@ export default function HomePage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => scrollRow('popular-row', 'left')}
-              className="w-9 h-9 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
             >
-              <ChevronLeft className="w-5 h-5" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => scrollRow('popular-row', 'right')}
-              className="w-9 h-9 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
+              className="w-8 h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
             >
-              <ChevronRight className="w-5 h-5" />
+              <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </div>
 
         <div id="popular-row" className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 snap-x scroll-smooth">
           {feed?.popular?.map((anime) => (
-            <div key={anime.id} className="min-w-[160px] sm:min-w-[190px] md:min-w-[220px] snap-start">
+            <div key={anime.id} className="w-[145px] sm:w-[165px] md:w-[180px] shrink-0 snap-start">
               <AnimeCard anime={anime} />
             </div>
           ))}
@@ -323,4 +385,3 @@ export default function HomePage() {
     </div>
   );
 }
-
