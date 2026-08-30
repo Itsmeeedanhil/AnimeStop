@@ -7,7 +7,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
     const trailerUrl = streamData?.trailerEmbedUrl;
     const servers = streamData?.servers || [];
 
-    const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || '4animo');
+    const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || '4animo-hd1');
     const [selectedServerId, setSelectedServerId] = useState(defaultServerId);
     const [reloadKey, setReloadKey] = useState(0);
 
@@ -31,6 +31,40 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
 
         return () => clearInterval(interval);
     }, [anime, currentEpisode, animeTitle]);
+
+    // Listen to 4animo Player Events via window.postMessage
+    useEffect(() => {
+        const handlePlayerMessage = (event) => {
+            let data = event.data;
+            if (typeof data === 'string') {
+                try {
+                    data = JSON.parse(data);
+                } catch (e) {
+                    return;
+                }
+            }
+
+            if (data?.type === 'NEXT_EPISODE' && onNextEpisode) {
+                onNextEpisode();
+            } else if (data?.type === 'TIME_UPDATE' && data.currentTime && anime?.id) {
+                // Auto-save precise progress from player
+                LibraryApi.saveProgress({
+                    anime_id: anime.id,
+                    anime_title: animeTitle,
+                    image_url: anime.coverImage?.extraLarge || anime.coverImage?.large,
+                    banner_url: anime.bannerImage,
+                    episode_number: currentEpisode,
+                    episode_title: `Episode ${currentEpisode}`,
+                    progress_seconds: Math.floor(data.currentTime),
+                    duration_seconds: Math.floor(data.duration || 1440),
+                    completed: data.currentTime >= (data.duration - 60),
+                }).catch(() => {});
+            }
+        };
+
+        window.addEventListener('message', handlePlayerMessage);
+        return () => window.removeEventListener('message', handlePlayerMessage);
+    }, [anime, currentEpisode, animeTitle, onNextEpisode]);
 
     // Synchronize mode when episode changes
     useEffect(() => {

@@ -9,7 +9,7 @@ class StreamingService
     ) {}
 
     /**
-     * Resolve streaming player data with 4animo player integration and trailer fallback
+     * Resolve streaming player data with exact 4animo AniList/MAL integration
      */
     public function getStreamData(int $animeId, int $episode = 1, ?array $animeDetails = null): array
     {
@@ -30,11 +30,10 @@ class StreamingService
             ? "https://www.youtube.com/embed/{$trailerId}?autoplay=1&rel=0"
             : "https://www.youtube.com/embed?listType=search&list=" . urlencode("{$title} anime official trailer");
 
-        // Resolve streaming servers from 4animo and mirrors
+        // Resolve streaming servers from 4animo endpoints
         $servers = $this->hiAnimeService->resolveServers(
-            $englishTitle ?? $romajiTitle ?? 'anime',
+            $animeId,
             $episode,
-            $romajiTitle,
             $targetId
         );
 
