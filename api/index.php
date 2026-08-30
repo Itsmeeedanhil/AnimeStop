@@ -20,3 +20,4 @@ if (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL'])) {
 }
 
 require __DIR__ . '/../public/index.php';
+
