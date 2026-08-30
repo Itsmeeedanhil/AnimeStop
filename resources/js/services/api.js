@@ -10,14 +10,40 @@ const getSessionId = () => {
     return sessionId;
 };
 
+// Get auth token from localStorage
+export const getAuthToken = () => localStorage.getItem('animestop_auth_token');
+export const setAuthToken = (token) => {
+    if (token) {
+        localStorage.setItem('animestop_auth_token', token);
+    } else {
+        localStorage.removeItem('animestop_auth_token');
+    }
+};
+
 const api = axios.create({
     baseURL: '/api',
     headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
-        'X-Session-ID': getSessionId(),
     },
 });
+
+// Attach Session-ID and Bearer Token dynamically
+api.interceptors.request.use((config) => {
+    config.headers['X-Session-ID'] = getSessionId();
+    const token = getAuthToken();
+    if (token) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+});
+
+export const AuthApi = {
+    register: (data) => api.post('/auth/register', data).then(res => res.data),
+    login: (credentials) => api.post('/auth/login', credentials).then(res => res.data),
+    logout: () => api.post('/auth/logout').then(res => res.data),
+    getMe: () => api.get('/auth/me').then(res => res.data.user),
+};
 
 export const AnimeApi = {
     getHome: () => api.get('/anime/home').then(res => res.data.data),
@@ -45,4 +71,3 @@ export const LibraryApi = {
 };
 
 export default api;
-

@@ -18,20 +18,34 @@ class LibraryController extends Controller
     }
 
     /**
-     * Get library summary (Watchlist + Continue Watching History)
+     * Get library summary (Watchlist + Continue Watching History) strictly isolated per user or guest session
      */
     public function index(Request $request): JsonResponse
     {
+        $user = AuthController::resolveUser($request);
         $sessionId = $this->getSessionId($request);
 
-        $watchlist = Watchlist::where('session_id', $sessionId)
-            ->orderBy('created_at', 'desc')
-            ->get();
+        if ($user) {
+            $watchlist = Watchlist::where('user_id', $user->id)
+                ->orderBy('created_at', 'desc')
+                ->get();
 
-        $history = WatchHistory::where('session_id', $sessionId)
-            ->orderBy('last_watched_at', 'desc')
-            ->limit(30)
-            ->get();
+            $history = WatchHistory::where('user_id', $user->id)
+                ->orderBy('last_watched_at', 'desc')
+                ->limit(30)
+                ->get();
+        } else {
+            $watchlist = Watchlist::where('session_id', $sessionId)
+                ->whereNull('user_id')
+                ->orderBy('created_at', 'desc')
+                ->get();
+
+            $history = WatchHistory::where('session_id', $sessionId)
+                ->whereNull('user_id')
+                ->orderBy('last_watched_at', 'desc')
+                ->limit(30)
+                ->get();
+        }
 
         return response()->json([
             'success' => true,
@@ -39,6 +53,11 @@ class LibraryController extends Controller
                 'watchlist' => $watchlist,
                 'continueWatching' => $history->where('completed', false)->values(),
                 'history' => $history,
+                'user' => $user ? [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                ] : null,
             ],
         ]);
     }
@@ -59,30 +78,53 @@ class LibraryController extends Controller
             'score' => ['nullable', 'numeric'],
         ]);
 
+        $user = AuthController::resolveUser($request);
         $sessionId = $this->getSessionId($request);
 
-        $existing = Watchlist::where('session_id', $sessionId)
-            ->where('anime_id', $validated['anime_id'])
-            ->first();
+        if ($user) {
+            $existing = Watchlist::where('user_id', $user->id)
+                ->where('anime_id', $validated['anime_id'])
+                ->first();
 
-        if ($existing) {
-            $existing->delete();
-            return response()->json([
-                'success' => true,
-                'isBookmarked' => false,
-                'message' => 'Removed from Watchlist',
-            ]);
+            if ($existing) {
+                $existing->delete();
+                return response()->json([
+                    'success' => true,
+                    'isBookmarked' => false,
+                    'message' => 'Removed from your personal Watchlist',
+                ]);
+            }
+
+            $watchlist = Watchlist::create(array_merge($validated, [
+                'user_id' => $user->id,
+                'session_id' => $sessionId,
+            ]));
+        } else {
+            $existing = Watchlist::where('session_id', $sessionId)
+                ->whereNull('user_id')
+                ->where('anime_id', $validated['anime_id'])
+                ->first();
+
+            if ($existing) {
+                $existing->delete();
+                return response()->json([
+                    'success' => true,
+                    'isBookmarked' => false,
+                    'message' => 'Removed from Watchlist',
+                ]);
+            }
+
+            $watchlist = Watchlist::create(array_merge($validated, [
+                'session_id' => $sessionId,
+                'user_id' => null,
+            ]));
         }
-
-        $watchlist = Watchlist::create(array_merge($validated, [
-            'session_id' => $sessionId,
-        ]));
 
         return response()->json([
             'success' => true,
             'isBookmarked' => true,
             'data' => $watchlist,
-            'message' => 'Added to Watchlist',
+            'message' => 'Added to your Watchlist',
         ]);
     }
 
@@ -103,25 +145,40 @@ class LibraryController extends Controller
             'completed' => ['nullable', 'boolean'],
         ]);
 
+        $user = AuthController::resolveUser($request);
         $sessionId = $this->getSessionId($request);
 
-        $history = WatchHistory::updateOrCreate(
-            [
-                'session_id' => $sessionId,
-                'anime_id' => $validated['anime_id'],
-            ],
-            [
-                'anime_title' => $validated['anime_title'],
-                'image_url' => $validated['image_url'] ?? null,
-                'banner_url' => $validated['banner_url'] ?? null,
-                'episode_number' => $validated['episode_number'],
-                'episode_title' => $validated['episode_title'] ?? "Episode {$validated['episode_number']}",
-                'progress_seconds' => $validated['progress_seconds'],
-                'duration_seconds' => $validated['duration_seconds'] ?? 1440,
-                'completed' => $validated['completed'] ?? false,
-                'last_watched_at' => now(),
-            ]
-        );
+        $payload = [
+            'anime_title' => $validated['anime_title'],
+            'image_url' => $validated['image_url'] ?? null,
+            'banner_url' => $validated['banner_url'] ?? null,
+            'episode_number' => $validated['episode_number'],
+            'episode_title' => $validated['episode_title'] ?? "Episode {$validated['episode_number']}",
+            'progress_seconds' => $validated['progress_seconds'],
+            'duration_seconds' => $validated['duration_seconds'] ?? 1440,
+            'completed' => $validated['completed'] ?? false,
+            'last_watched_at' => now(),
+        ];
+
+        if ($user) {
+            $history = WatchHistory::updateOrCreate(
+                [
+                    'user_id' => $user->id,
+                    'anime_id' => $validated['anime_id'],
+                ],
+                array_merge($payload, [
+                    'session_id' => $sessionId,
+                ])
+            );
+        } else {
+            $history = WatchHistory::updateOrCreate(
+                [
+                    'session_id' => $sessionId,
+                    'anime_id' => $validated['anime_id'],
+                ],
+                $payload
+            );
+        }
 
         return response()->json([
             'success' => true,
@@ -134,11 +191,19 @@ class LibraryController extends Controller
      */
     public function deleteHistory(Request $request, int $id): JsonResponse
     {
+        $user = AuthController::resolveUser($request);
         $sessionId = $this->getSessionId($request);
 
-        WatchHistory::where('session_id', $sessionId)
-            ->where('id', $id)
-            ->delete();
+        if ($user) {
+            WatchHistory::where('user_id', $user->id)
+                ->where('id', $id)
+                ->delete();
+        } else {
+            WatchHistory::where('session_id', $sessionId)
+                ->whereNull('user_id')
+                ->where('id', $id)
+                ->delete();
+        }
 
         return response()->json([
             'success' => true,
@@ -151,9 +216,14 @@ class LibraryController extends Controller
      */
     public function clearHistory(Request $request): JsonResponse
     {
+        $user = AuthController::resolveUser($request);
         $sessionId = $this->getSessionId($request);
 
-        WatchHistory::where('session_id', $sessionId)->delete();
+        if ($user) {
+            WatchHistory::where('user_id', $user->id)->delete();
+        } else {
+            WatchHistory::where('session_id', $sessionId)->whereNull('user_id')->delete();
+        }
 
         return response()->json([
             'success' => true,
@@ -161,4 +231,3 @@ class LibraryController extends Controller
         ]);
     }
 }
-

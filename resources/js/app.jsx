@@ -3,16 +3,21 @@ import { createRoot } from 'react-dom/client';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Footer from './components/Footer';
+import AuthModal from './components/AuthModal';
 import HomePage from './pages/HomePage';
 import DetailsPage from './pages/DetailsPage';
 import PlayerPage from './pages/PlayerPage';
 import LibraryPage from './pages/LibraryPage';
 import SearchPage from './pages/SearchPage';
 import GenresPage from './pages/GenresPage';
+import { AuthApi, setAuthToken } from './services/api';
 
 function App() {
     const [currentPath, setCurrentPath] = useState(window.location.pathname + window.location.search);
     const [notification, setNotification] = useState(null);
+    const [user, setUser] = useState(null);
+    const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+    const [authInitialMode, setAuthInitialMode] = useState('login');
 
     // Synchronize browser history
     useEffect(() => {
@@ -21,6 +26,17 @@ function App() {
         };
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
+    }, []);
+
+    // Load authenticated user on app mount
+    useEffect(() => {
+        AuthApi.getMe()
+            .then((userData) => {
+                if (userData) setUser(userData);
+            })
+            .catch(() => {
+                setUser(null);
+            });
     }, []);
 
     const navigate = (url) => {
@@ -32,6 +48,27 @@ function App() {
     const showNotification = (msg) => {
         setNotification(msg);
         setTimeout(() => setNotification(null), 3500);
+    };
+
+    const openAuthModal = (mode = 'login') => {
+        setAuthInitialMode(mode);
+        setIsAuthModalOpen(true);
+    };
+
+    const handleAuthSuccess = (userData) => {
+        setUser(userData);
+    };
+
+    const handleLogout = async () => {
+        try {
+            await AuthApi.logout();
+        } catch (e) {
+            // Ignore
+        } finally {
+            setAuthToken(null);
+            setUser(null);
+            showNotification('You have been signed out.');
+        }
     };
 
     // Route matching
@@ -80,8 +117,23 @@ function App() {
                 </div>
             )}
 
-            {/* Standard Top Navigation Bar */}
-            <Navbar navigate={navigate} currentRoute={currentPath} />
+            {/* Authentication Modal */}
+            <AuthModal
+                isOpen={isAuthModalOpen}
+                initialMode={authInitialMode}
+                onClose={() => setIsAuthModalOpen(false)}
+                onSuccess={handleAuthSuccess}
+                showNotification={showNotification}
+            />
+
+            {/* Standard Top Navigation Bar with User Profile */}
+            <Navbar
+                navigate={navigate}
+                currentRoute={currentPath}
+                user={user}
+                onOpenAuthModal={openAuthModal}
+                onLogout={handleLogout}
+            />
 
             {/* Main Body Shell */}
             <div className="flex flex-1 pt-[61px]">
@@ -91,11 +143,22 @@ function App() {
                 {/* Main Viewport Container */}
                 <main className={`flex-1 flex flex-col min-w-0 transition-all ${!isPlayerRoute ? 'md:pl-60' : ''}`}>
                     {route.name === 'home' && (
-                        <HomePage navigate={navigate} showNotification={showNotification} />
+                        <HomePage
+                            navigate={navigate}
+                            showNotification={showNotification}
+                            user={user}
+                            onOpenAuthModal={openAuthModal}
+                        />
                     )}
 
                     {route.name === 'details' && (
-                        <DetailsPage id={route.id} navigate={navigate} showNotification={showNotification} />
+                        <DetailsPage
+                            id={route.id}
+                            navigate={navigate}
+                            showNotification={showNotification}
+                            user={user}
+                            onOpenAuthModal={openAuthModal}
+                        />
                     )}
 
                     {route.name === 'player' && (
@@ -104,15 +167,28 @@ function App() {
                             episode={route.episode}
                             navigate={navigate}
                             showNotification={showNotification}
+                            user={user}
+                            onOpenAuthModal={openAuthModal}
                         />
                     )}
 
                     {route.name === 'library' && (
-                        <LibraryPage navigate={navigate} showNotification={showNotification} />
+                        <LibraryPage
+                            navigate={navigate}
+                            showNotification={showNotification}
+                            user={user}
+                            onOpenAuthModal={openAuthModal}
+                        />
                     )}
 
                     {route.name === 'search' && (
-                        <SearchPage initialParams={route.params} navigate={navigate} showNotification={showNotification} />
+                        <SearchPage
+                            initialParams={route.params}
+                            navigate={navigate}
+                            showNotification={showNotification}
+                            user={user}
+                            onOpenAuthModal={openAuthModal}
+                        />
                     )}
 
                     {route.name === 'genres' && (
@@ -131,4 +207,3 @@ const rootElement = document.getElementById('root');
 if (rootElement) {
     createRoot(rootElement).render(<App />);
 }
-
