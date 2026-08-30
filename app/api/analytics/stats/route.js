@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSql, ensureTables } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET() {
   try {
@@ -16,56 +17,56 @@ export async function GET() {
       await ensureTables();
       const sql = getSql();
 
-      // Exact total human visits (excluding bots)
+      // Query real human visits (casting count to integer in SQL)
       const totalVisitsRes = await sql`
-        SELECT COUNT(*) as count 
+        SELECT count(*)::int AS count 
         FROM site_visits 
         WHERE is_bot = FALSE
       `;
-      totalHumanVisits = parseInt(totalVisitsRes[0]?.count || '0', 10);
+      totalHumanVisits = Number(totalVisitsRes[0]?.count) || 0;
 
-      // Exact unique human visitors (deduplicated by visitor_hash)
+      // Query unique human visitors
       const uniqueVisitsRes = await sql`
-        SELECT COUNT(DISTINCT visitor_hash) as count 
+        SELECT count(DISTINCT visitor_hash)::int AS count 
         FROM site_visits 
         WHERE is_bot = FALSE
       `;
-      uniqueHumanVisitors = parseInt(uniqueVisitsRes[0]?.count || '0', 10);
+      uniqueHumanVisitors = Number(uniqueVisitsRes[0]?.count) || 0;
 
-      // Exact today's human visits
+      // Query today's human visits
       const todayVisitsRes = await sql`
-        SELECT COUNT(*) as count 
+        SELECT count(*)::int AS count 
         FROM site_visits 
         WHERE is_bot = FALSE AND created_at >= CURRENT_DATE
       `;
-      todayHumanVisits = parseInt(todayVisitsRes[0]?.count || '0', 10);
+      todayHumanVisits = Number(todayVisitsRes[0]?.count) || 0;
 
-      // Filtered bots count
+      // Query filtered bots
       const botVisitsRes = await sql`
-        SELECT COUNT(*) as count 
+        SELECT count(*)::int AS count 
         FROM site_visits 
         WHERE is_bot = TRUE
       `;
-      botVisitsFiltered = parseInt(botVisitsRes[0]?.count || '0', 10);
+      botVisitsFiltered = Number(botVisitsRes[0]?.count) || 0;
 
-      // Exact registered accounts
+      // Query registered accounts
       const usersRes = await sql`
-        SELECT COUNT(*) as count 
+        SELECT count(*)::int AS count 
         FROM users
       `;
-      registeredUsers = parseInt(usersRes[0]?.count || '0', 10);
+      registeredUsers = Number(usersRes[0]?.count) || 0;
 
-      // Exact total watch history / stream records
+      // Query total watch histories
       const historyRes = await sql`
-        SELECT COUNT(*) as count 
+        SELECT count(*)::int AS count 
         FROM watch_histories
       `;
-      totalStreams = parseInt(historyRes[0]?.count || '0', 10);
+      totalStreams = Number(historyRes[0]?.count) || 0;
     } catch (dbErr) {
-      console.warn('Database stats query offline:', dbErr.message);
+      console.warn('Database stats query error:', dbErr.message);
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         totalHumanVisits,
@@ -77,6 +78,9 @@ export async function GET() {
         botShieldStatus: 'Active & Verified',
       },
     });
+
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    return response;
   } catch (err) {
     return NextResponse.json({
       success: true,

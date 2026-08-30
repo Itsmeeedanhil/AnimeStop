@@ -8,10 +8,21 @@ export default function Footer() {
   const [stats, setStats] = useState(null);
 
   useEffect(() => {
-    fetch('/api/analytics/stats')
-      .then((res) => res.json())
-      .then((json) => setStats(json.data))
-      .catch(() => {});
+    const fetchStats = () => {
+      fetch('/api/analytics/stats', { cache: 'no-store' })
+        .then((res) => res.json())
+        .then((json) => {
+          if (json?.data) {
+            setStats(json.data);
+          }
+        })
+        .catch(() => {});
+    };
+
+    fetchStats();
+    // Refresh stats every 15 seconds
+    const interval = setInterval(fetchStats, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -36,20 +47,18 @@ export default function Footer() {
             The definitive cinema-grade anime streaming sanctuary. Ultra-HD streaming with multi-provider failover, curated seasonal archives, and real-time cloud synchronisation.
           </p>
 
-          {/* Live Visitor & Bot-Shield Pill */}
-          {stats && (
-            <div className="flex flex-col gap-1.5 pt-2">
-              <div className="flex items-center gap-2 text-[11px] text-[#ffe9b0] bg-[#1E2020] px-3 py-1.5 rounded-lg border border-[#4d4635]/40 w-fit shadow">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span className="font-bold">{stats.totalHumanVisits.toLocaleString()}</span>
-                <span className="text-[#99907c]">Human Visits</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-[10px] text-emerald-400">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Anti-Bot Shield Active (Crawlers Filtered)</span>
-              </div>
+          {/* Live Real-Time Visitor & Bot-Shield Pill */}
+          <div className="flex flex-col gap-1.5 pt-2">
+            <div className="flex items-center gap-2 text-[11px] text-[#ffe9b0] bg-[#1E2020] px-3 py-1.5 rounded-lg border border-[#4d4635]/40 w-fit shadow">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span className="font-bold">{(stats?.totalHumanVisits || 1).toLocaleString()}</span>
+              <span className="text-[#99907c]">Human Visits</span>
             </div>
-          )}
+            <div className="flex items-center gap-1.5 text-[10px] text-emerald-400">
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Anti-Bot Shield Active (Crawlers Filtered)</span>
+            </div>
+          </div>
         </div>
 
         {/* Quick Links */}
@@ -75,7 +84,7 @@ export default function Footer() {
           </ul>
         </div>
 
-        {/* Disclaimer Column */}
+        {/* Legal Notice */}
         <div className="space-y-3">
           <h4 className="text-sm font-semibold text-[#e2e2e2] tracking-wider uppercase">Legal Notice</h4>
           <p className="text-[11px] leading-relaxed">
