@@ -193,7 +193,7 @@ export default function HomePage() {
 
       {/* Quick Filter Category Chips */}
       <section className="px-4 sm:px-8 md:px-16 pt-6 sm:pt-8 pb-3 sm:pb-4">
-        <div className="flex gap-2 sm:gap-2.5 overflow-x-auto hide-scrollbar pb-2 touch-pan-x">
+        <div className="flex gap-2 sm:gap-2.5 overflow-x-auto hide-scrollbar pb-2">
           {[
             { id: 'trending', label: 'Trending' },
             { id: 'airing', label: 'Top Airing' },
@@ -236,7 +236,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar pb-3 sm:pb-4 snap-x scroll-smooth touch-pan-x">
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar pb-3 sm:pb-4 snap-x scroll-smooth">
             {continueWatching.map((item) => {
               const percent = Math.min(100, Math.round(((item.progress_seconds || 15) / (item.duration_seconds || 1440)) * 100));
               return (
@@ -310,7 +310,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div id="trending-row" className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar pb-3 sm:pb-4 snap-x scroll-smooth touch-pan-x">
+        <div id="trending-row" className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar pb-3 sm:pb-4 snap-x scroll-smooth">
           {feed?.trending?.map((anime) => (
             <div key={anime.id} className="w-[130px] sm:w-[160px] md:w-[180px] shrink-0 snap-start">
               <AnimeCard anime={anime} />
@@ -342,7 +342,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div id="airing-row" className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar pb-3 sm:pb-4 snap-x scroll-smooth touch-pan-x">
+        <div id="airing-row" className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar pb-3 sm:pb-4 snap-x scroll-smooth">
           {feed?.topAiring?.map((anime) => (
             <div key={anime.id} className="w-[130px] sm:w-[160px] md:w-[180px] shrink-0 snap-start">
               <AnimeCard anime={anime} />
@@ -374,7 +374,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div id="popular-row" className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar pb-3 sm:pb-4 snap-x scroll-smooth touch-pan-x">
+        <div id="popular-row" className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar pb-3 sm:pb-4 snap-x scroll-smooth">
           {feed?.popular?.map((anime) => (
             <div key={anime.id} className="w-[130px] sm:w-[160px] md:w-[180px] shrink-0 snap-start">
               <AnimeCard anime={anime} />

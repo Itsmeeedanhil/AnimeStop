@@ -120,9 +120,9 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           </div>
         </div>
 
-        {/* Server Mirror Switcher Row (Smooth Touch Pan on Mobile) */}
+        {/* Server Mirror Switcher Row (Clean Horizontal Scroll on Mobile) */}
         {!isUnreleased && servers.length > 1 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar touch-pan-x w-full py-0.5">
+          <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar w-full py-0.5">
             {servers.map((srv) => (
               <button
                 key={srv.id}

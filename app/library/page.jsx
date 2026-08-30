@@ -84,7 +84,7 @@ export default function LibraryPage() {
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-1.5 sm:gap-2 bg-[#1E2020] p-1 sm:p-1.5 rounded-xl border border-[#4d4635]/40 max-w-full overflow-x-auto hide-scrollbar touch-pan-x">
+        <div className="flex items-center gap-1.5 sm:gap-2 bg-[#1E2020] p-1 sm:p-1.5 rounded-xl border border-[#4d4635]/40 max-w-full overflow-x-auto hide-scrollbar">
           <button
             onClick={() => setActiveTab('continue')}
             className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
