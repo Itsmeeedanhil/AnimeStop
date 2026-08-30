@@ -1,22 +1,145 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { LibraryApi } from '@/lib/api';
-import { RefreshCw, ExternalLink, SkipBack, SkipForward, AlertCircle, VideoOff, Subtitles } from 'lucide-react';
+import { parseSubtitles, formatTimeCode } from '@/lib/subtitles';
+import {
+  RefreshCw,
+  ExternalLink,
+  SkipBack,
+  SkipForward,
+  AlertCircle,
+  VideoOff,
+  Subtitles,
+  Upload,
+  Sliders,
+  Play,
+  Pause,
+  RotateCcw,
+  X,
+  Check,
+} from 'lucide-react';
 
 export default function VideoPlayer({ streamData, anime, currentEpisode, onNextEpisode, onPrevEpisode }) {
   const isUnreleased = streamData?.isUnreleased;
   const animeTitle = anime?.title?.english || anime?.title?.romaji || 'Anime';
   const trailerUrl = streamData?.trailerUrl;
   const servers = streamData?.servers || [];
+  const animeId = parseInt(anime?.id || streamData?.animeId, 10);
 
   const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || '4animo-ani');
   const [selectedServerId, setSelectedServerId] = useState(defaultServerId);
   const [reloadKey, setReloadKey] = useState(0);
 
+  // Custom SRT Subtitle State
+  const [isSubModalOpen, setIsSubModalOpen] = useState(false);
+  const [subtitlesList, setSubtitlesList] = useState([]);
+  const [subFileName, setSubFileName] = useState('');
+  const [subOffset, setSubOffset] = useState(0); // seconds (+ or -)
+  const [subFontSize, setSubFontSize] = useState('medium'); // small, medium, large, xlarge
+  const [isSubEnabled, setIsSubEnabled] = useState(true);
+
+  // Subtitle live playback clock (for custom SRT sync overlay)
+  const [subCurrentTime, setSubCurrentTime] = useState(0);
+  const [isSubTimerPlaying, setIsSubTimerPlaying] = useState(true);
+  const subTimerRef = useRef(null);
+
+  // Load any previously uploaded SRT for this anime & episode
+  useEffect(() => {
+    if (!animeId) return;
+    try {
+      const savedKey = `animestop_sub_${animeId}_${currentEpisode}`;
+      const saved = localStorage.getItem(savedKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed?.cues && parsed.cues.length > 0) {
+          setSubtitlesList(parsed.cues);
+          setSubFileName(parsed.fileName || 'custom.srt');
+          setSubOffset(parsed.offset || 0);
+          setIsSubEnabled(true);
+        }
+      } else {
+        setSubtitlesList([]);
+        setSubFileName('');
+        setSubOffset(0);
+      }
+    } catch (e) {
+      console.warn('Failed to load local subtitles:', e);
+    }
+  }, [animeId, currentEpisode]);
+
+  // Subtitle playback interval timer (ticks every 250ms for smooth cue rendering)
+  useEffect(() => {
+    if (!isSubTimerPlaying || subtitlesList.length === 0 || !isSubEnabled) {
+      if (subTimerRef.current) clearInterval(subTimerRef.current);
+      return;
+    }
+
+    subTimerRef.current = setInterval(() => {
+      setSubCurrentTime((prev) => prev + 0.25);
+    }, 250);
+
+    return () => {
+      if (subTimerRef.current) clearInterval(subTimerRef.current);
+    };
+  }, [isSubTimerPlaying, subtitlesList, isSubEnabled]);
+
+  // Handle local SRT / VTT file upload
+  const handleFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result;
+      if (typeof text === 'string') {
+        const parsedCues = parseSubtitles(text);
+        if (parsedCues.length > 0) {
+          setSubtitlesList(parsedCues);
+          setSubFileName(file.name);
+          setIsSubEnabled(true);
+          setSubCurrentTime(0);
+          setIsSubTimerPlaying(true);
+
+          // Save to local storage
+          try {
+            const savedKey = `animestop_sub_${animeId}_${currentEpisode}`;
+            localStorage.setItem(
+              savedKey,
+              JSON.stringify({
+                fileName: file.name,
+                cues: parsedCues,
+                offset: subOffset,
+              })
+            );
+          } catch (err) {
+            console.warn('Could not save SRT to localStorage', err);
+          }
+        } else {
+          alert('Could not detect valid subtitles in this file. Please ensure it is a valid .srt or .vtt file.');
+        }
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const handleClearSubtitles = () => {
+    setSubtitlesList([]);
+    setSubFileName('');
+    setSubCurrentTime(0);
+    try {
+      localStorage.removeItem(`animestop_sub_${animeId}_${currentEpisode}`);
+    } catch (e) {}
+  };
+
+  // Find currently active subtitle cue
+  const effectiveTime = subCurrentTime + subOffset;
+  const currentCue = isSubEnabled
+    ? subtitlesList.find((c) => effectiveTime >= c.start && effectiveTime <= c.end)
+    : null;
+
   // IMMEDIATELY save watch progress on load, then continuously update
   useEffect(() => {
-    const animeId = parseInt(anime?.id || streamData?.animeId, 10);
     if (!animeId) return;
 
     const bannerUrl = anime?.bannerImage || streamData?.banner || anime?.coverImage?.extraLarge;
@@ -43,26 +166,35 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
     }, 15000);
 
     return () => clearInterval(interval);
-  }, [anime, currentEpisode, animeTitle, streamData]);
+  }, [anime, currentEpisode, animeTitle, streamData, animeId]);
 
   // Synchronize server when episode changes
   useEffect(() => {
     if (isUnreleased && trailerUrl) {
       setSelectedServerId('trailer');
-    } else if (servers.length > 0 && !servers.some(s => s.id === selectedServerId)) {
+    } else if (servers.length > 0 && !servers.some((s) => s.id === selectedServerId)) {
       setSelectedServerId(servers[0].id);
     }
-    setReloadKey(prev => prev + 1);
+    setReloadKey((prev) => prev + 1);
   }, [currentEpisode, streamData, isUnreleased, trailerUrl]);
 
   const handleReload = () => {
-    setReloadKey(prev => prev + 1);
+    setReloadKey((prev) => prev + 1);
+    setSubCurrentTime(0);
   };
 
-  const activeServer = servers.find(s => s.id === selectedServerId) || servers[0] || {};
-  const currentUrl = (selectedServerId === 'trailer' && trailerUrl)
-    ? trailerUrl
-    : (activeServer.url || streamData?.streamUrl || '');
+  const activeServer = servers.find((s) => s.id === selectedServerId) || servers[0] || {};
+  const currentUrl =
+    selectedServerId === 'trailer' && trailerUrl
+      ? trailerUrl
+      : activeServer.url || streamData?.streamUrl || '';
+
+  const fontSizeClasses = {
+    small: 'text-sm sm:text-base',
+    medium: 'text-base sm:text-xl md:text-2xl',
+    large: 'text-lg sm:text-2xl md:text-3xl font-bold',
+    xlarge: 'text-xl sm:text-3xl md:text-4xl font-extrabold',
+  }[subFontSize] || 'text-base sm:text-xl md:text-2xl';
 
   return (
     <div className="flex flex-col w-full max-w-full overflow-x-hidden bg-[#0d0f0f]">
@@ -72,7 +204,9 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-[11px] sm:text-xs font-bold text-[#ffe9b0] flex items-center gap-1.5 truncate">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-              <span className="truncate">{selectedServerId === 'trailer' ? 'Official PV Trailer' : `Ep ${currentEpisode}`}</span>
+              <span className="truncate">
+                {selectedServerId === 'trailer' ? 'Official PV Trailer' : `Ep ${currentEpisode}`}
+              </span>
             </span>
 
             <button
@@ -85,6 +219,20 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 text-xs text-[#d0c5af] shrink-0">
+            {/* Custom SRT Subtitle Button */}
+            <button
+              onClick={() => setIsSubModalOpen(true)}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer border ${
+                subtitlesList.length > 0
+                  ? 'bg-[#ffe9b0]/20 text-[#ffe9b0] border-[#ffe9b0]/50 shadow-[0_0_10px_rgba(255,233,176,0.2)]'
+                  : 'bg-[#121414] text-[#d0c5af] hover:text-[#ffe9b0] border-[#4d4635]/40 hover:border-[#ffe9b0]/40'
+              }`}
+              title="Upload custom .SRT / .VTT subtitle file"
+            >
+              <Subtitles className="w-3.5 h-3.5" />
+              <span>{subtitlesList.length > 0 ? 'Custom Subs Active' : 'Add Subtitles (.SRT)'}</span>
+            </button>
+
             {currentUrl && (
               <a
                 href={currentUrl}
@@ -120,7 +268,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           </div>
         </div>
 
-        {/* Server Mirror Switcher Row (Clean Horizontal Scroll on Mobile) */}
+        {/* Server Mirror Switcher Row */}
         {!isUnreleased && servers.length > 1 && (
           <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar w-full py-0.5">
             {servers.map((srv) => (
@@ -135,11 +283,13 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
               >
                 <span>{srv.name}</span>
                 {srv.badge && (
-                  <span className={`text-[9px] px-1.5 py-0.2 rounded uppercase font-bold ${
-                    selectedServerId === srv.id
-                      ? 'bg-[#241a00]/20 text-[#241a00]'
-                      : 'bg-[#ffe9b0]/15 text-[#ffe9b0]'
-                  }`}>
+                  <span
+                    className={`text-[9px] px-1.5 py-0.2 rounded uppercase font-bold ${
+                      selectedServerId === srv.id
+                        ? 'bg-[#241a00]/20 text-[#241a00]'
+                        : 'bg-[#ffe9b0]/15 text-[#ffe9b0]'
+                    }`}
+                  >
                     {srv.badge}
                   </span>
                 )}
@@ -149,35 +299,83 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         )}
       </div>
 
-      {/* Subtitle & Server Switching Tip Banner */}
+      {/* Subtitle & Server Guide Banner */}
       {!isUnreleased && (
         <div className="bg-[#121414] border-b border-[#4d4635]/30 px-3 sm:px-6 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 text-[11px] sm:text-xs text-[#d0c5af]">
           <div className="flex items-center gap-1.5 sm:gap-2">
             <Subtitles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#ffe9b0] shrink-0" />
             <span>
-              <strong className="text-[#ffe9b0]">Tip:</strong> If a video shows a playback error or missing subs, click <strong className="text-[#ffe9b0] font-bold">Server 2</strong> or <strong className="text-[#ffe9b0] font-bold">Server 3</strong> above!
+              <strong className="text-[#ffe9b0]">Subtitles:</strong> To load your own subtitles, click <strong className="text-[#ffe9b0] bg-[#1E2020] px-1.5 py-0.5 rounded border border-[#ffe9b0]/30 cursor-pointer" onClick={() => setIsSubModalOpen(true)}>Add Subtitles (.SRT)</strong> above!
             </span>
           </div>
           <span className="text-[10px] text-[#99907c]">
-            Turn on subs: Click <strong className="text-white">CC</strong> in player
+            Supports any .srt or .vtt file with live sync & size controls
           </span>
         </div>
       )}
 
-      {/* Unreleased Warning Notice */}
-      {isUnreleased && (
-        <div className="bg-[#af8d11]/20 border-b border-[#f2ca50]/40 px-4 py-2.5 flex items-center justify-between text-xs text-[#ffe9b0]">
+      {/* Custom Subtitle Floating Timing Sync Pill (Visible when SRT is loaded) */}
+      {subtitlesList.length > 0 && isSubEnabled && (
+        <div className="bg-[#161818] border-b border-[#ffe9b0]/20 px-3 sm:px-6 py-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-[#d0c5af]">
           <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-[#f2ca50]" />
-            <span>This anime is an upcoming title. Official broadcast episodes will release soon — stream the official PV trailer below!</span>
+            <span className="w-2 h-2 rounded-full bg-[#ffe9b0] animate-pulse"></span>
+            <span className="text-[#ffe9b0] font-semibold truncate max-w-[180px] sm:max-w-xs">
+              {subFileName} ({subtitlesList.length} cues)
+            </span>
+            <span className="text-[11px] text-[#99907c]">
+              Timer: <strong className="text-white">{formatTimeCode(subCurrentTime)}</strong>
+              {subOffset !== 0 && (
+                <span className="text-[#ffe9b0] ml-1">
+                  ({subOffset > 0 ? `+${subOffset}s` : `${subOffset}s`})
+                </span>
+              )}
+            </span>
           </div>
-          <span className="px-2 py-0.5 rounded bg-[#f2ca50]/20 font-bold uppercase text-[10px]">
-            Upcoming
-          </span>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setIsSubTimerPlaying(!isSubTimerPlaying)}
+              className="p-1 rounded bg-[#282a2a] hover:bg-[#ffe9b0] hover:text-[#241a00] text-[#d0c5af] transition-colors cursor-pointer"
+              title={isSubTimerPlaying ? 'Pause subtitle clock' : 'Play subtitle clock'}
+            >
+              {isSubTimerPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+            </button>
+
+            <button
+              onClick={() => setSubCurrentTime(0)}
+              className="p-1 rounded bg-[#282a2a] hover:bg-[#ffe9b0] hover:text-[#241a00] text-[#d0c5af] transition-colors cursor-pointer"
+              title="Reset subtitle timer to 00:00"
+            >
+              <RotateCcw className="w-3 h-3" />
+            </button>
+
+            <button
+              onClick={() => setSubOffset((prev) => prev - 0.5)}
+              className="px-1.5 py-0.5 rounded bg-[#282a2a] hover:bg-[#ffe9b0] hover:text-[#241a00] text-[10px] font-bold text-[#d0c5af] cursor-pointer"
+              title="Shift subtitles 0.5s earlier"
+            >
+              -0.5s
+            </button>
+            <button
+              onClick={() => setSubOffset((prev) => prev + 0.5)}
+              className="px-1.5 py-0.5 rounded bg-[#282a2a] hover:bg-[#ffe9b0] hover:text-[#241a00] text-[10px] font-bold text-[#d0c5af] cursor-pointer"
+              title="Delay subtitles 0.5s"
+            >
+              +0.5s
+            </button>
+
+            <button
+              onClick={() => setIsSubModalOpen(true)}
+              className="p-1 rounded bg-[#282a2a] hover:bg-[#ffe9b0] hover:text-[#241a00] text-[#d0c5af] transition-colors cursor-pointer ml-1"
+              title="Subtitle settings & sync"
+            >
+              <Sliders className="w-3 h-3" />
+            </button>
+          </div>
         </div>
       )}
 
-      {/* Direct Video Player Display Container with Ad-Shield Sandbox & No-Referrer Policy */}
+      {/* Direct Video Player Display Container with Ad-Shield Sandbox & High-Contrast Custom Subtitle Overlay */}
       <div className="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden shadow-2xl">
         {currentUrl ? (
           <iframe
@@ -197,19 +395,212 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             <p className="text-xs text-[#99907c] mt-1">Please check back later or switch servers above.</p>
           </div>
         )}
+
+        {/* Live Custom Subtitle Overlay (100% Readable, High-Contrast Text Plate) */}
+        {currentCue && isSubEnabled && (
+          <div className="absolute bottom-6 sm:bottom-10 left-4 right-4 z-20 pointer-events-none flex justify-center text-center">
+            <div className="px-3.5 py-1.5 sm:px-5 sm:py-2.5 rounded-lg bg-black/85 backdrop-blur-sm border border-black/40 shadow-2xl max-w-4xl animate-fade-in">
+              <p
+                className={`${fontSizeClasses} text-[#ffffff] font-semibold leading-snug tracking-wide drop-shadow-[0_2px_4px_rgba(0,0,0,1)] select-none whitespace-pre-line`}
+                style={{
+                  textShadow: '0 0 4px #000, 0 0 8px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000',
+                }}
+              >
+                {currentCue.text}
+              </p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Bottom Stream Status */}
       <div className="bg-[#121414] px-3 sm:px-4 py-2 border-t border-[#4d4635]/30 flex flex-wrap justify-between items-center text-[10px] sm:text-xs text-[#99907c] gap-2">
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
-          <span>Stream: <strong className="text-[#e2e2e2] uppercase">{isUnreleased ? 'OFFICIAL HD TRAILER' : (activeServer.name || 'DIRECT HD STREAM')}</strong></span>
-          <span className="text-[9px] text-[#2ebd85] font-semibold bg-[#2ebd85]/10 px-1.5 py-0.5 rounded">Ad-Shield Active</span>
+          <span>
+            Stream:{' '}
+            <strong className="text-[#e2e2e2] uppercase">
+              {isUnreleased ? 'OFFICIAL HD TRAILER' : activeServer.name || 'DIRECT HD STREAM'}
+            </strong>
+          </span>
+          <span className="text-[9px] text-[#2ebd85] font-semibold bg-[#2ebd85]/10 px-1.5 py-0.5 rounded">
+            Ad-Shield Active
+          </span>
         </div>
         <div>
           <span>Progress auto-saved</span>
         </div>
       </div>
+
+      {/* Custom Subtitle (.SRT / .VTT) Management Modal */}
+      {isSubModalOpen && (
+        <div
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+          onClick={() => setIsSubModalOpen(false)}
+        >
+          <div
+            className="relative w-[95vw] max-w-lg bg-[#161818] border border-[#ffe9b0]/40 rounded-2xl shadow-2xl p-5 sm:p-7 flex flex-col gap-5 my-auto max-h-[90vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex justify-between items-center border-b border-[#4d4635]/40 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-[#ffe9b0]/15 text-[#ffe9b0] flex items-center justify-center">
+                  <Subtitles className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-['Bodoni_Moda'] text-lg font-bold text-[#e2e2e2]">
+                    Custom Subtitles (.SRT / .VTT)
+                  </h3>
+                  <p className="text-xs text-[#99907c]">
+                    Load your own subtitle file for Episode {currentEpisode}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsSubModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#99907c] hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* File Upload Box */}
+            <div className="flex flex-col gap-2">
+              <label className="text-xs font-bold text-[#e2e2e2] flex items-center gap-1.5">
+                <Upload className="w-3.5 h-3.5 text-[#ffe9b0]" />
+                Select .SRT or .VTT Subtitle File:
+              </label>
+
+              <div className="border-2 border-dashed border-[#4d4635] hover:border-[#ffe9b0] rounded-xl p-5 bg-[#121414] transition-all flex flex-col items-center justify-center gap-2 text-center cursor-pointer relative">
+                <input
+                  type="file"
+                  accept=".srt,.vtt,.txt"
+                  onChange={handleFileUpload}
+                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                />
+                <Upload className="w-8 h-8 text-[#ffe9b0]/60" />
+                <p className="text-xs text-[#e2e2e2] font-semibold">
+                  Click or drag and drop your <span className="text-[#ffe9b0]">.srt</span> or <span className="text-[#ffe9b0]">.vtt</span> file here
+                </p>
+                <p className="text-[10px] text-[#99907c]">
+                  Subtitles will be parsed instantly and stored for this episode.
+                </p>
+              </div>
+
+              {subFileName && (
+                <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs mt-1">
+                  <span className="flex items-center gap-1.5 font-medium truncate">
+                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                    Loaded: {subFileName} ({subtitlesList.length} lines)
+                  </span>
+                  <button
+                    onClick={handleClearSubtitles}
+                    className="text-red-400 hover:text-red-300 text-[11px] underline shrink-0 cursor-pointer ml-2"
+                  >
+                    Remove
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Subtitle Display & Timing Sync Settings */}
+            <div className="flex flex-col gap-3 pt-2 border-t border-[#4d4635]/30">
+              <h4 className="text-xs font-bold text-[#e2e2e2] flex items-center gap-1.5">
+                <Sliders className="w-3.5 h-3.5 text-[#ffe9b0]" />
+                Subtitle Settings & Timing Sync:
+              </h4>
+
+              {/* Font Size Selector */}
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-[#d0c5af]">Font Size:</span>
+                <div className="flex gap-1 bg-[#121414] p-1 rounded-lg border border-[#4d4635]/40">
+                  {['small', 'medium', 'large', 'xlarge'].map((size) => (
+                    <button
+                      key={size}
+                      onClick={() => setSubFontSize(size)}
+                      className={`px-2.5 py-1 rounded text-[10px] font-bold uppercase transition-all cursor-pointer ${
+                        subFontSize === size
+                          ? 'bg-[#ffe9b0] text-[#241a00] shadow'
+                          : 'text-[#d0c5af] hover:text-[#ffe9b0]'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Subtitle Timer Sync Control */}
+              <div className="flex flex-col gap-1.5 bg-[#121414] p-3 rounded-xl border border-[#4d4635]/30">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-[#d0c5af]">Current Subtitle Clock:</span>
+                  <span className="text-[#ffe9b0] font-bold font-mono">
+                    {formatTimeCode(subCurrentTime)}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 mt-1">
+                  <input
+                    type="range"
+                    min="0"
+                    max="1800"
+                    step="1"
+                    value={Math.floor(subCurrentTime)}
+                    onChange={(e) => setSubCurrentTime(parseFloat(e.target.value))}
+                    className="flex-1 accent-[#ffe9b0] cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex justify-between items-center mt-2 text-xs">
+                  <span className="text-[#99907c] text-[11px]">Sync Offset (Delay/Advance):</span>
+                  <span className="text-white font-mono text-xs font-bold">
+                    {subOffset > 0 ? `+${subOffset}s` : `${subOffset}s`}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-4 gap-1.5 mt-1">
+                  <button
+                    onClick={() => setSubOffset((prev) => Math.round((prev - 1) * 10) / 10)}
+                    className="px-2 py-1 rounded bg-[#282a2a] hover:bg-[#ffe9b0] hover:text-[#241a00] text-xs font-semibold text-[#d0c5af] transition-colors cursor-pointer"
+                  >
+                    -1.0s
+                  </button>
+                  <button
+                    onClick={() => setSubOffset((prev) => Math.round((prev - 0.5) * 10) / 10)}
+                    className="px-2 py-1 rounded bg-[#282a2a] hover:bg-[#ffe9b0] hover:text-[#241a00] text-xs font-semibold text-[#d0c5af] transition-colors cursor-pointer"
+                  >
+                    -0.5s
+                  </button>
+                  <button
+                    onClick={() => setSubOffset((prev) => Math.round((prev + 0.5) * 10) / 10)}
+                    className="px-2 py-1 rounded bg-[#282a2a] hover:bg-[#ffe9b0] hover:text-[#241a00] text-xs font-semibold text-[#d0c5af] transition-colors cursor-pointer"
+                  >
+                    +0.5s
+                  </button>
+                  <button
+                    onClick={() => setSubOffset((prev) => Math.round((prev + 1) * 10) / 10)}
+                    className="px-2 py-1 rounded bg-[#282a2a] hover:bg-[#ffe9b0] hover:text-[#241a00] text-xs font-semibold text-[#d0c5af] transition-colors cursor-pointer"
+                  >
+                    +1.0s
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex justify-end gap-2.5 pt-3 border-t border-[#4d4635]/40">
+              <button
+                onClick={() => setIsSubModalOpen(false)}
+                className="px-5 py-2.5 rounded-xl bg-[#ffe9b0] hover:bg-[#f2ca50] text-[#241a00] font-bold text-xs shadow transition-all cursor-pointer"
+              >
+                Apply & Watch Video
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
