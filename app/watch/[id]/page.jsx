@@ -6,7 +6,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { AnimeApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import VideoPlayer from '@/components/VideoPlayer';
-import { Bookmark, ArrowRight, Search, X, Grid, List, Play, Music, AlertCircle, Tv } from 'lucide-react';
+import { Bookmark, ArrowRight, Search, X, Grid, List, Play, Music, AlertCircle } from 'lucide-react';
 
 function PlayerContent() {
   const router = useRouter();
@@ -19,12 +19,12 @@ function PlayerContent() {
   const { isBookmarked, toggleBookmark } = useAuth();
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [viewMode, setViewMode] = useState('grid');
+  const [viewMode, setViewMode] = useState('detail'); // Default to detailed list with thumbnails
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBatch, setSelectedBatch] = useState(0);
 
   const activeEpisodeRef = useRef(null);
-  const batchSize = 30;
+  const batchSize = 25;
 
   useEffect(() => {
     const fetchStream = async () => {
@@ -105,7 +105,7 @@ function PlayerContent() {
 
   return (
     <div className="w-full flex flex-col lg:flex-row min-h-[calc(100vh-64px)] bg-[#0d0f0f]">
-      {/* Main Column: Video Player + Metadata */}
+      {/* Left Area: Video Player + Metadata */}
       <div className="flex-1 flex flex-col min-w-0">
         <VideoPlayer
           streamData={stream}
@@ -118,7 +118,7 @@ function PlayerContent() {
         <div className="p-4 sm:p-6 md:p-8 bg-[#121414] border-b border-[#4d4635]/30">
           <div className="flex flex-wrap justify-between items-start gap-4">
             <div className="flex flex-col gap-2 max-w-3xl">
-              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="px-2.5 py-0.5 rounded bg-[#ffe9b0] text-[#241a00] font-bold text-xs">
                   Episode {epNumber}
                 </span>
@@ -135,16 +135,16 @@ function PlayerContent() {
                 )}
               </div>
 
-              <h1 className="font-['Bodoni_Moda'] text-xl sm:text-2xl md:text-3xl font-bold text-[#e2e2e2] leading-tight">
+              <h1 className="font-['Bodoni_Moda'] text-2xl md:text-3xl font-bold text-[#e2e2e2]">
                 {animeTitle}
               </h1>
 
               <p className="text-xs sm:text-sm text-[#ffe9b0]">
-                Playing Episode {epNumber} of {totalEpisodesCount} Released Episode{totalEpisodesCount === 1 ? '' : 's'}
+                Playing Episode {epNumber} • {totalEpisodesCount} Released Episode{totalEpisodesCount === 1 ? '' : 's'}
               </p>
             </div>
 
-            <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-3 w-full sm:w-auto">
               <button
                 onClick={() => toggleBookmark(anime)}
                 className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 border transition-all cursor-pointer ${
@@ -167,28 +167,30 @@ function PlayerContent() {
             </div>
           </div>
 
-          <p className="mt-4 text-xs sm:text-sm text-[#99907c] leading-relaxed line-clamp-3">
+          <p className="mt-4 text-xs md:text-sm text-[#99907c] leading-relaxed line-clamp-3">
             {anime.description?.replace(/<[^>]*>?/gm, '') || 'No synopsis available.'}
           </p>
         </div>
       </div>
 
-      {/* Episode Queue Container (Sidebar on Desktop, Full Clean Drawer on Mobile) */}
-      <div className="w-full lg:w-[380px] xl:w-[420px] bg-[#1a1c1c] flex flex-col border-t lg:border-t-0 lg:border-l border-[#4d4635]/40 shrink-0 min-h-[400px] lg:min-h-0">
-        <div className="p-3.5 sm:p-4 border-b border-[#4d4635]/30 flex items-center justify-between gap-2 shrink-0 bg-[#161818]">
-          <div className="flex items-center gap-2">
-            <Tv className="w-4 h-4 text-[#ffe9b0]" />
-            <h2 className="font-['Bodoni_Moda'] text-base sm:text-lg font-bold text-[#e2e2e2]">
-              Episodes ({totalEpisodesCount})
-            </h2>
-          </div>
-          <span className="text-[11px] text-[#ffe9b0] bg-[#ffe9b0]/10 px-2 py-0.5 rounded border border-[#ffe9b0]/20 font-semibold">
-            Ep {epNumber} Active
-          </span>
+      {/* Right Area: Detailed Episode Queue Sidebar */}
+      <div className="w-full lg:w-[380px] xl:w-[420px] bg-[#1E2020] flex flex-col border-t lg:border-t-0 lg:border-l border-[#4d4635]/40 min-h-[480px] lg:min-h-0 shrink-0">
+        <div className="p-4 border-b border-[#4d4635]/30 flex flex-col gap-1 shrink-0 bg-[#1a1c1c]">
+          <h2 className="font-['Bodoni_Moda'] text-lg font-bold text-[#e2e2e2] truncate">
+            {animeTitle}
+          </h2>
+          <p className="text-xs text-[#ffe9b0] flex items-center gap-1.5">
+            <span>Playing Episode {epNumber} of {totalEpisodesCount}</span>
+            {isOngoing && (
+              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded font-bold uppercase">
+                Released
+              </span>
+            )}
+          </p>
         </div>
 
-        {/* Search & View Switcher */}
-        <div className="p-3 bg-[#121414] border-b border-white/5 flex flex-col gap-2.5 shrink-0">
+        {/* Controls */}
+        <div className="p-3 bg-[#161818] border-b border-white/5 flex flex-col gap-2.5 shrink-0">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <input
@@ -196,35 +198,35 @@ function PlayerContent() {
                 placeholder="Jump to Episode #..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#1a1c1c] border border-[#4d4635]/50 focus:border-[#ffe9b0] text-[#e2e2e2] text-xs rounded-lg pl-8 pr-3 py-1.5 outline-none transition-colors"
+                className="w-full bg-[#121414] border border-[#4d4635]/50 focus:border-[#ffe9b0] text-[#e2e2e2] text-xs rounded-lg pl-8 pr-3 py-1.5 outline-none transition-colors"
               />
-              <Search className="w-3.5 h-3.5 text-[#99907c] absolute left-2.5 top-2" />
+              <Search className="w-3.5 h-3.5 text-[#99907c] absolute left-2 top-2" />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1.5 text-[#99907c] hover:text-white"
+                  className="absolute right-2 top-1.5 text-[#99907c] hover:text-white"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
 
-            <div className="flex bg-[#1a1c1c] rounded-lg p-0.5 border border-[#4d4635]/50">
+            <div className="flex bg-[#121414] rounded-lg p-0.5 border border-[#4d4635]/50">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded text-xs transition-colors ${
+                className={`p-1.5 rounded text-xs transition-colors cursor-pointer ${
                   viewMode === 'grid' ? 'bg-[#ffe9b0] text-[#241a00]' : 'text-[#99907c] hover:text-[#ffe9b0]'
                 }`}
-                title="Grid View"
+                title="Compact Grid View"
               >
                 <Grid className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setViewMode('detail')}
-                className={`p-1.5 rounded text-xs transition-colors ${
+                className={`p-1.5 rounded text-xs transition-colors cursor-pointer ${
                   viewMode === 'detail' ? 'bg-[#ffe9b0] text-[#241a00]' : 'text-[#99907c] hover:text-[#ffe9b0]'
                 }`}
-                title="List View"
+                title="Detailed List View"
               >
                 <List className="w-4 h-4" />
               </button>
@@ -232,7 +234,7 @@ function PlayerContent() {
           </div>
 
           {totalBatches > 1 && !searchQuery && (
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
               {Array.from({ length: totalBatches }).map((_, idx) => {
                 const from = idx * batchSize + 1;
                 const to = Math.min((idx + 1) * batchSize, allEpisodes.length);
@@ -245,7 +247,7 @@ function PlayerContent() {
                     className={`px-2.5 py-1 text-[11px] font-semibold rounded whitespace-nowrap transition-all cursor-pointer ${
                       isCurrentBatch
                         ? 'bg-[#ffe9b0] text-[#241a00] font-bold shadow'
-                        : 'bg-[#1a1c1c] text-[#d0c5af] hover:text-[#ffe9b0] border border-white/5'
+                        : 'bg-[#121414] text-[#d0c5af] hover:text-[#ffe9b0] border border-white/5'
                     }`}
                   >
                     {from} - {to}
@@ -256,14 +258,14 @@ function PlayerContent() {
           )}
         </div>
 
-        {/* Scrollable Episode Queue */}
-        <div className="flex-1 overflow-y-auto p-3 custom-scrollbar max-h-[500px] lg:max-h-none">
+        {/* Scrollable Episode Queue with Thumbnail Cards */}
+        <div className="flex-1 overflow-y-auto p-3 hide-scrollbar max-h-[520px] lg:max-h-none">
           {filteredEpisodes.length === 0 ? (
             <div className="p-8 text-center text-[#99907c] text-xs">
               No episodes found matching &quot;{searchQuery}&quot;
             </div>
           ) : viewMode === 'grid' ? (
-            <div className="grid grid-cols-5 sm:grid-cols-6 lg:grid-cols-5 gap-2">
+            <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
               {filteredEpisodes.map((ep) => {
                 const isActive = ep.number === epNumber;
                 return (
@@ -271,16 +273,16 @@ function PlayerContent() {
                     key={ep.number}
                     ref={isActive ? activeEpisodeRef : null}
                     onClick={() => router.push(`/watch/${id}?ep=${ep.number}`)}
-                    className={`h-11 rounded-lg text-xs font-bold transition-all flex flex-col items-center justify-center cursor-pointer border active:scale-95 ${
+                    className={`h-11 rounded-lg text-xs font-bold transition-all flex flex-col items-center justify-center cursor-pointer border ${
                       isActive
-                        ? 'bg-[#ffe9b0] text-[#241a00] border-[#ffe9b0] shadow-[0_0_12px_rgba(255,233,176,0.3)] font-extrabold scale-105'
+                        ? 'bg-[#ffe9b0] text-[#241a00] border-[#ffe9b0] shadow-[0_0_12px_rgba(255,233,176,0.3)] scale-105'
                         : 'bg-[#121414] text-[#e2e2e2] border-white/5 hover:border-[#ffe9b0]/50 hover:bg-[#282a2a]'
                     }`}
                   >
                     <span>{ep.number}</span>
                     {isActive && (
-                      <span className="text-[8px] uppercase tracking-wider font-extrabold text-[#241a00]">
-                        PLAYING
+                      <span className="text-[9px] uppercase tracking-wider font-extrabold">
+                        Active
                       </span>
                     )}
                   </button>
@@ -296,13 +298,13 @@ function PlayerContent() {
                     key={ep.number}
                     ref={isActive ? activeEpisodeRef : null}
                     onClick={() => router.push(`/watch/${id}?ep=${ep.number}`)}
-                    className={`group flex items-center gap-3 p-2 rounded-xl transition-all cursor-pointer border active:scale-[0.99] ${
+                    className={`group flex items-center gap-3 p-2 rounded-xl transition-all cursor-pointer border ${
                       isActive
                         ? 'bg-[#282a2a] border-[#ffe9b0] shadow-[0_0_15px_rgba(255,233,176,0.15)]'
-                        : 'bg-[#121414] border-transparent hover:border-white/10 hover:bg-[#202222]'
+                        : 'bg-[#161818] border-transparent hover:border-white/10 hover:bg-[#202222]'
                     }`}
                   >
-                    <div className="relative w-20 aspect-video rounded-lg overflow-hidden bg-[#1a1c1c] flex-shrink-0">
+                    <div className="relative w-20 aspect-video rounded-lg overflow-hidden bg-[#121414] flex-shrink-0">
                       <img
                         src={ep.thumbnail}
                         alt={`Episode ${ep.number}`}

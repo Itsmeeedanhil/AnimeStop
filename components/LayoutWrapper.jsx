@@ -14,13 +14,11 @@ export default function LayoutWrapper({ children }) {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Prevent duplicate triggers for the exact same page in short intervals
     if (lastTrackedPath.current === pathname) return;
     lastTrackedPath.current = pathname;
 
     const trackVisit = async () => {
       try {
-        // Collect genuine human client verification signals
         const clientSignals = {
           webdriver: Boolean(navigator.webdriver),
           screenW: window.screen?.width || 0,
@@ -47,10 +45,10 @@ export default function LayoutWrapper({ children }) {
   }, [pathname]);
 
   return (
-    <div className="flex flex-1 pt-16 min-h-screen">
+    <div className="flex flex-1 pt-16 min-h-screen w-full overflow-x-hidden">
       {!isWatchPage && <Sidebar />}
-      <div className={`flex-1 flex flex-col min-w-0 ${!isWatchPage ? 'xl:pl-60' : ''}`}>
-        <main className="flex-1 min-w-0">{children}</main>
+      <div className={`flex-1 flex flex-col min-w-0 w-full ${!isWatchPage ? 'xl:pl-60' : ''}`}>
+        <main className="flex-1 min-w-0 w-full">{children}</main>
         {!isWatchPage && <Footer />}
       </div>
     </div>
