@@ -104,9 +104,9 @@ function PlayerContent() {
     : allEpisodes.slice(selectedBatch * batchSize, (selectedBatch + 1) * batchSize);
 
   return (
-    <div className="w-full flex flex-col lg:flex-row min-h-[calc(100vh-64px)] mt-14 md:mt-0 bg-[#0d0f0f]">
+    <div className="w-full max-w-full overflow-x-hidden flex flex-col lg:flex-row min-h-[calc(100vh-64px)] mt-14 md:mt-0 bg-[#0d0f0f]">
       {/* Left Area: Video Player + Metadata */}
-      <div className="flex-1 flex flex-col overflow-y-auto">
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
         <VideoPlayer
           streamData={stream}
           anime={anime}
@@ -115,31 +115,31 @@ function PlayerContent() {
           onPrevEpisode={handlePrevEpisode}
         />
 
-        <div className="p-6 md:p-8 bg-[#121414] border-b border-[#4d4635]/30">
-          <div className="flex flex-wrap justify-between items-start gap-4">
-            <div className="flex flex-col gap-2 max-w-3xl">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="px-2.5 py-0.5 rounded bg-[#ffe9b0] text-[#241a00] font-bold text-xs">
+        <div className="p-4 sm:p-6 md:p-8 bg-[#121414] border-b border-[#4d4635]/30">
+          <div className="flex flex-wrap justify-between items-start gap-3 sm:gap-4">
+            <div className="flex flex-col gap-1.5 sm:gap-2 max-w-3xl">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                <span className="px-2 sm:px-2.5 py-0.5 rounded bg-[#ffe9b0] text-[#241a00] font-bold text-[11px] sm:text-xs">
                   Episode {epNumber}
                 </span>
-                <span className="px-2.5 py-0.5 rounded bg-[#1E2020] text-[#d0c5af] text-xs border border-white/10">
+                <span className="px-2 sm:px-2.5 py-0.5 rounded bg-[#1E2020] text-[#d0c5af] text-[11px] sm:text-xs border border-white/10">
                   {anime.format || 'TV'}
                 </span>
-                <span className="px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs font-semibold">
+                <span className="px-2 sm:px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[11px] sm:text-xs font-semibold">
                   {anime.status?.replace('_', ' ') || 'FINISHED'}
                 </span>
                 {isOngoing && nextAiring?.episode && (
-                  <span className="px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-xs font-semibold">
+                  <span className="px-2 sm:px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[11px] sm:text-xs font-semibold">
                     Ep {nextAiring.episode} Airing Soon
                   </span>
                 )}
               </div>
 
-              <h1 className="font-['Bodoni_Moda'] text-2xl md:text-3xl font-bold text-[#e2e2e2]">
+              <h1 className="font-['Bodoni_Moda'] text-xl sm:text-2xl md:text-3xl font-bold text-[#e2e2e2] leading-tight">
                 {animeTitle}
               </h1>
 
-              <p className="text-sm text-[#ffe9b0]">
+              <p className="text-xs sm:text-sm text-[#ffe9b0]">
                 Playing Episode {epNumber} • {totalEpisodesCount} Released Episode{totalEpisodesCount === 1 ? '' : 's'}
               </p>
             </div>

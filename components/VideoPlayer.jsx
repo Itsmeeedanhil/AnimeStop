@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { LibraryApi } from '@/lib/api';
-import { RefreshCw, ExternalLink, SkipBack, SkipForward, AlertCircle, VideoOff } from 'lucide-react';
+import { RefreshCw, ExternalLink, SkipBack, SkipForward, AlertCircle, VideoOff, Subtitles } from 'lucide-react';
 
 export default function VideoPlayer({ streamData, anime, currentEpisode, onNextEpisode, onPrevEpisode }) {
   const isUnreleased = streamData?.isUnreleased;
@@ -10,7 +10,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
   const trailerUrl = streamData?.trailerUrl;
   const servers = streamData?.servers || [];
 
-  const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || '4animo-hd1');
+  const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || '4animo-ani');
   const [selectedServerId, setSelectedServerId] = useState(defaultServerId);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -65,78 +65,104 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
     : (activeServer.url || streamData?.streamUrl || '');
 
   return (
-    <div className="flex flex-col w-full bg-[#0d0f0f]">
-      {/* Player Header Toolbar */}
-      <div className="bg-[#1a1c1c] border-b border-[#4d4635]/40 px-4 md:px-6 py-2.5 flex flex-wrap justify-between items-center gap-3">
-        <div className="flex items-center gap-3">
-          <span className="text-xs font-bold text-[#ffe9b0] flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            {selectedServerId === 'trailer' ? 'Official PV Trailer' : `Playing Episode ${currentEpisode}`}
-          </span>
+    <div className="flex flex-col w-full max-w-full overflow-x-hidden bg-[#0d0f0f]">
+      {/* Clean Player Header Toolbar */}
+      <div className="bg-[#1a1c1c] border-b border-[#4d4635]/40 px-3 sm:px-6 py-2 sm:py-2.5 flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-2 w-full">
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-[11px] sm:text-xs font-bold text-[#ffe9b0] flex items-center gap-1.5 truncate">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
+              <span className="truncate">{selectedServerId === 'trailer' ? 'Official PV Trailer' : `Ep ${currentEpisode}`}</span>
+            </span>
 
-          {/* Server Selector */}
-          {!isUnreleased && servers.length > 1 && (
-            <div className="flex items-center gap-1.5 bg-[#121414] p-1 rounded-lg border border-[#4d4635]/40 text-xs overflow-x-auto hide-scrollbar">
-              {servers.map((srv) => (
-                <button
-                  key={srv.id}
-                  onClick={() => setSelectedServerId(srv.id)}
-                  className={`px-2.5 py-1 rounded text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 ${
+            <button
+              onClick={handleReload}
+              className="p-1 rounded text-[#99907c] hover:text-[#ffe9b0] hover:bg-[#282a2a] transition-colors cursor-pointer shrink-0"
+              title="Reload video player"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2 sm:gap-3 text-xs text-[#d0c5af] shrink-0">
+            {currentUrl && (
+              <a
+                href={currentUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hidden sm:flex text-[#ffe9b0] hover:text-white items-center gap-1 bg-[#282a2a] px-2.5 py-1 rounded border border-[#4d4635]/40 transition-colors cursor-pointer text-[11px]"
+                title="Open in new window"
+              >
+                <span>New Tab</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            )}
+
+            {onPrevEpisode && (
+              <button
+                onClick={onPrevEpisode}
+                className="hover:text-[#ffe9b0] flex items-center gap-1 transition-colors cursor-pointer px-2 py-1 bg-[#121414] rounded border border-white/5 text-[11px]"
+              >
+                <SkipBack className="w-3 h-3" />
+                <span>Prev</span>
+              </button>
+            )}
+
+            {onNextEpisode && (
+              <button
+                onClick={onNextEpisode}
+                className="hover:text-[#ffe9b0] flex items-center gap-1 transition-colors cursor-pointer px-2 py-1 bg-[#121414] rounded border border-white/5 text-[11px]"
+              >
+                <span>Next</span>
+                <SkipForward className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Server Mirror Switcher Row (Smooth Touch Pan on Mobile) */}
+        {!isUnreleased && servers.length > 1 && (
+          <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar touch-pan-x w-full py-0.5">
+            {servers.map((srv) => (
+              <button
+                key={srv.id}
+                onClick={() => setSelectedServerId(srv.id)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+                  selectedServerId === srv.id
+                    ? 'bg-[#ffe9b0] text-[#241a00] font-bold shadow-[0_0_10px_rgba(255,233,176,0.3)]'
+                    : 'bg-[#121414] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40'
+                }`}
+              >
+                <span>{srv.name}</span>
+                {srv.badge && (
+                  <span className={`text-[9px] px-1.5 py-0.2 rounded uppercase font-bold ${
                     selectedServerId === srv.id
-                      ? 'bg-[#ffe9b0] text-[#241a00] font-bold shadow-[0_0_10px_rgba(255,233,176,0.3)]'
-                      : 'text-[#d0c5af] hover:text-[#ffe9b0]'
-                  }`}
-                >
-                  <span>{srv.name}</span>
-                </button>
-              ))}
-            </div>
-          )}
-
-          <button
-            onClick={handleReload}
-            className="p-1 rounded text-[#99907c] hover:text-[#ffe9b0] hover:bg-[#282a2a] transition-colors cursor-pointer"
-            title="Reload stream"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        <div className="flex items-center gap-3 text-xs text-[#d0c5af]">
-          {currentUrl && (
-            <a
-              href={currentUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[#ffe9b0] hover:text-white flex items-center gap-1 bg-[#282a2a] px-2.5 py-1 rounded border border-[#4d4635]/40 transition-colors cursor-pointer text-[11px]"
-              title="Open in new window"
-            >
-              <span>Open in New Tab</span>
-              <ExternalLink className="w-3 h-3" />
-            </a>
-          )}
-
-          {onPrevEpisode && (
-            <button
-              onClick={onPrevEpisode}
-              className="hover:text-[#ffe9b0] flex items-center gap-1 transition-colors cursor-pointer"
-            >
-              <SkipBack className="w-3.5 h-3.5" />
-              <span>Prev</span>
-            </button>
-          )}
-
-          {onNextEpisode && (
-            <button
-              onClick={onNextEpisode}
-              className="hover:text-[#ffe9b0] flex items-center gap-1 transition-colors cursor-pointer"
-            >
-              <span>Next</span>
-              <SkipForward className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
+                      ? 'bg-[#241a00]/20 text-[#241a00]'
+                      : 'bg-[#ffe9b0]/15 text-[#ffe9b0]'
+                  }`}>
+                    {srv.badge}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Subtitle / CC Helper Banner */}
+      {!isUnreleased && (
+        <div className="bg-[#121414] border-b border-[#4d4635]/30 px-3 sm:px-6 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 text-[11px] sm:text-xs text-[#d0c5af]">
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <Subtitles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#ffe9b0] shrink-0" />
+            <span>
+              <strong className="text-[#ffe9b0]">Subtitles:</strong> Click <strong className="text-white bg-white/10 px-1 py-0.2 rounded">CC</strong> / <strong className="text-white bg-white/10 px-1 py-0.2 rounded">⚙️</strong> at the bottom-right of the player.
+            </span>
+          </div>
+          <span className="text-[10px] text-[#99907c]">
+            If subs missing, switch to Server 2 or 3!
+          </span>
+        </div>
+      )}
 
       {/* Unreleased Warning Notice */}
       {isUnreleased && (
@@ -151,7 +177,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         </div>
       )}
 
-      {/* Video Player Display Container */}
+      {/* Direct Video Player Display Container with HTML5 Sandbox Popup Blocker */}
       <div className="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden shadow-2xl">
         {currentUrl ? (
           <iframe
@@ -160,6 +186,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             title={`Streaming ${animeTitle} Episode ${currentEpisode}`}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
             allowFullScreen
+            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
             className="w-full h-full border-0 absolute inset-0 z-10"
           />
         ) : (
@@ -172,14 +199,14 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
       </div>
 
       {/* Bottom Stream Status */}
-      <div className="bg-[#121414] px-4 py-2 border-t border-[#4d4635]/30 flex flex-wrap justify-between items-center text-xs text-[#99907c]">
+      <div className="bg-[#121414] px-3 sm:px-4 py-2 border-t border-[#4d4635]/30 flex flex-wrap justify-between items-center text-[10px] sm:text-xs text-[#99907c] gap-2">
         <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-          <span>Direct Stream: <strong className="text-[#e2e2e2] uppercase">{isUnreleased ? 'OFFICIAL HD TRAILER' : (activeServer.name || 'DIRECT HD STREAM')}</strong></span>
-          <span className="text-[10px] text-[#2ebd85] font-semibold bg-[#2ebd85]/10 px-1.5 py-0.5 rounded">Ad-Shield Active</span>
+          <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+          <span>Stream: <strong className="text-[#e2e2e2] uppercase">{isUnreleased ? 'OFFICIAL HD TRAILER' : (activeServer.name || 'DIRECT HD STREAM')}</strong></span>
+          <span className="text-[9px] text-[#2ebd85] font-semibold bg-[#2ebd85]/10 px-1.5 py-0.5 rounded">Ad-Shield</span>
         </div>
         <div>
-          <span>Progress auto-saves to your library</span>
+          <span>Progress auto-saved</span>
         </div>
       </div>
     </div>
