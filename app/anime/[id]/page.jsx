@@ -401,8 +401,8 @@ export default function DetailsPage() {
           )}
         </div>
 
-        {/* Right Column: Metadata Sidebar (4 cols) */}
-        <div className="lg:col-span-4 flex flex-col gap-6">
+        {/* Right Column: Metadata Sidebar (4 cols - Sticky on Desktop) */}
+        <div className="lg:col-span-4 flex flex-col gap-6 lg:sticky lg:top-20 lg:self-start">
           <div className="rounded-2xl bg-[#1E2020] border border-[#4d4635]/40 p-5 flex flex-col gap-5 shadow-xl">
             <div className="aspect-[3/4] w-full rounded-xl overflow-hidden shadow-md">
               <img src={cover} alt={title} className="w-full h-full object-cover" />

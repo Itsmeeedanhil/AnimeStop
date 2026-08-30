@@ -19,7 +19,7 @@ function PlayerContent() {
   const { isBookmarked, toggleBookmark } = useAuth();
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [viewMode, setViewMode] = useState('detail'); // Default to detailed list with thumbnails
+  const [viewMode, setViewMode] = useState('detail');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedBatch, setSelectedBatch] = useState(0);
 
@@ -104,9 +104,9 @@ function PlayerContent() {
     : allEpisodes.slice(selectedBatch * batchSize, (selectedBatch + 1) * batchSize);
 
   return (
-    <div className="w-full flex flex-col lg:flex-row min-h-[calc(100vh-64px)] bg-[#0d0f0f]">
+    <div className="w-full flex flex-col lg:flex-row min-h-[calc(100vh-64px)] mt-14 md:mt-0 bg-[#0d0f0f]">
       {/* Left Area: Video Player + Metadata */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col overflow-y-auto">
         <VideoPlayer
           streamData={stream}
           anime={anime}
@@ -115,7 +115,7 @@ function PlayerContent() {
           onPrevEpisode={handlePrevEpisode}
         />
 
-        <div className="p-4 sm:p-6 md:p-8 bg-[#121414] border-b border-[#4d4635]/30">
+        <div className="p-6 md:p-8 bg-[#121414] border-b border-[#4d4635]/30">
           <div className="flex flex-wrap justify-between items-start gap-4">
             <div className="flex flex-col gap-2 max-w-3xl">
               <div className="flex flex-wrap items-center gap-2">
@@ -139,15 +139,15 @@ function PlayerContent() {
                 {animeTitle}
               </h1>
 
-              <p className="text-xs sm:text-sm text-[#ffe9b0]">
+              <p className="text-sm text-[#ffe9b0]">
                 Playing Episode {epNumber} • {totalEpisodesCount} Released Episode{totalEpisodesCount === 1 ? '' : 's'}
               </p>
             </div>
 
-            <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => toggleBookmark(anime)}
-                className={`flex-1 sm:flex-initial px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center justify-center gap-2 border transition-all cursor-pointer ${
+                className={`px-4 py-2.5 rounded-xl font-semibold text-xs flex items-center gap-2 border transition-all cursor-pointer ${
                   bookmarked
                     ? 'bg-[#ffe9b0]/20 text-[#ffe9b0] border-[#ffe9b0]'
                     : 'bg-[#1E2020] text-[#e2e2e2] border-white/10 hover:bg-[#282a2a]'
@@ -159,7 +159,7 @@ function PlayerContent() {
 
               <Link
                 href={`/anime/${id}`}
-                className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] text-xs font-semibold border border-white/10 transition-colors flex items-center justify-center gap-1.5"
+                className="px-4 py-2.5 rounded-xl bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] text-xs font-semibold border border-white/10 transition-colors flex items-center gap-1.5"
               >
                 <span>Overview</span>
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -173,8 +173,8 @@ function PlayerContent() {
         </div>
       </div>
 
-      {/* Right Area: Detailed Episode Queue Sidebar */}
-      <div className="w-full lg:w-[380px] xl:w-[420px] bg-[#1E2020] flex flex-col border-t lg:border-t-0 lg:border-l border-[#4d4635]/40 min-h-[480px] lg:min-h-0 shrink-0">
+      {/* Right: Episode Queue Sidebar (Optimized Desktop & Mobile Layout) */}
+      <div className="w-full lg:w-[380px] xl:w-[420px] bg-[#1E2020] flex flex-col border-t lg:border-t-0 lg:border-l border-[#4d4635]/40 h-[560px] lg:h-[calc(100vh-64px)] lg:sticky lg:top-16 shrink-0 shadow-2xl">
         <div className="p-4 border-b border-[#4d4635]/30 flex flex-col gap-1 shrink-0 bg-[#1a1c1c]">
           <h2 className="font-['Bodoni_Moda'] text-lg font-bold text-[#e2e2e2] truncate">
             {animeTitle}
@@ -214,7 +214,7 @@ function PlayerContent() {
             <div className="flex bg-[#121414] rounded-lg p-0.5 border border-[#4d4635]/50">
               <button
                 onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded text-xs transition-colors cursor-pointer ${
+                className={`p-1.5 rounded text-xs transition-colors ${
                   viewMode === 'grid' ? 'bg-[#ffe9b0] text-[#241a00]' : 'text-[#99907c] hover:text-[#ffe9b0]'
                 }`}
                 title="Compact Grid View"
@@ -223,7 +223,7 @@ function PlayerContent() {
               </button>
               <button
                 onClick={() => setViewMode('detail')}
-                className={`p-1.5 rounded text-xs transition-colors cursor-pointer ${
+                className={`p-1.5 rounded text-xs transition-colors ${
                   viewMode === 'detail' ? 'bg-[#ffe9b0] text-[#241a00]' : 'text-[#99907c] hover:text-[#ffe9b0]'
                 }`}
                 title="Detailed List View"
@@ -258,8 +258,8 @@ function PlayerContent() {
           )}
         </div>
 
-        {/* Scrollable Episode Queue with Thumbnail Cards */}
-        <div className="flex-1 overflow-y-auto p-3 hide-scrollbar max-h-[520px] lg:max-h-none">
+        {/* Scrollable Episode Queue */}
+        <div className="flex-1 overflow-y-auto p-3 hide-scrollbar">
           {filteredEpisodes.length === 0 ? (
             <div className="p-8 text-center text-[#99907c] text-xs">
               No episodes found matching &quot;{searchQuery}&quot;
@@ -359,3 +359,4 @@ export default function PlayerPage() {
     </Suspense>
   );
 }
+
