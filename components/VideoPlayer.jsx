@@ -299,17 +299,17 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         )}
       </div>
 
-      {/* Subtitle & Server Guide Banner */}
+      {/* Subtitle Notice Banner */}
       {!isUnreleased && (
-        <div className="bg-[#121414] border-b border-[#4d4635]/30 px-3 sm:px-6 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 text-[11px] sm:text-xs text-[#d0c5af]">
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            <Subtitles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#ffe9b0] shrink-0" />
+        <div className="bg-gradient-to-r from-[#2a220e] via-[#1a1c1c] to-[#121414] border-b border-[#ffe9b0]/30 px-3 sm:px-6 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-[#d0c5af]">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-[#ffe9b0] shrink-0" />
             <span>
-              <strong className="text-[#ffe9b0]">Subtitles:</strong> To load your own subtitles, click <strong className="text-[#ffe9b0] bg-[#1E2020] px-1.5 py-0.5 rounded border border-[#ffe9b0]/30 cursor-pointer" onClick={() => setIsSubModalOpen(true)}>Add Subtitles (.SRT)</strong> above!
+              <strong className="text-[#ffe9b0]">Notice:</strong> Some anime currently do not have subtitles and are currently being fixed. Thanks for your patience! You can also click <button type="button" onClick={() => setIsSubModalOpen(true)} className="text-[#ffe9b0] underline font-bold hover:text-white cursor-pointer inline">Add Subtitles (.SRT)</button> to upload or fetch any subtitle file.
             </span>
           </div>
-          <span className="text-[10px] text-[#99907c]">
-            Supports any .srt or .vtt file with live sync & size controls
+          <span className="text-[10px] text-[#ffe9b0]/80 shrink-0 font-medium hidden md:inline">
+            🔧 Subtitle Updates Ongoing
           </span>
         </div>
       )}
