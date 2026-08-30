@@ -13,6 +13,9 @@ export default function Footer() {
             <img
               src="/favicon.svg"
               alt="AnimeStop Logo"
+              width={32}
+              height={32}
+              style={{ width: '32px', height: '32px', minWidth: '32px' }}
               className="w-8 h-8 rounded-lg shadow-[0_0_15px_rgba(255,233,176,0.35)]"
             />
             <span className="font-['Bodoni_Moda'] text-2xl font-bold tracking-tight text-[#ffe9b0]">

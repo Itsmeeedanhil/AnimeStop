@@ -107,6 +107,9 @@ export default function AuthModal() {
           <img
             src="/favicon.svg"
             alt="AnimeStop Logo"
+            width={48}
+            height={48}
+            style={{ width: '48px', height: '48px', minWidth: '48px' }}
             className="w-12 h-12 rounded-xl shadow-[0_0_20px_rgba(255,233,176,0.35)]"
           />
           <h2 className="font-['Bodoni_Moda'] text-2xl font-bold text-[#e2e2e2]">

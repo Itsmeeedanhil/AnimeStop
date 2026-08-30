@@ -92,6 +92,9 @@ export default function Navbar() {
             <img
               src="/favicon.svg"
               alt="AnimeStop Logo"
+              width={36}
+              height={36}
+              style={{ width: '36px', height: '36px', minWidth: '36px' }}
               className="w-9 h-9 rounded-lg shadow-[0_0_15px_rgba(255,233,176,0.35)] group-hover:scale-105 transition-transform"
             />
             <span className="font-['Bodoni_Moda'] text-2xl md:text-3xl font-bold tracking-tight text-[#ffe9b0] group-hover:text-white transition-colors">
