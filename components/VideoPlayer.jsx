@@ -466,43 +466,156 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
               </button>
             </div>
 
-            {/* File Upload Box */}
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-bold text-[#e2e2e2] flex items-center gap-1.5">
-                <Upload className="w-3.5 h-3.5 text-[#ffe9b0]" />
-                Select .SRT or .VTT Subtitle File:
-              </label>
-
-              <div className="border-2 border-dashed border-[#4d4635] hover:border-[#ffe9b0] rounded-xl p-5 bg-[#121414] transition-all flex flex-col items-center justify-center gap-2 text-center cursor-pointer relative">
-                <input
-                  type="file"
-                  accept=".srt,.vtt,.txt"
-                  onChange={handleFileUpload}
-                  className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
-                />
-                <Upload className="w-8 h-8 text-[#ffe9b0]/60" />
-                <p className="text-xs text-[#e2e2e2] font-semibold">
-                  Click or drag and drop your <span className="text-[#ffe9b0]">.srt</span> or <span className="text-[#ffe9b0]">.vtt</span> file here
-                </p>
-                <p className="text-[10px] text-[#99907c]">
-                  Subtitles will be parsed instantly and stored for this episode.
-                </p>
-              </div>
-
-              {subFileName && (
-                <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs mt-1">
-                  <span className="flex items-center gap-1.5 font-medium truncate">
-                    <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                    Loaded: {subFileName} ({subtitlesList.length} lines)
+            {/* Subtitle Source Tabs */}
+            <div className="flex flex-col gap-3">
+              {/* Option 1: Fetch From Direct Subtitle URL */}
+              <div className="p-3.5 rounded-xl bg-[#121414] border border-[#4d4635]/40 flex flex-col gap-2">
+                <label className="text-xs font-bold text-[#e2e2e2] flex items-center justify-between">
+                  <span className="flex items-center gap-1.5">
+                    <ExternalLink className="w-3.5 h-3.5 text-[#ffe9b0]" />
+                    Option 1: Fetch From Subtitle URL / Link:
                   </span>
+                  <span className="text-[10px] text-[#99907c]">.srt, .vtt, raw text</span>
+                </label>
+
+                <div className="flex gap-2">
+                  <input
+                    type="url"
+                    id="custom-sub-url-input"
+                    placeholder="https://example.com/subtitles/anime_ep1.srt"
+                    className="flex-1 bg-[#1E2020] border border-[#4d4635] focus:border-[#ffe9b0] text-[#e2e2e2] text-xs rounded-lg px-3 py-2 focus:outline-none"
+                  />
                   <button
-                    onClick={handleClearSubtitles}
-                    className="text-red-400 hover:text-red-300 text-[11px] underline shrink-0 cursor-pointer ml-2"
+                    type="button"
+                    onClick={async (e) => {
+                      const input = document.getElementById('custom-sub-url-input');
+                      const url = input?.value?.trim();
+                      if (!url) return alert('Please enter a valid subtitle URL.');
+                      try {
+                        const btn = e.currentTarget;
+                        btn.innerText = 'Fetching...';
+                        const res = await fetch('/api/subtitles/fetch', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ url }),
+                        });
+                        const data = await res.json();
+                        if (data.success && data.data?.content) {
+                          const parsedCues = parseSubtitles(data.data.content);
+                          if (parsedCues.length > 0) {
+                            setSubtitlesList(parsedCues);
+                            setSubFileName(url.split('/').pop() || 'online_subs.srt');
+                            setIsSubEnabled(true);
+                            setSubCurrentTime(0);
+                            setIsSubTimerPlaying(true);
+                            try {
+                              localStorage.setItem(
+                                `animestop_sub_${animeId}_${currentEpisode}`,
+                                JSON.stringify({
+                                  fileName: url.split('/').pop() || 'online_subs.srt',
+                                  cues: parsedCues,
+                                  offset: subOffset,
+                                })
+                              );
+                            } catch (e) {}
+                            alert(`Success! Loaded ${parsedCues.length} subtitle cues from URL.`);
+                          } else {
+                            alert('No valid subtitle cues found at this URL.');
+                          }
+                        } else {
+                          alert(data.message || 'Failed to fetch subtitles from this link.');
+                        }
+                        btn.innerText = 'Fetch & Load';
+                      } catch (err) {
+                        alert('Failed to connect to subtitle link.');
+                      }
+                    }}
+                    className="px-3 py-2 bg-[#ffe9b0] hover:bg-[#f2ca50] text-[#241a00] font-bold rounded-lg text-xs transition-colors cursor-pointer shrink-0"
                   >
-                    Remove
+                    Fetch & Load
                   </button>
                 </div>
-              )}
+              </div>
+
+              {/* Option 2: Upload Local File */}
+              <div className="flex flex-col gap-2">
+                <label className="text-xs font-bold text-[#e2e2e2] flex items-center gap-1.5">
+                  <Upload className="w-3.5 h-3.5 text-[#ffe9b0]" />
+                  Option 2: Upload .SRT or .VTT File:
+                </label>
+
+                <div className="border border-dashed border-[#4d4635] hover:border-[#ffe9b0] rounded-xl p-4 bg-[#121414] transition-all flex flex-col items-center justify-center gap-1.5 text-center cursor-pointer relative">
+                  <input
+                    type="file"
+                    accept=".srt,.vtt,.txt"
+                    onChange={handleFileUpload}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  />
+                  <Upload className="w-6 h-6 text-[#ffe9b0]/60" />
+                  <p className="text-xs text-[#e2e2e2] font-semibold">
+                    Click to browse or drop your <span className="text-[#ffe9b0]">.srt</span> file here
+                  </p>
+                </div>
+
+                {subFileName && (
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs mt-1">
+                    <span className="flex items-center gap-1.5 font-medium truncate">
+                      <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                      Loaded: {subFileName} ({subtitlesList.length} lines)
+                    </span>
+                    <button
+                      onClick={handleClearSubtitles}
+                      className="text-red-400 hover:text-red-300 text-[11px] underline shrink-0 cursor-pointer ml-2"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Option 3: 1-Click Online Subtitle Search Shortcuts */}
+              <div className="p-3.5 rounded-xl bg-[#1a1c1c] border border-white/5 flex flex-col gap-2.5">
+                <label className="text-xs font-bold text-[#e2e2e2] flex items-center gap-1.5">
+                  <Subtitles className="w-3.5 h-3.5 text-[#ffe9b0]" />
+                  Find Free Subtitles Online (1-Click Search):
+                </label>
+
+                <p className="text-[11px] text-[#99907c]">
+                  Click below to open trusted subtitle repositories with <strong>{animeTitle} Ep {currentEpisode}</strong> pre-searched, download the small .srt, and upload it above:
+                </p>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <a
+                    href={`https://www.opensubtitles.org/en/search/sublanguageid-eng/moviename-${encodeURIComponent(animeTitle + ' ' + currentEpisode)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-lg bg-[#121414] hover:bg-[#282a2a] text-[#ffe9b0] text-[11px] font-semibold flex items-center justify-center gap-1 border border-[#4d4635]/40 transition-colors"
+                  >
+                    <span>OpenSubtitles</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+
+                  <a
+                    href={`https://subdl.com/search/${encodeURIComponent(animeTitle)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-lg bg-[#121414] hover:bg-[#282a2a] text-[#ffe9b0] text-[11px] font-semibold flex items-center justify-center gap-1 border border-[#4d4635]/40 transition-colors"
+                  >
+                    <span>Subdl Anime</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+
+                  <a
+                    href={`https://kitsunekko.net/dirlist.php?dir=subtitles%2Fjapanese%2F`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-lg bg-[#121414] hover:bg-[#282a2a] text-[#ffe9b0] text-[11px] font-semibold flex items-center justify-center gap-1 border border-[#4d4635]/40 transition-colors"
+                  >
+                    <span>Kitsunekko</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </a>
+                </div>
+              </div>
             </div>
 
             {/* Subtitle Display & Timing Sync Settings */}
