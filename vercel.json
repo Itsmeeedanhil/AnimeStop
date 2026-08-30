@@ -35,7 +35,7 @@
         "APP_DEBUG": "true",
         "APP_KEY": "base64:9NaD9pAVZOYhxcpSs3OZgVvyliyL31O3Pz8d561PoeQ=",
         "LOG_CHANNEL": "stderr",
-        "SESSION_DRIVER": "cookie",
+        "SESSION_DRIVER": "file",
         "CACHE_STORE": "array",
         "VIEW_COMPILED_PATH": "/tmp/storage/framework/views",
         "APP_STORAGE_PATH": "/tmp/storage"
