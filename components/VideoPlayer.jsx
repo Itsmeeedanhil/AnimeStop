@@ -149,17 +149,17 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         )}
       </div>
 
-      {/* Subtitle / CC Helper Banner */}
+      {/* Subtitle & Server Switching Tip Banner */}
       {!isUnreleased && (
         <div className="bg-[#121414] border-b border-[#4d4635]/30 px-3 sm:px-6 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2 text-[11px] sm:text-xs text-[#d0c5af]">
           <div className="flex items-center gap-1.5 sm:gap-2">
             <Subtitles className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#ffe9b0] shrink-0" />
             <span>
-              <strong className="text-[#ffe9b0]">Subtitles:</strong> Click <strong className="text-white bg-white/10 px-1 py-0.2 rounded">CC</strong> / <strong className="text-white bg-white/10 px-1 py-0.2 rounded">⚙️</strong> at the bottom-right of the player.
+              <strong className="text-[#ffe9b0]">Tip:</strong> If a video shows a playback error or missing subs, click <strong className="text-[#ffe9b0] font-bold">Server 2</strong> or <strong className="text-[#ffe9b0] font-bold">Server 3</strong> above!
             </span>
           </div>
           <span className="text-[10px] text-[#99907c]">
-            If subs missing, switch to Server 2 or 3!
+            Turn on subs: Click <strong className="text-white">CC</strong> in player
           </span>
         </div>
       )}
@@ -177,23 +177,23 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         </div>
       )}
 
-      {/* Direct Video Player Display Container with HTML5 Sandbox Popup Blocker */}
+      {/* Direct Video Player Display Container with No-Referrer Policy to prevent Error 233429 */}
       <div className="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden shadow-2xl">
         {currentUrl ? (
           <iframe
             key={`direct-player-${currentEpisode}-${selectedServerId}-${reloadKey}`}
             src={currentUrl}
             title={`Streaming ${animeTitle} Episode ${currentEpisode}`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; web-share"
             allowFullScreen
-            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+            referrerPolicy="no-referrer"
             className="w-full h-full border-0 absolute inset-0 z-10"
           />
         ) : (
           <div className="flex flex-col items-center justify-center text-center p-6 text-[#d0c5af]">
             <VideoOff className="w-10 h-10 text-[#ffe9b0] mb-2" />
             <p className="text-sm font-semibold">Video Stream Unavailable</p>
-            <p className="text-xs text-[#99907c] mt-1">Please check back later.</p>
+            <p className="text-xs text-[#99907c] mt-1">Please check back later or switch servers above.</p>
           </div>
         )}
       </div>
@@ -203,7 +203,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
           <span>Stream: <strong className="text-[#e2e2e2] uppercase">{isUnreleased ? 'OFFICIAL HD TRAILER' : (activeServer.name || 'DIRECT HD STREAM')}</strong></span>
-          <span className="text-[9px] text-[#2ebd85] font-semibold bg-[#2ebd85]/10 px-1.5 py-0.5 rounded">Ad-Shield</span>
+          <span className="text-[9px] text-[#2ebd85] font-semibold bg-[#2ebd85]/10 px-1.5 py-0.5 rounded">Ad-Shield Active</span>
         </div>
         <div>
           <span>Progress auto-saved</span>
