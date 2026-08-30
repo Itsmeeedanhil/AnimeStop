@@ -61,7 +61,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="hidden xl:flex flex-col gap-2 py-6 bg-[#161818]/95 backdrop-blur-md fixed left-0 top-16 h-[calc(100vh-64px)] w-60 border-r border-[#4d4635]/40 z-40 overflow-y-auto custom-scrollbar shadow-xl">
+    <aside className="hidden xl:flex flex-col gap-2 py-6 bg-[#161818]/95 backdrop-blur-md fixed left-0 top-16 h-[calc(100vh-64px)] w-60 border-r border-[#4d4635]/40 z-40 overflow-y-auto custom-scrollbar shadow-xl pb-10">
       <div className="px-5 mb-2">
         <span className="text-[11px] font-bold tracking-[0.15em] text-[#99907c] uppercase">
           Menu
@@ -113,13 +113,6 @@ export default function Sidebar() {
           ))}
         </div>
       </div>
-
-      {/* Bottom Luxury Footer */}
-      <div className="mt-auto px-5 pt-6 text-xs text-[#99907c] border-t border-white/5">
-        <p className="font-['Bodoni_Moda'] text-sm font-bold text-[#ffe9b0]">AnimeStop</p>
-        <p className="text-[10px] text-[#99907c] mt-0.5">Cinema-Grade Anime Streaming</p>
-      </div>
     </aside>
   );
 }
-

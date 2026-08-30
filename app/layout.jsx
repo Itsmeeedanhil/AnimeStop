@@ -2,7 +2,6 @@ import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import LayoutWrapper from '@/components/LayoutWrapper';
-import Footer from '@/components/Footer';
 import AuthModal from '@/components/AuthModal';
 
 export const metadata = {
@@ -31,7 +30,6 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <Navbar />
           <LayoutWrapper>{children}</LayoutWrapper>
-          <Footer />
           <AuthModal />
         </AuthProvider>
       </body>
