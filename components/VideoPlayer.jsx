@@ -45,6 +45,18 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
   const [isSubTimerPlaying, setIsSubTimerPlaying] = useState(true);
   const subTimerRef = useRef(null);
 
+  // Globally disarm all popup window.open triggers
+  useEffect(() => {
+    const originalOpen = window.open;
+    window.open = function (...args) {
+      console.warn('Ad-Shield neutralized popup attempt:', args);
+      return null;
+    };
+    return () => {
+      window.open = originalOpen;
+    };
+  }, []);
+
   // Load any previously uploaded SRT for this anime & episode
   useEffect(() => {
     if (!animeId) return;
@@ -451,6 +463,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
             allowFullScreen
             referrerPolicy="no-referrer"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
             className="w-full h-full border-0 absolute inset-0 z-10"
           />
         ) : (
