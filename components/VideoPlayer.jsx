@@ -10,7 +10,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
   const trailerUrl = streamData?.trailerUrl;
   const servers = streamData?.servers || [];
 
-  const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || 'vidlink-sub');
+  const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || '4animo-ani');
   const [selectedServerId, setSelectedServerId] = useState(defaultServerId);
   const [reloadKey, setReloadKey] = useState(0);
 
