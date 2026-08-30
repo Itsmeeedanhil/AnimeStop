@@ -91,8 +91,11 @@ export default function AuthModal() {
   };
 
   const handleGoogleStandardOAuth = () => {
-    const origin = window.location.origin;
-    const redirectUri = `${origin}/auth/google/callback`;
+    const isLocal = typeof window !== 'undefined' && window.location.hostname === 'localhost';
+    const redirectUri = isLocal
+      ? 'http://localhost:3000/auth/google/callback'
+      : 'https://anime-stop.vercel.app/auth/google/callback';
+
     window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(GOOGLE_CLIENT_ID)}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=token&scope=${encodeURIComponent('openid email profile')}`;
   };
 
