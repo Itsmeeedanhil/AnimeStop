@@ -478,13 +478,9 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             key={`direct-player-${currentEpisode}-${selectedServerId}-${reloadKey}`}
             src={currentUrl}
             title={`Streaming ${animeTitle} Episode ${currentEpisode}`}
-            /* Edge-like permissions: passes cross-origin decoding capabilities */
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
             allowFullScreen
-            /* Fixed: replaces no-referrer to allow CDN header handshake */
-            referrerPolicy="origin-when-cross-origin"
-            /* Ad-protected sandbox without popup permissions */
-            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+            referrerPolicy="no-referrer"
             className="w-full h-full border-0 absolute inset-0 z-10"
           />
         ) : (
