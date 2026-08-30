@@ -1,21 +1,26 @@
 <?php
 
-// Ensure all required storage subdirectories exist in /tmp on Vercel
-$storageDirs = [
-    '/tmp/storage/framework/views',
-    '/tmp/storage/framework/cache',
-    '/tmp/storage/framework/sessions',
-    '/tmp/storage/logs',
+// Prepare writable /tmp storage paths for Vercel Serverless
+$storagePath = '/tmp/storage';
+$dirs = [
+    $storagePath . '/framework/views',
+    $storagePath . '/framework/cache',
+    $storagePath . '/framework/sessions',
+    $storagePath . '/logs',
     '/tmp/bootstrap/cache',
 ];
 
-foreach ($storageDirs as $dir) {
+foreach ($dirs as $dir) {
     if (! is_dir($dir)) {
         @mkdir($dir, 0777, true);
     }
 }
 
-putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
-putenv('APP_STORAGE_PATH=/tmp/storage');
+putenv("APP_STORAGE_PATH={$storagePath}");
+putenv("VIEW_COMPILED_PATH={$storagePath}/framework/views");
+$_ENV['APP_STORAGE_PATH'] = $storagePath;
+$_ENV['VIEW_COMPILED_PATH'] = "{$storagePath}/framework/views";
+$_SERVER['APP_STORAGE_PATH'] = $storagePath;
+$_SERVER['VIEW_COMPILED_PATH'] = "{$storagePath}/framework/views";
 
 require __DIR__ . '/../public/index.php';
