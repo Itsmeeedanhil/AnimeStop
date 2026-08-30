@@ -30,6 +30,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
   const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || '4animo-hd1');
   const [selectedServerId, setSelectedServerId] = useState(defaultServerId);
   const [reloadKey, setReloadKey] = useState(0);
+  const [adShieldActive, setAdShieldActive] = useState(true);
 
   // Custom SRT Subtitle State
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
@@ -430,6 +431,18 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
 
       {/* Direct Video Player Display Container with Ad-Shield Sandbox & No-Referrer Policy */}
       <div className="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden shadow-2xl">
+        {/* First-click ad absorber: consumes the click so the iframe ad script never triggers it */}
+        {adShieldActive && (
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              setAdShieldActive(false);
+            }}
+            className="absolute inset-0 z-30 cursor-pointer bg-transparent"
+            title="Click to activate player"
+          />
+        )}
+
         {currentUrl ? (
           <iframe
             key={`direct-player-${currentEpisode}-${selectedServerId}-${reloadKey}`}
