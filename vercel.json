@@ -2,7 +2,6 @@
     "version": 2,
     "framework": null,
     "buildCommand": "npm run build",
-    "outputDirectory": "public",
     "functions": {
         "api/index.php": {
             "runtime": "vercel-php@0.7.3"
@@ -10,7 +9,21 @@
     },
     "routes": [
         {
-            "handle": "filesystem"
+            "src": "/build/(.*)",
+            "headers": { "cache-control": "public, max-age=31536000, immutable" },
+            "dest": "/public/build/$1"
+        },
+        {
+            "src": "/favicon.svg",
+            "dest": "/public/favicon.svg"
+        },
+        {
+            "src": "/logo.svg",
+            "dest": "/public/logo.svg"
+        },
+        {
+            "src": "/robots.txt",
+            "dest": "/public/robots.txt"
         },
         {
             "src": "/(.*)",
