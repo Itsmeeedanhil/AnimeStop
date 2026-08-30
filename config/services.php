@@ -35,8 +35,8 @@ return [
         ],
     ],
 
-    'megaplays' => [
-        'url' => env('MEGAPLAYS_URL', 'https://megaplays.se'),
+    'hianime' => [
+        'url' => env('HIANIME_API_URL', 'https://hianime-api-ten.vercel.app'),
     ],
 
 ];
