@@ -1,0 +1,326 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { AnimeApi, LibraryApi } from '@/lib/api';
+import { useAuth } from '@/context/AuthContext';
+import AnimeCard from '@/components/AnimeCard';
+import { Play, Bookmark, ChevronLeft, ChevronRight, Flame, Tv, Sparkles, Star, Info } from 'lucide-react';
+
+export default function HomePage() {
+  const router = useRouter();
+  const { isBookmarked, toggleBookmark } = useAuth();
+  const [feed, setFeed] = useState(null);
+  const [continueWatching, setContinueWatching] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeHeroIndex, setActiveHeroIndex] = useState(0);
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState('trending');
+
+  useEffect(() => {
+    const loadHomeData = async () => {
+      try {
+        const [homeFeed, libraryData] = await Promise.all([
+          AnimeApi.getHome(),
+          LibraryApi.getLibrary().catch(() => null),
+        ]);
+        setFeed(homeFeed);
+        if (libraryData?.continueWatching) {
+          setContinueWatching(libraryData.continueWatching);
+        }
+      } catch (err) {
+        console.error('Failed to load home feed', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadHomeData();
+  }, []);
+
+  // Auto rotate hero spotlight every 8 seconds
+  useEffect(() => {
+    if (!feed?.spotlight?.length) return;
+    const interval = setInterval(() => {
+      setActiveHeroIndex((prev) => (prev + 1) % feed.spotlight.length);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, [feed?.spotlight]);
+
+  const scrollRow = (elementId, direction) => {
+    const el = document.getElementById(elementId);
+    if (el) {
+      el.scrollBy({ left: direction === 'left' ? -600 : 600, behavior: 'smooth' });
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[80vh] flex flex-col items-center justify-center gap-4 text-[#ffe9b0]">
+        <div className="w-12 h-12 border-4 border-[#ffe9b0] border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-sm text-[#d0c5af] animate-pulse">Loading AnimeStop cinematic archives...</p>
+      </div>
+    );
+  }
+
+  const heroAnime = feed?.spotlight?.[activeHeroIndex] || feed?.spotlight?.[0];
+  const heroTitle = heroAnime?.title?.english || heroAnime?.title?.romaji || 'Featured Anime';
+  const heroScore = heroAnime?.averageScore ? (heroAnime.averageScore / 10).toFixed(1) : '9.0';
+  const heroBanner = heroAnime?.bannerImage || heroAnime?.coverImage?.extraLarge;
+  const isHeroBookmarked = heroAnime ? isBookmarked(heroAnime.id) : false;
+
+  return (
+    <div className="w-full flex flex-col pb-16">
+      {/* Dynamic Hero Spotlight */}
+      {heroAnime && (
+        <section className="relative w-full h-[75vh] min-h-[520px] max-h-[720px] flex items-end pb-12 px-6 md:px-16 overflow-hidden group">
+          {/* Background Banner */}
+          <div
+            className="absolute inset-0 bg-cover bg-center transition-all duration-1000 transform scale-100 group-hover:scale-105"
+            style={{ backgroundImage: `url(${heroBanner})` }}
+          ></div>
+
+          {/* Luxury Gradient Overlays */}
+          <div className="absolute inset-0 bg-gradient-to-t from-[#121414] via-[#121414]/60 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-[#121414] via-[#121414]/50 to-transparent"></div>
+
+          {/* Hero Content Overlay */}
+          <div className="relative z-10 max-w-3xl flex flex-col">
+            {/* Meta Tags */}
+            <div className="flex flex-wrap items-center gap-2.5 mb-3">
+              <span className="px-2.5 py-1 bg-[#121414]/80 backdrop-blur-md rounded border border-[#ffe9b0]/30 text-[11px] font-bold text-[#ffe9b0] uppercase tracking-wider">
+                {heroAnime.format || 'TV Series'}
+              </span>
+              <span className="px-2.5 py-1 bg-[#121414]/80 backdrop-blur-md rounded border border-white/10 text-[11px] font-semibold text-[#e2e2e2] flex items-center gap-1">
+                <Star className="w-3 h-3 fill-current text-[#ffe9b0]" />
+                {heroScore} Rating
+              </span>
+              {heroAnime.episodes && (
+                <span className="text-xs text-[#d0c5af]">
+                  {heroAnime.episodes} Episodes • {heroAnime.seasonYear || '2024'}
+                </span>
+              )}
+            </div>
+
+            {/* Title */}
+            <h1 className="font-['Bodoni_Moda'] text-3xl md:text-5xl lg:text-6xl font-bold text-[#e2e2e2] mb-3 leading-tight drop-shadow-md">
+              {heroTitle}
+            </h1>
+
+            {/* Description */}
+            <p className="text-sm md:text-base text-[#d0c5af] mb-6 drop-shadow max-w-2xl line-clamp-3 leading-relaxed">
+              {heroAnime.description || 'Step into an epic anime journey filled with high-stakes battles, profound mysteries, and unforgettable companions.'}
+            </p>
+
+            {/* Hero CTA Buttons */}
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                onClick={() => router.push(`/watch/${heroAnime.id}?ep=1`)}
+                className="bg-[#ffe9b0] text-[#241a00] text-sm md:text-base font-bold px-7 py-3.5 rounded-xl flex items-center gap-2 hover:bg-[#f2ca50] transition-all shadow-[0_0_20px_rgba(255,233,176,0.4)] transform hover:scale-105 cursor-pointer"
+              >
+                <Play className="w-5 h-5 fill-current" />
+                Stream Episode 1
+              </button>
+
+              <button
+                onClick={() => toggleBookmark(heroAnime)}
+                className={`px-6 py-3.5 rounded-xl text-sm font-semibold flex items-center gap-2 backdrop-blur-md border transition-all cursor-pointer ${
+                  isHeroBookmarked
+                    ? 'bg-[#ffe9b0]/20 border-[#ffe9b0] text-[#ffe9b0]'
+                    : 'bg-[#1E2020]/70 border-white/20 text-[#e2e2e2] hover:bg-[#1E2020] hover:border-[#ffe9b0]/50'
+                }`}
+              >
+                <Bookmark className={`w-4 h-4 ${isHeroBookmarked ? 'fill-current' : ''}`} />
+                {isHeroBookmarked ? 'In Watchlist' : 'Add to List'}
+              </button>
+
+              <Link
+                href={`/anime/${heroAnime.id}`}
+                className="px-5 py-3.5 rounded-xl text-sm font-semibold text-[#d0c5af] hover:text-white bg-[#121414]/60 border border-white/10 hover:bg-[#121414] transition-all flex items-center gap-1.5"
+              >
+                <Info className="w-4 h-4" />
+                <span>Overview</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Hero Slide Dots */}
+          {feed.spotlight?.length > 1 && (
+            <div className="absolute bottom-6 right-6 md:right-16 z-20 flex gap-2">
+              {feed.spotlight.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveHeroIndex(idx)}
+                  className={`h-2 rounded-full transition-all ${
+                    idx === activeHeroIndex ? 'w-8 bg-[#ffe9b0]' : 'w-2 bg-white/30 hover:bg-white/60'
+                  }`}
+                  title={`Slide ${idx + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Quick Filter Category Chips */}
+      <section className="px-6 md:px-16 pt-8 pb-4">
+        <div className="flex gap-2.5 overflow-x-auto hide-scrollbar pb-2">
+          {[
+            { id: 'trending', label: 'Trending' },
+            { id: 'airing', label: 'Top Airing' },
+            { id: 'popular', label: 'All-Time Popular' },
+            { id: 'Action', label: 'Action & Shonen' },
+            { id: 'Fantasy', label: 'Fantasy & Isekai' },
+            { id: 'Romance', label: 'Romance & Drama' },
+            { id: 'Sci-Fi', label: 'Sci-Fi & Cyberpunk' },
+          ].map((cat) => (
+            <button
+              key={cat.id}
+              onClick={() => {
+                setActiveCategoryFilter(cat.id);
+                if (cat.id !== 'trending' && cat.id !== 'airing' && cat.id !== 'popular') {
+                  router.push(`/search?genre=${cat.id}`);
+                }
+              }}
+              className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                activeCategoryFilter === cat.id
+                  ? 'bg-[#ffe9b0] text-[#241a00] shadow-[0_0_15px_rgba(255,233,176,0.3)]'
+                  : 'bg-[#1E2020] text-[#d0c5af] border border-[#4d4635]/50 hover:border-[#ffe9b0]/50 hover:text-[#ffe9b0]'
+              }`}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* Continue Watching Shelf (if user has active history) */}
+      {continueWatching.length > 0 && (
+        <section className="py-6 px-6 md:px-16">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="font-['Bodoni_Moda'] text-2xl md:text-3xl font-bold text-[#e2e2e2] flex items-center gap-2.5">
+              <Sparkles className="w-6 h-6 text-[#ffe9b0]" />
+              Continue Watching
+            </h2>
+            <Link href="/library" className="text-xs font-semibold text-[#ffe9b0] hover:underline">
+              View All History →
+            </Link>
+          </div>
+
+          <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 snap-x scroll-smooth">
+            {continueWatching.map((item) => (
+              <div key={item.id} className="min-w-[160px] sm:min-w-[190px] md:min-w-[220px] snap-start">
+                <AnimeCard
+                  anime={{
+                    id: item.anime_id,
+                    title: { english: item.anime_title },
+                    coverImage: { extraLarge: item.anime_image },
+                    bannerImage: item.anime_banner,
+                  }}
+                  progress={item}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Carousel 1: Trending Now */}
+      <section className="py-6 px-6 md:px-16">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="font-['Bodoni_Moda'] text-2xl md:text-3xl font-bold text-[#e2e2e2] flex items-center gap-2.5">
+            <Flame className="w-6 h-6 text-[#ffe9b0]" />
+            Trending Now
+          </h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => scrollRow('trending-row', 'left')}
+              className="w-9 h-9 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => scrollRow('trending-row', 'right')}
+              className="w-9 h-9 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        <div id="trending-row" className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 snap-x scroll-smooth">
+          {feed?.trending?.map((anime) => (
+            <div key={anime.id} className="min-w-[160px] sm:min-w-[190px] md:min-w-[220px] snap-start">
+              <AnimeCard anime={anime} />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Carousel 2: Top Airing Series */}
+      <section className="py-6 px-6 md:px-16">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="font-['Bodoni_Moda'] text-2xl md:text-3xl font-bold text-[#e2e2e2] flex items-center gap-2.5">
+            <Tv className="w-6 h-6 text-[#ffe9b0]" />
+            Top Airing This Season
+          </h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => scrollRow('airing-row', 'left')}
+              className="w-9 h-9 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => scrollRow('airing-row', 'right')}
+              className="w-9 h-9 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        <div id="airing-row" className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 snap-x scroll-smooth">
+          {feed?.topAiring?.map((anime) => (
+            <div key={anime.id} className="min-w-[160px] sm:min-w-[190px] md:min-w-[220px] snap-start">
+              <AnimeCard anime={anime} />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Carousel 3: Most Popular All-Time */}
+      <section className="py-6 px-6 md:px-16">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="font-['Bodoni_Moda'] text-2xl md:text-3xl font-bold text-[#e2e2e2] flex items-center gap-2.5">
+            <Star className="w-6 h-6 text-[#ffe9b0]" />
+            Most Popular of All Time
+          </h2>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => scrollRow('popular-row', 'left')}
+              className="w-9 h-9 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => scrollRow('popular-row', 'right')}
+              className="w-9 h-9 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        <div id="popular-row" className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 snap-x scroll-smooth">
+          {feed?.popular?.map((anime) => (
+            <div key={anime.id} className="min-w-[160px] sm:min-w-[190px] md:min-w-[220px] snap-start">
+              <AnimeCard anime={anime} />
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
