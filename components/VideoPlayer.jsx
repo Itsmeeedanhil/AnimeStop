@@ -27,7 +27,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
   const servers = streamData?.servers || [];
   const animeId = parseInt(anime?.id || streamData?.animeId, 10);
 
-  const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || '4animo-hd1');
+  const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || '4animo-ani');
   const [selectedServerId, setSelectedServerId] = useState(defaultServerId);
   const [reloadKey, setReloadKey] = useState(0);
   const [adShieldActive, setAdShieldActive] = useState(true);
@@ -44,18 +44,6 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
   const [subCurrentTime, setSubCurrentTime] = useState(0);
   const [isSubTimerPlaying, setIsSubTimerPlaying] = useState(true);
   const subTimerRef = useRef(null);
-
-  // Globally disarm all popup window.open triggers
-  useEffect(() => {
-    const originalOpen = window.open;
-    window.open = function (...args) {
-      console.warn('Ad-Shield neutralized popup attempt:', args);
-      return null;
-    };
-    return () => {
-      window.open = originalOpen;
-    };
-  }, []);
 
   // Load any previously uploaded SRT for this anime & episode
   useEffect(() => {
@@ -380,7 +368,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         </div>
       )}
 
-      {/* Custom Subtitle Floating Timing Sync Pill (Visible when SRT is loaded) */}
+      {/* Custom Subtitle Floating Timing Sync Pill */}
       {subtitlesList.length > 0 && isSubEnabled && (
         <div className="bg-[#161818] border-b border-[#ffe9b0]/20 px-3 sm:px-6 py-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-[#d0c5af]">
           <div className="flex items-center gap-2">
@@ -441,9 +429,9 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         </div>
       )}
 
-      {/* Direct Video Player Display Container with Ad-Shield Sandbox & No-Referrer Policy */}
+      {/* Direct Video Player Display Container */}
       <div className="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden shadow-2xl">
-        {/* First-click ad absorber: consumes the click so the iframe ad script never triggers it */}
+        {/* First-click ad absorber */}
         {adShieldActive && (
           <div
             onClick={(e) => {
@@ -460,9 +448,12 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             key={`direct-player-${currentEpisode}-${selectedServerId}-${reloadKey}`}
             src={currentUrl}
             title={`Streaming ${animeTitle} Episode ${currentEpisode}`}
+            /* Edge-like permissions: passes cross-origin decoding capabilities */
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
             allowFullScreen
-            referrerPolicy="no-referrer"
+            /* Fixed: replaces no-referrer to allow CDN header handshake */
+            referrerPolicy="origin-when-cross-origin"
+            /* Ad-protected sandbox without popup permissions */
             sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
             className="w-full h-full border-0 absolute inset-0 z-10"
           />
@@ -474,7 +465,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           </div>
         )}
 
-        {/* Live Custom Subtitle Overlay (100% Readable, High-Contrast Text Plate) */}
+        {/* Custom Subtitle Overlay */}
         {currentCue && isSubEnabled && (
           <div className="absolute bottom-6 sm:bottom-10 left-4 right-4 z-20 pointer-events-none flex justify-center text-center">
             <div className="px-3.5 py-1.5 sm:px-5 sm:py-2.5 rounded-lg bg-black/85 backdrop-blur-sm border border-black/40 shadow-2xl max-w-4xl animate-fade-in">
@@ -541,7 +532,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         </div>
       </div>
 
-      {/* Custom Subtitle (.SRT / .VTT) Management Modal */}
+      {/* Modal Section */}
       {isSubModalOpen && (
         <div
           className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
@@ -551,7 +542,6 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             className="relative w-[95vw] max-w-lg bg-[#161818] border border-[#ffe9b0]/40 rounded-2xl shadow-2xl p-5 sm:p-7 flex flex-col gap-5 my-auto max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
             <div className="flex justify-between items-center border-b border-[#4d4635]/40 pb-4">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-[#ffe9b0]/15 text-[#ffe9b0] flex items-center justify-center">
@@ -575,9 +565,8 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
               </button>
             </div>
 
-            {/* Subtitle Source Tabs */}
             <div className="flex flex-col gap-3">
-              {/* Option 1: Fetch From Direct Subtitle URL */}
+              {/* Option 1: URL */}
               <div className="p-3.5 rounded-xl bg-[#121414] border border-[#4d4635]/40 flex flex-col gap-2">
                 <label className="text-xs font-bold text-[#e2e2e2] flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
@@ -627,7 +616,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
                                 })
                               );
                             } catch (e) {}
-                            alert(`Success! Loaded ${parsedCues.length} subtitle cues from URL.`);
+                            alert(`Success! Loaded ${parsedCues.length} subtitle cues.`);
                           } else {
                             alert('No valid subtitle cues found at this URL.');
                           }
@@ -646,7 +635,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
                 </div>
               </div>
 
-              {/* Option 2: Upload Local File */}
+              {/* Option 2: Upload */}
               <div className="flex flex-col gap-2">
                 <label className="text-xs font-bold text-[#e2e2e2] flex items-center gap-1.5">
                   <Upload className="w-3.5 h-3.5 text-[#ffe9b0]" />
@@ -682,16 +671,12 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
                 )}
               </div>
 
-              {/* Option 3: 1-Click Online Subtitle Search Shortcuts */}
+              {/* Option 3: Search shortcuts */}
               <div className="p-3.5 rounded-xl bg-[#1a1c1c] border border-white/5 flex flex-col gap-2.5">
                 <label className="text-xs font-bold text-[#e2e2e2] flex items-center gap-1.5">
                   <Subtitles className="w-3.5 h-3.5 text-[#ffe9b0]" />
                   Find Free Subtitles Online (1-Click Search):
                 </label>
-
-                <p className="text-[11px] text-[#99907c]">
-                  Click below to open trusted subtitle repositories with <strong>{animeTitle} Ep {currentEpisode}</strong> pre-searched, download the small .srt, and upload it above:
-                </p>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                   <a
@@ -727,14 +712,13 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
               </div>
             </div>
 
-            {/* Subtitle Display & Timing Sync Settings */}
+            {/* Sync Settings */}
             <div className="flex flex-col gap-3 pt-2 border-t border-[#4d4635]/30">
               <h4 className="text-xs font-bold text-[#e2e2e2] flex items-center gap-1.5">
                 <Sliders className="w-3.5 h-3.5 text-[#ffe9b0]" />
                 Subtitle Settings & Timing Sync:
               </h4>
 
-              {/* Font Size Selector */}
               <div className="flex items-center justify-between text-xs">
                 <span className="text-[#d0c5af]">Font Size:</span>
                 <div className="flex gap-1 bg-[#121414] p-1 rounded-lg border border-[#4d4635]/40">
@@ -754,7 +738,6 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
                 </div>
               </div>
 
-              {/* Subtitle Timer Sync Control */}
               <div className="flex flex-col gap-1.5 bg-[#121414] p-3 rounded-xl border border-[#4d4635]/30">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-[#d0c5af]">Current Subtitle Clock:</span>
@@ -811,7 +794,6 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
               </div>
             </div>
 
-            {/* Modal Actions */}
             <div className="flex justify-end gap-2.5 pt-3 border-t border-[#4d4635]/40">
               <button
                 onClick={() => setIsSubModalOpen(false)}
