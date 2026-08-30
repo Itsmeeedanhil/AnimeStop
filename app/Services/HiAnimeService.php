@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Log;
 class HiAnimeService
 {
     protected string $baseUrl;
+    protected string $embedBaseUrl = 'https://cdn.4animo.xyz/api/embed';
 
     public function __construct()
     {
@@ -38,7 +39,7 @@ class HiAnimeService
                     }
                 }
             } catch (\Throwable $e) {
-                Log::info("HiAnime API not running locally on {$this->baseUrl} - using direct anime stream resolver.");
+                Log::info("HiAnime API not available locally on {$this->baseUrl}");
             }
 
             return null;
@@ -71,7 +72,7 @@ class HiAnimeService
     }
 
     /**
-     * Resolve streaming player URL for an anime title and episode number
+     * Resolve streaming player URL using dynamic parameters from API and the official 4animo player embed
      */
     public function resolveStream(string $title, int $episodeNumber = 1, ?string $romaji = null, ?int $malId = null): string
     {
@@ -88,13 +89,20 @@ class HiAnimeService
             }
         }
 
-        if ($targetEpisodeId) {
-            $cleanEpId = str_replace('::', '?ep=', $targetEpisodeId);
-            return "https://megacloud.tv/embed-2/e-1/{$cleanEpId}";
+        $server = 'hd-1';
+        $category = 'sub';
+        $targetId = $targetEpisodeId ?: ($malId ?: $episodeNumber);
+
+        // Clean target ID if slug format
+        if (is_string($targetId) && str_contains($targetId, '?ep=')) {
+            $parts = explode('?ep=', $targetId);
+            $targetId = $parts[1] ?? $targetId;
+        } elseif (is_string($targetId) && str_contains($targetId, '::')) {
+            $parts = explode('::', $targetId);
+            $targetId = $parts[1] ?? $targetId;
         }
 
-        // Accurate Direct Anime Video Resolver (Explicit anime ID mapping)
-        $targetId = $malId ?: 1;
-        return "https://vidsrc.me/embed/anime?id={$targetId}&ep={$episodeNumber}";
+        // Official 4animo external player embed
+        return "{$this->embedBaseUrl}/{$server}/{$targetId}/{$category}?k=1&autoPlay=1&skipIntro=1&skipOutro=1";
     }
 }
