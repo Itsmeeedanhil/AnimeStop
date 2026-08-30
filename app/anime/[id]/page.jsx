@@ -113,20 +113,20 @@ export default function DetailsPage() {
         </div>
 
         {/* Content Overlay */}
-        <div className="relative h-full px-6 md:px-16 flex flex-col justify-end pb-12 z-10 max-w-4xl">
-          <div className="flex flex-wrap items-center gap-2 mb-3">
+        <div className="relative h-full px-4 sm:px-8 md:px-16 flex flex-col justify-end pb-10 sm:pb-12 z-10 max-w-4xl">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
             {anime.genres?.slice(0, 3).map((g) => (
               <span
                 key={g}
-                className="px-2.5 py-1 bg-[#1E2020]/70 backdrop-blur-md rounded border border-[#4d4635] text-[11px] font-bold text-[#ffe9b0] uppercase tracking-wider"
+                className="px-2 sm:px-2.5 py-0.5 sm:py-1 bg-[#1E2020]/70 backdrop-blur-md rounded border border-[#4d4635] text-[10px] sm:text-[11px] font-bold text-[#ffe9b0] uppercase tracking-wider"
               >
                 {g}
               </span>
             ))}
-            <span className="px-2.5 py-1 bg-[#282a2a]/60 backdrop-blur-md rounded text-[11px] font-bold text-[#e2e2e2] uppercase">
+            <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 bg-[#282a2a]/60 backdrop-blur-md rounded text-[10px] sm:text-[11px] font-bold text-[#e2e2e2] uppercase">
               {anime.format || 'TV'}
             </span>
-            <span className={`px-2.5 py-1 backdrop-blur-md rounded text-[11px] font-bold uppercase ${
+            <span className={`px-2 sm:px-2.5 py-0.5 sm:py-1 backdrop-blur-md rounded text-[10px] sm:text-[11px] font-bold uppercase ${
               anime.status === 'RELEASING'
                 ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
                 : anime.status === 'NOT_YET_RELEASED'
@@ -136,51 +136,51 @@ export default function DetailsPage() {
               {anime.status?.replace('_', ' ') || 'FINISHED'}
             </span>
             {anime.seasonYear && (
-              <span className="text-xs text-[#d0c5af]/80 font-semibold ml-1">
+              <span className="text-[11px] sm:text-xs text-[#d0c5af]/80 font-semibold ml-1">
                 {anime.season ? `${anime.season} ` : ''}{anime.seasonYear}
               </span>
             )}
           </div>
 
-          <h1 className="font-['Bodoni_Moda'] text-3xl sm:text-4xl md:text-6xl font-bold tracking-tight text-white leading-tight drop-shadow-lg mb-2">
+          <h1 className="font-['Bodoni_Moda'] text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight drop-shadow-lg mb-2">
             {title}
           </h1>
 
           {romaji && romaji !== title && (
-            <p className="text-sm md:text-base text-[#d0c5af]/80 italic mb-4">
+            <p className="text-xs sm:text-sm md:text-base text-[#d0c5af]/80 italic mb-3 sm:mb-4">
               {romaji} {native && `• ${native}`}
             </p>
           )}
 
-          <div className="flex flex-wrap items-center gap-4 mt-2">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-4 mt-2">
             {!isUnreleased && (
               <button
                 onClick={() => router.push(`/watch/${anime.id}?ep=1`)}
-                className="px-7 py-3 rounded-xl bg-gradient-to-r from-[#f2ca50] to-[#af8d11] text-[#241a00] font-bold text-sm flex items-center gap-2.5 shadow-[0_0_20px_rgba(242,202,80,0.3)] hover:brightness-110 transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                className="px-5 sm:px-7 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-[#f2ca50] to-[#af8d11] text-[#241a00] font-bold text-xs sm:text-sm flex items-center gap-2 sm:gap-2.5 shadow-[0_0_20px_rgba(242,202,80,0.3)] hover:brightness-110 transition-all hover:scale-105 active:scale-95 cursor-pointer"
               >
-                <Play className="w-5 h-5 fill-current" />
+                <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
                 <span>Start Watching (Ep 1)</span>
               </button>
             )}
 
             <button
               onClick={() => toggleBookmark(anime)}
-              className={`px-5 py-3 rounded-xl font-semibold text-sm flex items-center gap-2 backdrop-blur-md border transition-all cursor-pointer ${
+              className={`px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl font-semibold text-xs sm:text-sm flex items-center gap-2 backdrop-blur-md border transition-all cursor-pointer ${
                 bookmarked
                   ? 'bg-[#ffe9b0]/20 text-[#ffe9b0] border-[#ffe9b0]'
                   : 'bg-[#1E2020]/70 text-[#e2e2e2] border-white/20 hover:bg-[#282a2a]'
               }`}
             >
-              <Bookmark className={`w-4 h-4 ${bookmarked ? 'fill-current' : ''}`} />
+              <Bookmark className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${bookmarked ? 'fill-current' : ''}`} />
               <span>{bookmarked ? 'In Watchlist' : 'Add to Watchlist'}</span>
             </button>
 
             {trailer?.id && (
               <button
                 onClick={() => setIsTrailerModalOpen(true)}
-                className="px-5 py-3 rounded-xl bg-[#1E2020]/70 hover:bg-[#282a2a] text-[#e2e2e2] hover:text-[#ffe9b0] font-semibold text-sm flex items-center gap-2 backdrop-blur-md border border-white/20 transition-all cursor-pointer"
+                className="px-4 sm:px-5 py-2.5 sm:py-3 rounded-xl bg-[#1E2020]/70 hover:bg-[#282a2a] text-[#e2e2e2] hover:text-[#ffe9b0] font-semibold text-xs sm:text-sm flex items-center gap-2 backdrop-blur-md border border-white/20 transition-all cursor-pointer"
               >
-                <Film className="w-4 h-4" />
+                <Film className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span>Trailer</span>
               </button>
             )}
@@ -189,7 +189,7 @@ export default function DetailsPage() {
       </section>
 
       {/* Main Content Layout */}
-      <div className="max-w-[1920px] mx-auto px-6 md:px-16 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-10">
+      <div className="max-w-[1920px] mx-auto px-4 sm:px-8 md:px-16 mt-6 sm:mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10">
         {/* Left Column (8 cols) */}
         <div className="lg:col-span-8 flex flex-col gap-10">
           {/* Synopsis */}

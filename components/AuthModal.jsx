@@ -62,11 +62,11 @@ export default function AuthModal() {
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
       onClick={closeAuthModal}
     >
       <div
-        className="relative w-full max-w-md bg-[#161818] border border-[#4d4635]/60 rounded-2xl shadow-2xl p-6 sm:p-8 flex flex-col gap-6"
+        className="relative w-[95vw] max-w-md max-h-[90vh] overflow-y-auto bg-[#161818] border border-[#4d4635]/60 rounded-2xl shadow-2xl p-5 sm:p-8 flex flex-col gap-5 sm:gap-6 hide-scrollbar my-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close Button */}

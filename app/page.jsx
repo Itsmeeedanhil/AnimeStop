@@ -94,7 +94,7 @@ export default function HomePage() {
     <div className="w-full flex flex-col pb-20 overflow-x-hidden">
       {/* Dynamic Hero Spotlight Banner */}
       {heroAnime && (
-        <section className="relative w-full h-[60vh] sm:h-[68vh] md:h-[75vh] min-h-[440px] max-h-[750px] overflow-hidden">
+        <section className="relative w-full h-[65vh] md:h-[75vh] min-h-[460px] max-h-[750px] overflow-hidden">
           {/* Background Poster/Banner Image with Dual Luxury Vignette Gradients */}
           <div
             className="absolute inset-0 bg-cover bg-center transition-all duration-1000 transform scale-105"
@@ -107,26 +107,26 @@ export default function HomePage() {
           </div>
 
           {/* Hero Content Overlay */}
-          <div className="relative z-10 h-full max-w-[1920px] mx-auto px-4 sm:px-8 md:px-16 flex flex-col justify-end pb-8 sm:pb-12 md:pb-16 max-w-3xl">
+          <div className="relative z-10 h-full max-w-[1920px] mx-auto px-4 sm:px-8 md:px-16 flex flex-col justify-end pb-10 md:pb-16 max-w-3xl">
             {/* Meta Tags */}
-            <div className="flex flex-wrap items-center gap-2 mb-2 sm:mb-3">
-              <span className="px-2.5 py-0.5 rounded-full bg-[#ffe9b0] text-[#241a00] text-xs font-extrabold uppercase tracking-wider">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+              <span className="px-2 sm:px-2.5 py-0.5 rounded-full bg-[#ffe9b0] text-[#241a00] text-[11px] sm:text-xs font-extrabold uppercase tracking-wider">
                 Spotlight #{activeHeroIndex + 1}
               </span>
-              <span className="px-2.5 py-0.5 rounded-full bg-[#1E2020]/80 backdrop-blur-md border border-white/10 text-xs font-semibold text-[#e2e2e2]">
+              <span className="px-2 sm:px-2.5 py-0.5 rounded-full bg-[#1E2020]/80 backdrop-blur-md border border-white/10 text-[11px] sm:text-xs font-semibold text-[#e2e2e2]">
                 {heroAnime.format || 'TV'}
               </span>
               {heroAnime.genres?.slice(0, 3).map((g) => (
                 <span
                   key={g}
-                  className="px-2.5 py-0.5 rounded-full bg-[#1E2020]/60 backdrop-blur-md border border-white/10 text-xs text-[#d0c5af]"
+                  className="px-2 sm:px-2.5 py-0.5 rounded-full bg-[#1E2020]/60 backdrop-blur-md border border-white/10 text-[11px] sm:text-xs text-[#d0c5af]"
                 >
                   {g}
                 </span>
               ))}
               {heroAnime.episodes && (
-                <span className="text-xs text-[#99907c] font-medium ml-1 hidden sm:inline">
-                  {heroAnime.episodes} Episodes
+                <span className="text-[11px] sm:text-xs text-[#99907c] font-medium ml-1">
+                  {heroAnime.episodes} Eps • {heroAnime.seasonYear || '2024'}
                 </span>
               )}
             </div>
@@ -145,7 +145,7 @@ export default function HomePage() {
             <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
               <button
                 onClick={() => router.push(`/watch/${heroAnime.id}?ep=1`)}
-                className="bg-[#ffe9b0] text-[#241a00] text-xs sm:text-sm md:text-base font-bold px-5 sm:px-7 py-3 sm:py-3.5 rounded-xl flex items-center gap-2 hover:bg-[#f2ca50] transition-all shadow-[0_0_20px_rgba(255,233,176,0.4)] transform hover:scale-105 cursor-pointer active:scale-95"
+                className="bg-[#ffe9b0] text-[#241a00] text-xs sm:text-sm md:text-base font-bold px-5 sm:px-7 py-3 sm:py-3.5 rounded-xl flex items-center gap-2 hover:bg-[#f2ca50] transition-all shadow-[0_0_20px_rgba(255,233,176,0.4)] transform hover:scale-105 active:scale-95 cursor-pointer"
               >
                 <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
                 Stream Episode 1
@@ -165,7 +165,7 @@ export default function HomePage() {
 
               <Link
                 href={`/anime/${heroAnime.id}`}
-                className="px-4 sm:px-5 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-semibold text-[#d0c5af] hover:text-white bg-[#121414]/60 border border-white/10 hover:bg-[#121414] transition-all flex items-center gap-1.5"
+                className="px-3.5 sm:px-5 py-3 sm:py-3.5 rounded-xl text-xs sm:text-sm font-semibold text-[#d0c5af] hover:text-white bg-[#121414]/60 border border-white/10 hover:bg-[#121414] transition-all flex items-center gap-1.5"
               >
                 <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 <span>Overview</span>
@@ -175,13 +175,13 @@ export default function HomePage() {
 
           {/* Hero Slide Dots */}
           {feed.spotlight?.length > 1 && (
-            <div className="absolute bottom-4 right-4 sm:bottom-6 sm:right-16 z-20 flex gap-2">
+            <div className="absolute bottom-4 sm:bottom-6 right-4 sm:right-16 z-20 flex gap-1.5 sm:gap-2">
               {feed.spotlight.map((_, idx) => (
                 <button
                   key={idx}
                   onClick={() => setActiveHeroIndex(idx)}
-                  className={`h-2 rounded-full transition-all ${
-                    idx === activeHeroIndex ? 'w-8 bg-[#ffe9b0]' : 'w-2 bg-white/30 hover:bg-white/60'
+                  className={`h-1.5 sm:h-2 rounded-full transition-all ${
+                    idx === activeHeroIndex ? 'w-6 sm:w-8 bg-[#ffe9b0]' : 'w-1.5 sm:w-2 bg-white/30 hover:bg-white/60'
                   }`}
                   title={`Slide ${idx + 1}`}
                 />
@@ -193,7 +193,7 @@ export default function HomePage() {
 
       {/* Quick Filter Category Chips */}
       <section className="px-4 sm:px-8 md:px-16 pt-6 sm:pt-8 pb-3 sm:pb-4">
-        <div className="flex gap-2.5 overflow-x-auto hide-scrollbar pb-2">
+        <div className="flex gap-2 sm:gap-2.5 overflow-x-auto hide-scrollbar pb-2 touch-pan-x">
           {[
             { id: 'trending', label: 'Trending' },
             { id: 'airing', label: 'Top Airing' },
@@ -211,9 +211,9 @@ export default function HomePage() {
                   router.push(`/search?genre=${cat.id}`);
                 }
               }}
-              className={`px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+              className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 activeCategoryFilter === cat.id
-                  ? 'bg-[#ffe9b0] text-[#241a00] shadow-[0_0_15px_rgba(255,233,176,0.3)] font-bold'
+                  ? 'bg-[#ffe9b0] text-[#241a00] shadow-[0_0_15px_rgba(255,233,176,0.3)]'
                   : 'bg-[#1E2020] text-[#d0c5af] border border-[#4d4635]/50 hover:border-[#ffe9b0]/50 hover:text-[#ffe9b0]'
               }`}
             >
@@ -232,18 +232,18 @@ export default function HomePage() {
               Continue Watching
             </h2>
             <Link href="/library" className="text-xs font-semibold text-[#ffe9b0] hover:underline">
-              View All →
+              View All History →
             </Link>
           </div>
 
-          <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar pb-3 snap-x scroll-smooth">
+          <div className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar pb-3 sm:pb-4 snap-x scroll-smooth touch-pan-x">
             {continueWatching.map((item) => {
               const percent = Math.min(100, Math.round(((item.progress_seconds || 15) / (item.duration_seconds || 1440)) * 100));
               return (
                 <div
                   key={item.id || item.anime_id}
                   onClick={() => router.push(`/watch/${item.anime_id}?ep=${item.episode_number}`)}
-                  className="group relative w-[220px] sm:w-[260px] shrink-0 snap-start rounded-xl bg-[#1E2020] border border-[#4d4635]/40 hover:border-[#ffe9b0]/70 overflow-hidden transition-all duration-300 shadow-md hover:shadow-xl cursor-pointer flex flex-col active:scale-[0.99]"
+                  className="group relative w-[220px] sm:w-[270px] shrink-0 snap-start rounded-xl bg-[#1E2020] border border-[#4d4635]/40 hover:border-[#ffe9b0]/70 overflow-hidden transition-all duration-300 shadow-md hover:shadow-xl cursor-pointer flex flex-col"
                 >
                   <div className="relative aspect-video w-full overflow-hidden bg-[#121414]">
                     <img
@@ -271,11 +271,11 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  <div className="p-3 flex flex-col gap-0.5">
+                  <div className="p-2.5 sm:p-3 flex flex-col gap-0.5">
                     <h4 className="text-xs font-semibold text-[#e2e2e2] group-hover:text-[#ffe9b0] transition-colors truncate">
                       {item.anime_title}
                     </h4>
-                    <div className="flex justify-between text-[11px] text-[#99907c]">
+                    <div className="flex justify-between text-[10px] sm:text-[11px] text-[#99907c]">
                       <span>Episode {item.episode_number}</span>
                       <span>{percent}% watched</span>
                     </div>
@@ -299,20 +299,20 @@ export default function HomePage() {
               onClick={() => scrollRow('trending-row', 'left')}
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
             <button
               onClick={() => scrollRow('trending-row', 'right')}
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           </div>
         </div>
 
-        <div id="trending-row" className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar pb-3 snap-x scroll-smooth">
+        <div id="trending-row" className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar pb-3 sm:pb-4 snap-x scroll-smooth touch-pan-x">
           {feed?.trending?.map((anime) => (
-            <div key={anime.id} className="w-[140px] sm:w-[165px] md:w-[180px] shrink-0 snap-start">
+            <div key={anime.id} className="w-[130px] sm:w-[160px] md:w-[180px] shrink-0 snap-start">
               <AnimeCard anime={anime} />
             </div>
           ))}
@@ -324,27 +324,27 @@ export default function HomePage() {
         <div className="flex justify-between items-center mb-3 sm:mb-4">
           <h2 className="font-['Bodoni_Moda'] text-xl sm:text-2xl md:text-3xl font-bold text-[#e2e2e2] flex items-center gap-2">
             <Tv className="w-5 h-5 sm:w-6 sm:h-6 text-[#ffe9b0]" />
-            Top Airing Series
+            Top Airing This Season
           </h2>
           <div className="flex items-center gap-2">
             <button
               onClick={() => scrollRow('airing-row', 'left')}
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
             <button
               onClick={() => scrollRow('airing-row', 'right')}
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           </div>
         </div>
 
-        <div id="airing-row" className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar pb-3 snap-x scroll-smooth">
+        <div id="airing-row" className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar pb-3 sm:pb-4 snap-x scroll-smooth touch-pan-x">
           {feed?.topAiring?.map((anime) => (
-            <div key={anime.id} className="w-[140px] sm:w-[165px] md:w-[180px] shrink-0 snap-start">
+            <div key={anime.id} className="w-[130px] sm:w-[160px] md:w-[180px] shrink-0 snap-start">
               <AnimeCard anime={anime} />
             </div>
           ))}
@@ -363,20 +363,20 @@ export default function HomePage() {
               onClick={() => scrollRow('popular-row', 'left')}
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
             <button
               onClick={() => scrollRow('popular-row', 'right')}
               className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           </div>
         </div>
 
-        <div id="popular-row" className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar pb-3 snap-x scroll-smooth">
+        <div id="popular-row" className="flex gap-3 sm:gap-4 overflow-x-auto hide-scrollbar pb-3 sm:pb-4 snap-x scroll-smooth touch-pan-x">
           {feed?.popular?.map((anime) => (
-            <div key={anime.id} className="w-[140px] sm:w-[165px] md:w-[180px] shrink-0 snap-start">
+            <div key={anime.id} className="w-[130px] sm:w-[160px] md:w-[180px] shrink-0 snap-start">
               <AnimeCard anime={anime} />
             </div>
           ))}
