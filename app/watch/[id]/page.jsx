@@ -330,7 +330,7 @@ function PlayerContent() {
                       <h4 className={`text-xs font-semibold truncate ${
                         isActive ? 'text-white font-bold' : 'text-[#d0c5af] group-hover:text-white'
                       }`}>
-                        Episode {ep.number}
+                        {ep.title || `Episode ${ep.number}`}
                       </h4>
                       <span className="text-[10px] text-[#99907c]">24m</span>
                     </div>
