@@ -84,8 +84,23 @@ export default function Navbar() {
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full z-50 bg-[#121414]/90 backdrop-blur-xl border-b border-white/10 transition-all">
-      <div className="max-w-[1920px] mx-auto px-4 md:px-12 py-3.5 flex justify-between items-center">
+    <header className="fixed top-0 left-0 w-full z-50 bg-[#121414]/95 backdrop-blur-xl border-b border-white/10 transition-all">
+      {/* Global Browser Subtitle Recommendation Banner on Every Page */}
+      <div className="bg-gradient-to-r from-[#2a2007] via-[#1a1c1c] to-[#2a2007] border-b border-[#ffe9b0]/30 px-3 sm:px-8 py-1.5 flex items-center justify-between gap-2 text-[11px] sm:text-xs text-[#d0c5af] shadow-md">
+        <div className="flex items-center gap-2 max-w-full overflow-hidden">
+          <span className="px-1.5 py-0.5 rounded bg-[#ffe9b0] text-[#241a00] font-extrabold text-[10px] uppercase tracking-wider shrink-0 shadow-sm">
+            Notice
+          </span>
+          <span className="truncate">
+            Some anime subtitles do not display properly on <span className="text-[#e2e2e2] font-semibold">Google Chrome</span> or <span className="text-[#e2e2e2] font-semibold">Brave Browser</span>. We recommend opening in <strong className="text-[#ffe9b0]">Microsoft Edge</strong> for full subtitle support!
+          </span>
+        </div>
+        <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-[#ffe9b0] font-bold shrink-0 bg-[#ffe9b0]/15 px-2 py-0.5 rounded border border-[#ffe9b0]/30">
+          <span>💡 Edge Recommended</span>
+        </span>
+      </div>
+
+      <div className="max-w-[1920px] mx-auto px-4 md:px-12 py-3 flex justify-between items-center">
         {/* Brand & Nav */}
         <div className="flex items-center gap-8">
           <Link href="/" className="flex items-center gap-2.5 group text-left focus:outline-none">
