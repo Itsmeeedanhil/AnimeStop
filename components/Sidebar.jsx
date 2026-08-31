@@ -61,8 +61,8 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="hidden xl:flex flex-col gap-2 py-6 bg-[#161818]/95 backdrop-blur-md fixed left-0 top-16 h-[calc(100vh-64px)] w-60 border-r border-[#4d4635]/40 z-40 overflow-y-auto custom-scrollbar shadow-xl pb-10">
-      <div className="px-5 mb-2">
+    <aside className="hidden xl:flex flex-col gap-2 py-4 bg-[#161818]/95 backdrop-blur-md fixed left-0 top-20 md:top-24 h-[calc(100vh-80px)] md:h-[calc(100vh-96px)] w-60 border-r border-[#4d4635]/40 z-40 overflow-y-auto custom-scrollbar shadow-xl pb-10">
+      <div className="px-5 mb-1 pt-1">
         <span className="text-[11px] font-bold tracking-[0.15em] text-[#99907c] uppercase">
           Menu
         </span>
