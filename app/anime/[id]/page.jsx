@@ -317,39 +317,83 @@ export default function DetailsPage() {
               </div>
             ) : (
               <div className="flex flex-col gap-3">
-                {episodesToDisplay.map((epNum) => (
-                  <div
-                    key={epNum}
-                    onClick={() => router.push(`/watch/${anime.id}?ep=${epNum}`)}
-                    className="group flex gap-4 p-3.5 rounded-xl bg-[#1E2020] hover:bg-[#282a2a] transition-all cursor-pointer border border-transparent hover:border-[#ffe9b0]/30 shadow"
-                  >
-                    <div className="relative w-36 sm:w-44 aspect-video flex-shrink-0 rounded-lg overflow-hidden bg-[#121414]">
-                      <img
-                        src={banner}
-                        alt={`Episode ${epNum}`}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <PlayCircle className="w-8 h-8 text-[#ffe9b0]" />
-                      </div>
-                      <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/80 text-[10px] text-white/90">
-                        24m
-                      </div>
-                    </div>
+                {episodesToDisplay.map((epNum) => {
+                  const streamingEpisodes = Array.isArray(anime.streamingEpisodes) ? anime.streamingEpisodes : [];
+                  const characterImages = (anime.characters?.edges || [])
+                    .map((e) => e?.node?.image?.large)
+                    .filter(Boolean);
 
-                    <div className="flex flex-col justify-center min-w-0">
-                      <span className="text-xs font-bold text-[#ffe9b0] uppercase tracking-wider">
-                        Episode {epNum}
-                      </span>
-                      <h4 className="text-sm font-semibold text-[#e2e2e2] group-hover:text-white truncate">
-                        Episode {epNum}
-                      </h4>
-                      <p className="text-xs text-[#99907c] line-clamp-2 mt-1 hidden sm:block">
-                        Follow the progression, encounters, and character development in this released episode.
-                      </p>
+                  const matchingStreamEp =
+                    streamingEpisodes.find((se) => {
+                      const t = (se.title || '').toLowerCase();
+                      return (
+                        t.includes(`episode ${epNum} `) ||
+                        t.includes(`episode ${epNum}:`) ||
+                        t.includes(`episode ${epNum}-`) ||
+                        t.includes(`ep ${epNum} `) ||
+                        t.includes(`ep. ${epNum} `) ||
+                        t.endsWith(`episode ${epNum}`) ||
+                        t.endsWith(`ep ${epNum}`) ||
+                        t === `episode ${epNum}`
+                      );
+                    }) || streamingEpisodes[epNum - 1];
+
+                  let epThumb = matchingStreamEp?.thumbnail;
+                  if (!epThumb) {
+                    if (characterImages.length > 0) {
+                      epThumb = characterImages[(epNum - 1) % characterImages.length];
+                    } else {
+                      epThumb = banner || cover;
+                    }
+                  }
+
+                  let epTitle = `Episode ${epNum}`;
+                  if (matchingStreamEp?.title) {
+                    let cleanTitle = matchingStreamEp.title.trim();
+                    if (cleanTitle.match(/^episode\s+\d+[\s:–—-]+/i)) {
+                      cleanTitle = cleanTitle.replace(/^episode\s+\d+[\s:–—-]+/i, '').trim();
+                    } else if (cleanTitle.match(/^ep\.?\s*\d+[\s:–—-]+/i)) {
+                      cleanTitle = cleanTitle.replace(/^ep\.?\s*\d+[\s:–—-]+/i, '').trim();
+                    } else if (cleanTitle.match(/^\d+[\s:–—-]+/)) {
+                      cleanTitle = cleanTitle.replace(/^\d+[\s:–—-]+/, '').trim();
+                    }
+                    epTitle = cleanTitle || matchingStreamEp.title;
+                  }
+
+                  return (
+                    <div
+                      key={epNum}
+                      onClick={() => router.push(`/watch/${anime.id}?ep=${epNum}`)}
+                      className="group flex gap-4 p-3.5 rounded-xl bg-[#1E2020] hover:bg-[#282a2a] transition-all cursor-pointer border border-transparent hover:border-[#ffe9b0]/30 shadow"
+                    >
+                      <div className="relative w-36 sm:w-44 aspect-video flex-shrink-0 rounded-lg overflow-hidden bg-[#121414]">
+                        <img
+                          src={epThumb}
+                          alt={`Episode ${epNum}`}
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <PlayCircle className="w-8 h-8 text-[#ffe9b0]" />
+                        </div>
+                        <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/80 text-[10px] text-white/90">
+                          24m
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col justify-center min-w-0">
+                        <span className="text-xs font-bold text-[#ffe9b0] uppercase tracking-wider">
+                          Episode {epNum}
+                        </span>
+                        <h4 className="text-sm font-semibold text-[#e2e2e2] group-hover:text-white truncate">
+                          {epTitle}
+                        </h4>
+                        <p className="text-xs text-[#99907c] line-clamp-2 mt-1 hidden sm:block">
+                          Follow the progression, encounters, and character development in this released episode.
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
