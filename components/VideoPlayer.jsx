@@ -30,10 +30,12 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
   const trailerUrl = streamData?.trailerUrl;
   const servers = streamData?.servers || [];
   const animeId = parseInt(anime?.id || streamData?.animeId, 10);
+  const malId = anime?.idMal || null;
 
   const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || '4animo-ani');
   const [selectedServerId, setSelectedServerId] = useState(defaultServerId);
-  const [playerMode, setPlayerMode] = useState('native'); // 'native' (Artplayer - Zero Ads) or 'embed' (Direct Mirror)
+  const [resolvedStream, setResolvedStream] = useState(null);
+  const [isResolving, setIsResolving] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
 
   const artRef = useRef(null);
@@ -47,72 +49,51 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
   const [subFontSize, setSubFontSize] = useState('medium');
   const [isSubEnabled, setIsSubEnabled] = useState(true);
 
-  // Subtitle live playback clock (for custom SRT sync overlay in embed mode)
+  // Subtitle live playback clock (for custom SRT sync overlay fallback)
   const [subCurrentTime, setSubCurrentTime] = useState(0);
   const [isSubTimerPlaying, setIsSubTimerPlaying] = useState(true);
   const subTimerRef = useRef(null);
 
-  // Auto-saved subtitle restore
+  // 1. Fetch direct HLS stream & subtitles from our backend resolver
   useEffect(() => {
-    if (!animeId) return;
-    try {
-      const savedKey = `animestop_sub_${animeId}_${currentEpisode}`;
-      const saved = localStorage.getItem(savedKey);
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed?.cues && parsed.cues.length > 0) {
-          setSubtitlesList(parsed.cues);
-          setSubFileName(parsed.fileName || 'custom.srt');
-          setSubOffset(parsed.offset || 0);
-          setIsSubEnabled(true);
-        }
-      } else {
-        setSubtitlesList([]);
-        setSubFileName('');
-        setSubOffset(0);
-      }
-    } catch (e) {}
-  }, [animeId, currentEpisode]);
+    if (isUnreleased || !animeId) return;
 
-  // Auto-fetch online subtitles in background
-  useEffect(() => {
-    if (!animeTitle || isUnreleased) return;
+    let serverType = 'ani';
+    if (selectedServerId.includes('hd-1') || selectedServerId.includes('hd1')) serverType = 'hd-1';
+    if (selectedServerId.includes('hd-2') || selectedServerId.includes('hd2')) serverType = 'hd-2';
+    if (selectedServerId.includes('mal')) serverType = 'mal';
 
-    const fetchAutoSubtitles = async () => {
+    let isMounted = true;
+    setIsResolving(true);
+
+    const resolveStream = async () => {
       try {
         const res = await fetch(
-          `/api/subtitles/auto?title=${encodeURIComponent(animeTitle)}&episode=${currentEpisode}&animeId=${animeId || ''}`
+          `/api/anime/stream/resolve?animeId=${animeId}&episode=${currentEpisode}&server=${serverType}&malId=${malId || ''}`
         );
-        const data = await res.json();
-        if (data?.success && data?.data?.content) {
-          const parsedCues = parseSubtitles(data.data.content);
-          if (parsedCues.length > 0) {
-            setSubtitlesList((existing) => (existing.length === 0 ? parsedCues : existing));
-            setSubFileName((existing) => (existing ? existing : data.data.fileName || 'Auto English Subtitles'));
-            setIsSubEnabled(true);
-          }
+        const json = await res.json();
+        if (isMounted && json?.success && json?.data?.hlsUrl) {
+          setResolvedStream(json.data);
+        } else if (isMounted) {
+          setResolvedStream(null);
         }
-      } catch (err) {}
+      } catch (err) {
+        if (isMounted) setResolvedStream(null);
+      } finally {
+        if (isMounted) setIsResolving(false);
+      }
     };
 
-    const savedKey = `animestop_sub_${animeId}_${currentEpisode}`;
-    if (typeof window !== 'undefined' && !localStorage.getItem(savedKey)) {
-      fetchAutoSubtitles();
-    }
-  }, [animeTitle, currentEpisode, animeId, isUnreleased]);
+    resolveStream();
 
-  const activeServer = servers.find((s) => s.id === selectedServerId) || servers[0] || {};
-  const currentUrl =
-    selectedServerId === 'trailer' && trailerUrl
-      ? trailerUrl
-      : activeServer.url || streamData?.streamUrl || '';
+    return () => {
+      isMounted = false;
+    };
+  }, [animeId, currentEpisode, selectedServerId, isUnreleased, malId, reloadKey]);
 
-  // Direct HLS Source determination
-  const isDirectHls = typeof currentUrl === 'string' && (currentUrl.includes('.m3u8') || currentUrl.includes('manifest'));
-
-  // Initialize Native Artplayer when in Native Mode and stream URL is available
+  // 2. Initialize Native Artplayer when direct HLS is available
   useEffect(() => {
-    if (playerMode !== 'native' || isUnreleased || !artRef.current) return;
+    if (isUnreleased || !artRef.current || !resolvedStream?.hlsUrl) return;
 
     const bannerUrl = anime?.bannerImage || streamData?.banner || anime?.coverImage?.extraLarge;
     const coverUrl = anime?.coverImage?.extraLarge || anime?.coverImage?.large || bannerUrl;
@@ -122,19 +103,15 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         artInstanceRef.current.destroy(false);
       }
 
-      // If URL is an embed rather than direct HLS, automatically fallback cleanly
-      if (!isDirectHls && currentUrl.includes('/embed/')) {
-        setPlayerMode('embed');
-        return;
-      }
+      const activeSub = resolvedStream.activeSubtitle;
 
       const art = new Artplayer({
         container: artRef.current,
-        url: currentUrl,
+        url: resolvedStream.hlsUrl,
         poster: bannerUrl || coverUrl,
         title: `${animeTitle} - Episode ${currentEpisode}`,
         theme: '#ffe9b0',
-        volume: 0.8,
+        volume: 0.85,
         isLive: false,
         muted: false,
         autoplay: true,
@@ -157,6 +134,19 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         autoPlayback: true,
         airplay: true,
         hotkey: true,
+        subtitle: activeSub
+          ? {
+              url: activeSub,
+              type: 'vtt',
+              style: {
+                color: '#ffffff',
+                fontSize: '24px',
+                textShadow:
+                  '0 0 4px #000, 0 0 8px #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000',
+              },
+              encoding: 'utf-8',
+            }
+          : undefined,
         customType: {
           m3u8: function (video, url, artInstance) {
             if (Hls.isSupported()) {
@@ -172,13 +162,13 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
               video.src = url;
             } else {
-              artInstance.notice.show = 'Unsupported video format on this browser';
+              artInstance.notice.show = 'Unsupported video format';
             }
           },
         },
       });
 
-      // Save watch progress continuously
+      // Continuous watch progress tracking to database
       art.on('video:timeupdate', () => {
         const currentTime = Math.floor(art.currentTime);
         const duration = Math.floor(art.duration) || 1440;
@@ -199,8 +189,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
 
       artInstanceRef.current = art;
     } catch (err) {
-      console.warn('Native Artplayer initialization fallback to embed mode:', err);
-      setPlayerMode('embed');
+      console.warn('Native Artplayer initialization error:', err);
     }
 
     return () => {
@@ -208,7 +197,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         artInstanceRef.current.destroy(false);
       }
     };
-  }, [currentUrl, playerMode, currentEpisode, animeId, reloadKey, isDirectHls]);
+  }, [resolvedStream, isUnreleased, currentEpisode, animeId, animeTitle, streamData]);
 
   // Synchronize server on episode change
   useEffect(() => {
@@ -217,13 +206,18 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
     } else if (servers.length > 0 && !servers.some((s) => s.id === selectedServerId)) {
       setSelectedServerId(servers[0].id);
     }
-    setReloadKey((prev) => prev + 1);
   }, [currentEpisode, streamData, isUnreleased, trailerUrl]);
 
   const handleReload = () => {
     setReloadKey((prev) => prev + 1);
     setSubCurrentTime(0);
   };
+
+  const activeServer = servers.find((s) => s.id === selectedServerId) || servers[0] || {};
+  const fallbackEmbedUrl =
+    selectedServerId === 'trailer' && trailerUrl
+      ? trailerUrl
+      : activeServer.url || streamData?.streamUrl || '';
 
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
@@ -239,6 +233,12 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           setSubFileName(file.name);
           setIsSubEnabled(true);
           setSubCurrentTime(0);
+
+          if (artInstanceRef.current?.subtitle) {
+            const blob = new Blob([text], { type: 'text/vtt' });
+            const blobUrl = URL.createObjectURL(blob);
+            artInstanceRef.current.subtitle.switch(blobUrl, { name: file.name });
+          }
 
           try {
             const savedKey = `animestop_sub_${animeId}_${currentEpisode}`;
@@ -293,6 +293,13 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
               </span>
             </span>
 
+            {resolvedStream?.hlsUrl && (
+              <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 text-[10px] font-bold border border-emerald-500/30">
+                <Sparkles className="w-3 h-3" />
+                <span>Zero-Ad Player Active</span>
+              </span>
+            )}
+
             <button
               onClick={handleReload}
               className="p-1 rounded text-[#99907c] hover:text-[#ffe9b0] hover:bg-[#282a2a] transition-colors cursor-pointer shrink-0"
@@ -307,19 +314,25 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             <button
               onClick={() => setIsSubModalOpen(true)}
               className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer border ${
-                subtitlesList.length > 0
+                subtitlesList.length > 0 || resolvedStream?.activeSubtitle
                   ? 'bg-[#ffe9b0]/20 text-[#ffe9b0] border-[#ffe9b0]/50 shadow-[0_0_10px_rgba(255,233,176,0.2)]'
                   : 'bg-[#121414] text-[#d0c5af] hover:text-[#ffe9b0] border-[#4d4635]/40 hover:border-[#ffe9b0]/40'
               }`}
               title="Upload custom .SRT / .VTT subtitle file"
             >
               <Subtitles className="w-3.5 h-3.5" />
-              <span>{subtitlesList.length > 0 ? 'Custom Subs Active' : 'Add Subtitles (.SRT)'}</span>
+              <span>
+                {subtitlesList.length > 0
+                  ? 'Custom Subs'
+                  : resolvedStream?.activeSubtitle
+                  ? 'English Sub (Active)'
+                  : 'Add Subtitles (.SRT)'}
+              </span>
             </button>
 
-            {currentUrl && (
+            {fallbackEmbedUrl && (
               <a
-                href={currentUrl}
+                href={fallbackEmbedUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hidden sm:flex text-[#ffe9b0] hover:text-white items-center gap-1 bg-[#282a2a] px-2.5 py-1 rounded border border-[#4d4635]/40 transition-colors cursor-pointer text-[11px]"
@@ -386,94 +399,26 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         )}
       </div>
 
-      {/* Subtitle Notice Banner */}
-      {!isUnreleased && (
-        <div className="bg-gradient-to-r from-[#2a220e] via-[#1a1c1c] to-[#121414] border-b border-[#ffe9b0]/30 px-3 sm:px-6 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-[#d0c5af]">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-[#ffe9b0] shrink-0" />
-            <span>
-              <strong className="text-[#ffe9b0]">Notice:</strong> Some anime currently do not have built-in subtitles and are actively being updated. Click <button type="button" onClick={() => setIsSubModalOpen(true)} className="text-[#ffe9b0] underline font-bold hover:text-white cursor-pointer inline">Add Subtitles (.SRT)</button> to load any subtitle file.
-            </span>
-          </div>
-          <span className="text-[10px] text-[#ffe9b0]/80 shrink-0 font-medium hidden md:inline">
-            🔧 Subtitle Updates Ongoing
-          </span>
-        </div>
-      )}
-
-      {/* Custom Subtitle Floating Timing Sync Pill */}
-      {subtitlesList.length > 0 && isSubEnabled && (
-        <div className="bg-[#161818] border-b border-[#ffe9b0]/20 px-3 sm:px-6 py-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-[#d0c5af]">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#ffe9b0] animate-pulse"></span>
-            <span className="text-[#ffe9b0] font-semibold truncate max-w-[180px] sm:max-w-xs">
-              {subFileName} ({subtitlesList.length} cues)
-            </span>
-            <span className="text-[11px] text-[#99907c]">
-              Timer: <strong className="text-white">{formatTimeCode(subCurrentTime)}</strong>
-              {subOffset !== 0 && (
-                <span className="text-[#ffe9b0] ml-1">
-                  ({subOffset > 0 ? `+${subOffset}s` : `${subOffset}s`})
-                </span>
-              )}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setIsSubTimerPlaying(!isSubTimerPlaying)}
-              className="p-1 rounded bg-[#282a2a] hover:bg-[#ffe9b0] hover:text-[#241a00] text-[#d0c5af] transition-colors cursor-pointer"
-              title={isSubTimerPlaying ? 'Pause subtitle clock' : 'Play subtitle clock'}
-            >
-              {isSubTimerPlaying ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-            </button>
-
-            <button
-              onClick={() => setSubCurrentTime(0)}
-              className="p-1 rounded bg-[#282a2a] hover:bg-[#ffe9b0] hover:text-[#241a00] text-[#d0c5af] transition-colors cursor-pointer"
-              title="Reset subtitle timer to 00:00"
-            >
-              <RotateCcw className="w-3 h-3" />
-            </button>
-
-            <button
-              onClick={() => setSubOffset((prev) => prev - 0.5)}
-              className="px-1.5 py-0.5 rounded bg-[#282a2a] hover:bg-[#ffe9b0] hover:text-[#241a00] text-[10px] font-bold text-[#d0c5af] cursor-pointer"
-              title="Shift subtitles 0.5s earlier"
-            >
-              -0.5s
-            </button>
-            <button
-              onClick={() => setSubOffset((prev) => prev + 0.5)}
-              className="px-1.5 py-0.5 rounded bg-[#282a2a] hover:bg-[#ffe9b0] hover:text-[#241a00] text-[10px] font-bold text-[#d0c5af] cursor-pointer"
-              title="Delay subtitles 0.5s"
-            >
-              +0.5s
-            </button>
-
-            <button
-              onClick={() => setIsSubModalOpen(true)}
-              className="p-1 rounded bg-[#282a2a] hover:bg-[#ffe9b0] hover:text-[#241a00] text-[#d0c5af] transition-colors cursor-pointer ml-1"
-              title="Subtitle settings & sync"
-            >
-              <Sliders className="w-3 h-3" />
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Main Video Player Container */}
       <div className="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden shadow-2xl">
-        {playerMode === 'native' && isDirectHls ? (
+        {isResolving ? (
+          <div className="flex flex-col items-center justify-center gap-3 text-[#ffe9b0]">
+            <div className="w-10 h-10 border-4 border-[#ffe9b0] border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-xs text-[#d0c5af]">Connecting to zero-ad high-speed stream...</p>
+          </div>
+        ) : resolvedStream?.hlsUrl ? (
+          /* Real Native Artplayer Engine (0% Ads, 100% Subtitles) */
           <div ref={artRef} className="w-full h-full absolute inset-0 z-10" />
-        ) : currentUrl ? (
+        ) : fallbackEmbedUrl ? (
+          /* Fallback Direct Mirror Player */
           <iframe
             key={`direct-player-${currentEpisode}-${selectedServerId}-${reloadKey}`}
-            src={currentUrl}
+            src={fallbackEmbedUrl}
             title={`Streaming ${animeTitle} Episode ${currentEpisode}`}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
             allowFullScreen
             referrerPolicy="no-referrer"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
             className="w-full h-full border-0 absolute inset-0 z-10"
           />
         ) : (
@@ -484,8 +429,8 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           </div>
         )}
 
-        {/* Live Custom Subtitle Overlay */}
-        {currentCue && isSubEnabled && (
+        {/* Live Custom Subtitle Overlay (When custom SRT loaded) */}
+        {!resolvedStream?.hlsUrl && currentCue && isSubEnabled && (
           <div className="absolute bottom-6 sm:bottom-10 left-4 right-4 z-20 pointer-events-none flex justify-center text-center">
             <div className="px-3.5 py-1.5 sm:px-5 sm:py-2.5 rounded-lg bg-black/85 backdrop-blur-sm border border-black/40 shadow-2xl max-w-4xl animate-fade-in">
               <p
@@ -504,7 +449,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
       {/* Stream Recovery Bar */}
       <div className="bg-[#161818] border-t border-white/5 px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-[#99907c]">Encountering an issue?</span>
+          <span className="text-[11px] text-[#99907c]">Having stream issues?</span>
           <button
             onClick={() => {
               if (servers.length > 1) {
@@ -516,12 +461,12 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             }}
             className="px-2.5 py-1 rounded bg-[#ffe9b0]/15 hover:bg-[#ffe9b0]/25 text-[#ffe9b0] text-[11px] font-bold border border-[#ffe9b0]/30 transition-all cursor-pointer flex items-center gap-1"
           >
-            <span>⚡ Switch Server</span>
+            <span>⚡ Switch Server Mirror</span>
           </button>
         </div>
 
         <div className="flex items-center gap-1.5 text-[11px] text-[#99907c]">
-          <span>Fast Mirrors:</span>
+          <span>Mirrors:</span>
           {servers.map((srv) => (
             <button
               key={srv.id}
@@ -548,7 +493,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             <div className="flex items-center justify-between border-b border-[#4d4635]/30 pb-3">
               <div className="flex items-center gap-2 text-[#ffe9b0]">
                 <Subtitles className="w-5 h-5" />
-                <h3 className="font-bold text-base">Custom Subtitles</h3>
+                <h3 className="font-bold text-base">Subtitles & Custom Tracks</h3>
               </div>
               <button
                 onClick={() => setIsSubModalOpen(false)}
@@ -574,7 +519,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
                   <span className="text-xs font-medium text-[#d0c5af]">
                     Click to select .srt / .vtt file
                   </span>
-                  <span className="text-[10px] text-[#99907c]">Auto-saves for this episode</span>
+                  <span className="text-[10px] text-[#99907c]">Auto-attaches to native player</span>
                 </label>
               </div>
             </div>
