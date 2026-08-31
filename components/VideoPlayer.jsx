@@ -201,34 +201,44 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
 
   const [autoRecoverNotice, setAutoRecoverNotice] = useState('');
 
+  // Automatic Server Failover on error
   const handleAutoRecover = () => {
     if (servers.length > 1) {
       const currentIndex = servers.findIndex((s) => s.id === selectedServerId);
       const nextIndex = (currentIndex + 1) % servers.length;
       const nextServer = servers[nextIndex];
       setSelectedServerId(nextServer.id);
-      setAutoRecoverNotice(`Auto-recovered: Switched to ${nextServer.name}`);
-      setTimeout(() => setAutoRecoverNotice(''), 4000);
+      setAutoRecoverNotice(`⚡ Auto-switched to backup mirror: ${nextServer.name}`);
+      setTimeout(() => setAutoRecoverNotice(''), 5000);
     }
     setReloadKey((prev) => prev + 1);
   };
 
-  // Listen for iframe / JW Player postMessage error signals to auto-recover
+  // Listen for iframe / JW Player postMessage error signals (e.g. Error Code 232429) to auto-recover immediately
   useEffect(() => {
     const handleMessage = (e) => {
       const data = e.data;
       if (!data) return;
       try {
         const str = typeof data === 'string' ? data : JSON.stringify(data);
-        if (
-          str.includes('233429') ||
+        const hasError =
+          str.includes('232429') ||
+          str.includes('232011') ||
+          str.includes('233011') ||
+          str.includes('224003') ||
+          str.includes('234011') ||
+          str.includes('102630') ||
+          str.includes('102631') ||
+          str.includes('cannot be played') ||
+          str.includes('video file cannot be played') ||
           str.includes('jwplayerError') ||
-          str.includes('Error Code') ||
-          str.includes('hlsError') ||
           str.includes('MEDIA_ELEMENT_ERROR') ||
-          (data.event === 'error' && data.code)
-        ) {
-          console.warn('Playback error detected via embed signal, auto-refreshing...');
+          str.includes('hlsError') ||
+          str.includes('PLAYER_ERROR') ||
+          (data.event === 'error' && data.code);
+
+        if (hasError) {
+          console.warn('Playback error code 232429 detected from embed stream, auto-switching to next server mirror...');
           handleAutoRecover();
         }
       } catch (err) {}
