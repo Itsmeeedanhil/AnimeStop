@@ -1,13 +1,14 @@
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     const animeId = searchParams.get('animeId');
     const episode = searchParams.get('episode') || '1';
-    const server = searchParams.get('server') || 'ani'; // 'ani', 'hd-1', 'hd-2', 'mal'
+    const server = searchParams.get('server') || 'ani';
     const malId = searchParams.get('malId');
 
     if (!animeId) {
@@ -32,17 +33,10 @@ export async function GET(request) {
 
         const embedRes = await fetch(embedUrl, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Sec-Ch-Ua': '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"',
-            'Sec-Ch-Ua-Mobile': '?0',
-            'Sec-Ch-Ua-Platform': '"Windows"',
-            'Sec-Fetch-Dest': 'iframe',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'cross-site',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
           },
-          next: { revalidate: 300 },
+          cache: 'no-store',
         });
 
         if (!embedRes.ok) continue;
@@ -55,10 +49,10 @@ export async function GET(request) {
         const sourcesRes = await fetch(getSourcesUrl, {
           headers: {
             'Referer': embedUrl,
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'application/json, text/plain, */*',
           },
-          next: { revalidate: 300 },
+          cache: 'no-store',
         });
 
         if (!sourcesRes.ok) continue;
