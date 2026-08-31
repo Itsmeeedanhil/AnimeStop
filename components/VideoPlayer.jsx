@@ -507,6 +507,21 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           </div>
         )}
 
+        {/* Floating Instant Server Failover Switcher */}
+        {!isUnreleased && servers.length > 1 && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAutoRecover();
+            }}
+            className="absolute top-3 right-3 z-30 px-3 py-1.5 rounded-xl bg-black/85 hover:bg-[#ffe9b0] text-[#ffe9b0] hover:text-[#241a00] text-xs font-bold border border-[#ffe9b0]/60 shadow-[0_0_20px_rgba(0,0,0,0.8)] backdrop-blur-md transition-all cursor-pointer flex items-center gap-1.5 hover:scale-105"
+            title="Video error 233429 or buffering? Click to switch to next high-speed server mirror"
+          >
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span>⚡ Fix: Switch Server</span>
+          </button>
+        )}
+
         {/* Custom Subtitle Overlay */}
         {currentCue && isSubEnabled && (
           <div className="absolute bottom-6 sm:bottom-10 left-4 right-4 z-20 pointer-events-none flex justify-center text-center">
@@ -525,31 +540,36 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
       </div>
 
       {/* Stream Recovery Quick-Switch Bar */}
-      <div className="bg-[#161818] border-t border-white/5 px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+      <div className="bg-[#161818] border-t border-white/5 px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
         <div className="flex items-center gap-2">
-          <span className="text-[11px] text-[#99907c]">Encountering an error?</span>
+          <span className="text-xs font-bold text-[#ffe9b0] flex items-center gap-1">
+            <span>⚡ Stream Recovery:</span>
+          </span>
           <button
             onClick={handleAutoRecover}
-            className="px-2.5 py-1 rounded bg-[#ffe9b0]/15 hover:bg-[#ffe9b0]/25 text-[#ffe9b0] text-[11px] font-bold border border-[#ffe9b0]/30 transition-all cursor-pointer flex items-center gap-1"
-            title="Auto-recover and switch to next server"
+            className="px-3 py-1 rounded-lg bg-[#ffe9b0] text-[#241a00] text-xs font-extrabold hover:brightness-110 transition-all cursor-pointer flex items-center gap-1 shadow-[0_0_10px_rgba(255,233,176,0.3)]"
+            title="Auto-switch to next server mirror"
           >
-            <span>⚡ Fix: Switch Server</span>
+            <span>Switch Next Server →</span>
           </button>
         </div>
 
-        <div className="flex items-center gap-1.5 text-[11px] text-[#99907c]">
-          <span>Fast Mirrors:</span>
+        <div className="flex items-center gap-1.5 text-xs text-[#99907c] overflow-x-auto hide-scrollbar">
+          <span className="shrink-0 font-medium">Select Mirror:</span>
           {servers.map((srv) => (
             <button
               key={srv.id}
-              onClick={() => setSelectedServerId(srv.id)}
-              className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-all cursor-pointer ${
+              onClick={() => {
+                setSelectedServerId(srv.id);
+                setReloadKey((prev) => prev + 1);
+              }}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer shrink-0 ${
                 selectedServerId === srv.id
-                  ? 'bg-[#ffe9b0] text-[#241a00] font-bold'
-                  : 'bg-[#121414] text-[#d0c5af] hover:text-[#ffe9b0] border border-white/5'
+                  ? 'bg-[#ffe9b0] text-[#241a00] shadow-[0_0_10px_rgba(255,233,176,0.3)]'
+                  : 'bg-[#121414] text-[#d0c5af] hover:text-[#ffe9b0] border border-white/10 hover:border-[#ffe9b0]/40'
               }`}
             >
-              {srv.name.split(' (')[0]}
+              {srv.name}
             </button>
           ))}
         </div>
