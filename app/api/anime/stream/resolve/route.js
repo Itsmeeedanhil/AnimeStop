@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 
+export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
+export const maxDuration = 30;
 
 export async function GET(request) {
   try {
@@ -83,7 +85,7 @@ export async function GET(request) {
           },
         });
       } catch (err) {
-        // Try next candidate
+        // Try next server
       }
     }
 
