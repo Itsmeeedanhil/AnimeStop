@@ -65,7 +65,7 @@ export async function POST(request) {
       const existing = await sql`
         SELECT id, name, email, avatar_url, google_id, created_at
         FROM users
-        WHERE email = ${cleanEmail} OR (google_id IS NOT NULL AND google_id = ${googleId || ''})
+        WHERE email = ${cleanEmail} OR (google_id IS NOT NULL AND google_id = ${googleId || null})
         LIMIT 1
       `;
 
@@ -73,15 +73,15 @@ export async function POST(request) {
         user = existing[0];
         await sql`
           UPDATE users
-          SET google_id = COALESCE(google_id, ${googleId}),
-              avatar_url = COALESCE(avatar_url, ${userAvatar}),
+          SET google_id = COALESCE(google_id, ${googleId || null}),
+              avatar_url = COALESCE(avatar_url, ${userAvatar || null}),
               updated_at = CURRENT_TIMESTAMP
           WHERE id = ${user.id}
         `.catch(() => {});
       } else {
         const inserted = await sql`
           INSERT INTO users (name, email, google_id, avatar_url)
-          VALUES (${cleanName}, ${cleanEmail}, ${googleId}, ${userAvatar})
+          VALUES (${cleanName}, ${cleanEmail}, ${googleId || null}, ${userAvatar || null})
           RETURNING id, name, email, avatar_url, created_at
         `;
         if (inserted.length > 0) {
