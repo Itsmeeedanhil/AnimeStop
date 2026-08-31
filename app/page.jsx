@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { AnimeApi, LibraryApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import AnimeCard from '@/components/AnimeCard';
+import { Analytics } from "@vercel/analytics/next"
 import {
   Play,
   Bookmark,
@@ -381,6 +382,7 @@ export default function HomePage() {
             </div>
           ))}
         </div>
+        <Analytics />
       </section>
     </div>
   );
