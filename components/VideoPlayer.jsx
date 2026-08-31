@@ -173,17 +173,22 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
   useEffect(() => {
     if (!animeId) return;
 
-    const bannerUrl = anime?.bannerImage || streamData?.banner || anime?.coverImage?.extraLarge;
-    const coverUrl = anime?.coverImage?.extraLarge || anime?.coverImage?.large || bannerUrl;
+    const currentEpObj =
+      streamData?.episodes?.find((e) => Number(e.number) === Number(currentEpisode)) ||
+      streamData?.episodes?.[Number(currentEpisode) - 1];
+
+    const epThumb = currentEpObj?.thumbnail || anime?.coverImage?.extraLarge || anime?.coverImage?.large;
+    const epBanner = currentEpObj?.thumbnail || anime?.bannerImage || streamData?.banner || epThumb;
+    const epTitle = currentEpObj?.title || `Episode ${currentEpisode}`;
 
     const recordProgress = (seconds = 10) => {
       LibraryApi.saveProgress({
         anime_id: animeId,
         anime_title: animeTitle,
-        anime_image: coverUrl,
-        anime_banner: bannerUrl,
+        anime_image: epThumb,
+        anime_banner: epBanner,
         episode_number: currentEpisode,
-        episode_title: `Episode ${currentEpisode}`,
+        episode_title: epTitle,
         progress_seconds: seconds,
         duration_seconds: 1440,
         completed: false,
