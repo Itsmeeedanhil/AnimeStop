@@ -43,3 +43,4 @@ export async function GET() {
     return NextResponse.json({ success: false, diagnostics }, { status: 500 });
   }
 }
+
