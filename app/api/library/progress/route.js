@@ -36,7 +36,10 @@ export async function POST(request) {
         if (existing.length > 0) {
           const updated = await sql`
             UPDATE watch_histories
-            SET progress_seconds = ${progSec},
+            SET anime_image = COALESCE(${anime_image || null}, anime_image),
+                anime_banner = COALESCE(${anime_banner || null}, anime_banner),
+                anime_title = COALESCE(${anime_title || null}, anime_title),
+                progress_seconds = ${progSec},
                 duration_seconds = ${durSec},
                 completed = ${isCompleted},
                 last_watched_at = CURRENT_TIMESTAMP,
@@ -66,7 +69,10 @@ export async function POST(request) {
         if (existing.length > 0) {
           const updated = await sql`
             UPDATE watch_histories
-            SET progress_seconds = ${progSec},
+            SET anime_image = COALESCE(${anime_image || null}, anime_image),
+                anime_banner = COALESCE(${anime_banner || null}, anime_banner),
+                anime_title = COALESCE(${anime_title || null}, anime_title),
+                progress_seconds = ${progSec},
                 duration_seconds = ${durSec},
                 completed = ${isCompleted},
                 last_watched_at = CURRENT_TIMESTAMP,

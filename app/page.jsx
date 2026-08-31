@@ -247,7 +247,7 @@ export default function HomePage() {
                 >
                   <div className="relative aspect-video w-full overflow-hidden bg-[#121414]">
                     <img
-                      src={item.anime_banner || item.anime_image}
+                      src={item.anime_image || item.anime_banner}
                       alt={item.anime_title}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
