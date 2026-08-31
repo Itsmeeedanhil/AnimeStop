@@ -6,19 +6,19 @@ import { useRouter } from 'next/navigation';
 import { LibraryApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import AnimeCard from '@/components/AnimeCard';
-import { Library as LibraryIcon, PlayCircle, Bookmark, History, CloudLightning, Trash2, Trash } from 'lucide-react';
+import { Library as LibraryIcon, PlayCircle, Bookmark, History, CloudLightning, Trash2, Sparkles } from 'lucide-react';
 
 export default function LibraryPage() {
   const router = useRouter();
   const { user, openAuthModal } = useAuth();
-  const [activeTab, setActiveTab] = useState('continue');
+  const [activeTab, setActiveTab] = useState('watchlist'); // Default to Watchlist so bookmarks are immediately visible
   const [libraryData, setLibraryData] = useState({ continueWatching: [], watchlist: [], history: [] });
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchLibrary = async () => {
     try {
       const data = await LibraryApi.getLibrary();
-      setLibraryData(data);
+      setLibraryData(data || { continueWatching: [], watchlist: [], history: [] });
     } catch (err) {
       console.error('Failed to load library', err);
     } finally {
@@ -60,7 +60,7 @@ export default function LibraryPage() {
     return (
       <div className="min-h-[70vh] flex flex-col items-center justify-center gap-4 text-[#ffe9b0]">
         <div className="w-12 h-12 border-4 border-[#ffe9b0] border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-sm text-[#d0c5af]">Loading your anime vault...</p>
+        <p className="text-sm text-[#d0c5af]">Loading your anime library...</p>
       </div>
     );
   }
@@ -79,45 +79,45 @@ export default function LibraryPage() {
           <p className="text-xs sm:text-sm text-[#99907c] mt-1">
             {user
               ? `Personalized watchlist and watch history synced to ${user.email}.`
-              : 'Manage your continue watching queue, bookmarks, and viewing history.'}
+              : 'Manage your bookmarks, continue watching queue, and viewing history.'}
           </p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex items-center gap-1.5 sm:gap-2 bg-[#1E2020] p-1 sm:p-1.5 rounded-xl border border-[#4d4635]/40 max-w-full overflow-x-auto hide-scrollbar">
-          <button
-            onClick={() => setActiveTab('continue')}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'continue'
-                ? 'bg-[#ffe9b0] text-[#241a00] shadow'
-                : 'text-[#d0c5af] hover:text-[#ffe9b0]'
-            }`}
-          >
-            <PlayCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>Continue ({continueWatching.length})</span>
-          </button>
-
+        {/* Prominent Tab Switcher */}
+        <div className="flex items-center gap-1.5 sm:gap-2 bg-[#1E2020] p-1.5 rounded-2xl border border-[#4d4635]/40 max-w-full overflow-x-auto">
           <button
             onClick={() => setActiveTab('watchlist')}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+            className={`px-3.5 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
               activeTab === 'watchlist'
-                ? 'bg-[#ffe9b0] text-[#241a00] shadow'
+                ? 'bg-[#ffe9b0] text-[#241a00] shadow-[0_0_15px_rgba(255,233,176,0.3)]'
                 : 'text-[#d0c5af] hover:text-[#ffe9b0]'
             }`}
           >
-            <Bookmark className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <Bookmark className="w-4 h-4" />
             <span>Watchlist ({watchlist.length})</span>
           </button>
 
           <button
-            onClick={() => setActiveTab('history')}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
-              activeTab === 'history'
-                ? 'bg-[#ffe9b0] text-[#241a00] shadow'
+            onClick={() => setActiveTab('continue')}
+            className={`px-3.5 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'continue'
+                ? 'bg-[#ffe9b0] text-[#241a00] shadow-[0_0_15px_rgba(255,233,176,0.3)]'
                 : 'text-[#d0c5af] hover:text-[#ffe9b0]'
             }`}
           >
-            <History className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <PlayCircle className="w-4 h-4" />
+            <span>Continue ({continueWatching.length})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('history')}
+            className={`px-3.5 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
+              activeTab === 'history'
+                ? 'bg-[#ffe9b0] text-[#241a00] shadow-[0_0_15px_rgba(255,233,176,0.3)]'
+                : 'text-[#d0c5af] hover:text-[#ffe9b0]'
+            }`}
+          >
+            <History className="w-4 h-4" />
             <span>History ({history.length})</span>
           </button>
         </div>
@@ -133,7 +133,7 @@ export default function LibraryPage() {
             <div className="flex flex-col">
               <h4 className="text-sm font-bold text-[#e2e2e2]">Sync Your Anime Library Everywhere</h4>
               <p className="text-xs text-[#99907c] mt-0.5">
-                Sign in or register to keep your Watchlist and progress saved permanently across all your devices.
+                Sign in with Google to keep your Watchlist and progress saved permanently across all your devices.
               </p>
             </div>
           </div>
@@ -141,12 +141,41 @@ export default function LibraryPage() {
             onClick={() => openAuthModal('signin')}
             className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#f2ca50] to-[#af8d11] text-[#241a00] font-bold text-xs shadow-[0_0_15px_rgba(242,202,80,0.3)] hover:brightness-110 transition-all flex-shrink-0 cursor-pointer"
           >
-            Sign In / Register
+            Sign In with Google
           </button>
         </div>
       )}
 
-      {/* Tab 1: Continue Watching */}
+      {/* Tab 1: Watchlist (Default) */}
+      {activeTab === 'watchlist' && (
+        <div className="flex flex-col gap-6">
+          {watchlist.length === 0 ? (
+            <div className="p-16 rounded-2xl bg-[#1E2020] border border-white/5 flex flex-col items-center justify-center text-center gap-4">
+              <Bookmark className="w-12 h-12 text-[#ffe9b0]/40" />
+              <div className="flex flex-col gap-1">
+                <h3 className="font-['Bodoni_Moda'] text-2xl text-[#e2e2e2]">Your Watchlist is Empty</h3>
+                <p className="text-xs text-[#99907c] max-w-sm">
+                  Click the bookmark icon or "Add to List" on any anime title to save it here for later.
+                </p>
+              </div>
+              <Link
+                href="/"
+                className="px-6 py-2.5 rounded-xl bg-[#ffe9b0] text-[#241a00] font-bold text-xs hover:bg-[#f2ca50] transition-colors"
+              >
+                Explore Trending Anime
+              </Link>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+              {watchlist.map((item) => (
+                <AnimeCard key={`watchlist-${item.anime_id || item.id}`} anime={item} />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab 2: Continue Watching */}
       {activeTab === 'continue' && (
         <div className="flex flex-col gap-6">
           {continueWatching.length === 0 ? (
@@ -155,12 +184,12 @@ export default function LibraryPage() {
               <div className="flex flex-col gap-1">
                 <h3 className="font-['Bodoni_Moda'] text-2xl text-[#e2e2e2]">No Active Anime In Progress</h3>
                 <p className="text-xs text-[#99907c] max-w-sm">
-                  When you start watching an anime series or episode, your progress will automatically appear here.
+                  When you start watching an anime episode, your playback progress will automatically appear here.
                 </p>
               </div>
               <Link
                 href="/"
-                className="px-6 py-2.5 rounded-xl bg-[#ffe9b0] text-[#241a00] font-bold text-xs hover:bg-[#f2ca50]"
+                className="px-6 py-2.5 rounded-xl bg-[#ffe9b0] text-[#241a00] font-bold text-xs hover:bg-[#f2ca50] transition-colors"
               >
                 Browse Trending Anime
               </Link>
@@ -212,82 +241,46 @@ export default function LibraryPage() {
         </div>
       )}
 
-      {/* Tab 2: Watchlist */}
-      {activeTab === 'watchlist' && (
-        <div className="flex flex-col gap-6">
-          {watchlist.length === 0 ? (
-            <div className="p-16 rounded-2xl bg-[#1E2020] border border-white/5 flex flex-col items-center justify-center text-center gap-4">
-              <Bookmark className="w-12 h-12 text-[#ffe9b0]/40" />
-              <div className="flex flex-col gap-1">
-                <h3 className="font-['Bodoni_Moda'] text-2xl text-[#e2e2e2]">Your Watchlist is Empty</h3>
-                <p className="text-xs text-[#99907c] max-w-sm">
-                  Bookmark series and movies while browsing so you can easily find and watch them later.
-                </p>
-              </div>
-              <Link
-                href="/search"
-                className="px-6 py-2.5 rounded-xl bg-[#ffe9b0] text-[#241a00] font-bold text-xs hover:bg-[#f2ca50]"
-              >
-                Explore Anime Catalog
-              </Link>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-5">
-              {watchlist.map((item) => (
-                <AnimeCard
-                  key={item.anime_id || item.id}
-                  anime={{
-                    id: item.anime_id || item.id,
-                    title: { english: item.title, romaji: item.title },
-                    coverImage: { large: item.image_url, extraLarge: item.image_url },
-                    bannerImage: item.banner_url,
-                    genres: item.genres,
-                    format: item.format,
-                    episodes: item.episodes_count,
-                    averageScore: item.score ? item.score * 10 : null,
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Tab 3: Detailed History */}
+      {/* Tab 3: History */}
       {activeTab === 'history' && (
-        <div className="flex flex-col gap-4">
-          {history.length > 0 && (
-            <div className="flex justify-end">
+        <div className="flex flex-col gap-6">
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-semibold text-[#d0c5af]">
+              {history.length} Watched Episode{history.length === 1 ? '' : 's'}
+            </h3>
+            {history.length > 0 && (
               <button
                 onClick={handleClearHistory}
-                className="px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer border border-red-500/20"
+                className="text-xs text-red-400 hover:text-red-300 font-semibold flex items-center gap-1.5 bg-red-500/10 px-3 py-1.5 rounded-lg border border-red-500/20 hover:bg-red-500/20 transition-all cursor-pointer"
               >
-                <Trash className="w-3.5 h-3.5" />
-                <span>Clear All History</span>
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Clear History</span>
               </button>
-            </div>
-          )}
+            )}
+          </div>
 
           {history.length === 0 ? (
             <div className="p-16 rounded-2xl bg-[#1E2020] border border-white/5 flex flex-col items-center justify-center text-center gap-4">
               <History className="w-12 h-12 text-[#ffe9b0]/40" />
-              <h3 className="font-['Bodoni_Moda'] text-2xl text-[#e2e2e2]">No Viewing History</h3>
-              <p className="text-xs text-[#99907c] max-w-sm">
-                Episodes you have completed or watched will be recorded here chronologically.
-              </p>
+              <div className="flex flex-col gap-1">
+                <h3 className="font-['Bodoni_Moda'] text-2xl text-[#e2e2e2]">No Watch History</h3>
+                <p className="text-xs text-[#99907c] max-w-sm">
+                  Anime episodes you finish will be logged here with timestamps.
+                </p>
+              </div>
             </div>
           ) : (
             <div className="flex flex-col gap-3">
               {history.map((item) => (
                 <div
-                  key={`${item.anime_id}-${item.episode_number}-${item.id || ''}`}
-                  className="flex items-center justify-between p-3.5 rounded-xl bg-[#1E2020] border border-white/5 hover:border-[#ffe9b0]/30 transition-all gap-4"
+                  key={`history-${item.id || item.anime_id}-${item.episode_number}`}
+                  className="flex items-center justify-between p-3.5 sm:p-4 rounded-xl bg-[#1E2020] border border-[#4d4635]/30 hover:border-[#ffe9b0]/40 transition-all"
                 >
                   <div
                     onClick={() => router.push(`/watch/${item.anime_id}?ep=${item.episode_number}`)}
-                    className="flex items-center gap-4 flex-1 min-w-0 cursor-pointer"
+                    className="flex items-center gap-3.5 min-w-0 cursor-pointer flex-1"
                   >
-                    <div className="relative w-24 aspect-video rounded-lg overflow-hidden bg-[#121414] flex-shrink-0">
+                    <div className="w-16 sm:w-20 aspect-video rounded-lg overflow-hidden bg-[#121414] flex-shrink-0">
                       <img
                         src={item.anime_banner || item.anime_image}
                         alt={item.anime_title}
@@ -298,18 +291,20 @@ export default function LibraryPage() {
                       <h4 className="text-sm font-bold text-[#e2e2e2] truncate hover:text-[#ffe9b0]">
                         {item.anime_title}
                       </h4>
-                      <span className="text-xs text-[#ffe9b0] mt-0.5">
+                      <p className="text-xs text-[#99907c]">
                         Episode {item.episode_number}
-                      </span>
-                      <span className="text-[10px] text-[#99907c] mt-0.5">
-                        Watched on {new Date(item.last_watched_at || item.created_at || Date.now()).toLocaleDateString()}
-                      </span>
+                        {item.last_watched_at && (
+                          <span className="ml-2">
+                            • {new Date(item.last_watched_at).toLocaleDateString()}
+                          </span>
+                        )}
+                      </p>
                     </div>
                   </div>
 
                   <button
-                    onClick={() => handleDeleteHistoryItem(item.id)}
-                    className="p-2 rounded-lg text-[#99907c] hover:text-red-400 hover:bg-white/5 transition-colors cursor-pointer"
+                    onClick={() => handleDeleteHistoryItem(item.id || item.anime_id)}
+                    className="p-2 text-[#99907c] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
                     title="Remove from history"
                   >
                     <Trash2 className="w-4 h-4" />

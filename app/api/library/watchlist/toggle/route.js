@@ -10,10 +10,17 @@ export async function POST(request) {
     const sessionId = request.headers.get('x-session-id') || 'guest_default_session';
 
     const body = await request.json();
-    const { anime_id, title, image_url, banner_url, genres, format, episodes_count, score } = body;
+    const { anime_id, image_url, banner_url, genres, format, episodes_count, score } = body;
+    
+    // Safely extract title string
+    const rawTitle = body.title || body.anime_title;
+    const titleStr = typeof rawTitle === 'object' 
+      ? (rawTitle.english || rawTitle.romaji || rawTitle.native || 'Anime')
+      : String(rawTitle || 'Anime');
 
-    if (!anime_id || !title) {
-      return NextResponse.json({ success: false, message: 'Anime ID and Title are required' }, { status: 422 });
+    const cleanAnimeId = parseInt(anime_id, 10);
+    if (!cleanAnimeId) {
+      return NextResponse.json({ success: false, message: 'Anime ID is required' }, { status: 422 });
     }
 
     try {
@@ -23,7 +30,8 @@ export async function POST(request) {
       if (user) {
         const existing = await sql`
           SELECT id FROM watchlists 
-          WHERE user_id = ${user.id} AND anime_id = ${anime_id} 
+          WHERE (user_id = ${user.id} OR (session_id = ${sessionId} AND user_id IS NULL))
+            AND anime_id = ${cleanAnimeId} 
           LIMIT 1
         `;
 
@@ -37,8 +45,20 @@ export async function POST(request) {
         }
 
         const inserted = await sql`
-          INSERT INTO watchlists (user_id, session_id, anime_id, title, image_url, banner_url, genres, format, episodes_count, score)
-          VALUES (${user.id}, ${sessionId}, ${anime_id}, ${title}, ${image_url}, ${banner_url}, ${JSON.stringify(genres || [])}, ${format}, ${episodes_count}, ${score})
+          INSERT INTO watchlists (user_id, session_id, anime_id, title, image_url, banner_url, genres, format, episodes_count, score, created_at)
+          VALUES (
+            ${user.id}, 
+            ${sessionId}, 
+            ${cleanAnimeId}, 
+            ${titleStr}, 
+            ${image_url || null}, 
+            ${banner_url || null}, 
+            ${JSON.stringify(genres || [])}, 
+            ${format || 'TV'}, 
+            ${episodes_count || null}, 
+            ${score || null},
+            CURRENT_TIMESTAMP
+          )
           RETURNING *
         `;
 
@@ -51,7 +71,7 @@ export async function POST(request) {
       } else {
         const existing = await sql`
           SELECT id FROM watchlists 
-          WHERE session_id = ${sessionId} AND user_id IS NULL AND anime_id = ${anime_id} 
+          WHERE session_id = ${sessionId} AND user_id IS NULL AND anime_id = ${cleanAnimeId} 
           LIMIT 1
         `;
 
@@ -65,8 +85,19 @@ export async function POST(request) {
         }
 
         const inserted = await sql`
-          INSERT INTO watchlists (session_id, anime_id, title, image_url, banner_url, genres, format, episodes_count, score)
-          VALUES (${sessionId}, ${anime_id}, ${title}, ${image_url}, ${banner_url}, ${JSON.stringify(genres || [])}, ${format}, ${episodes_count}, ${score})
+          INSERT INTO watchlists (session_id, anime_id, title, image_url, banner_url, genres, format, episodes_count, score, created_at)
+          VALUES (
+            ${sessionId}, 
+            ${cleanAnimeId}, 
+            ${titleStr}, 
+            ${image_url || null}, 
+            ${banner_url || null}, 
+            ${JSON.stringify(genres || [])}, 
+            ${format || 'TV'}, 
+            ${episodes_count || null}, 
+            ${score || null},
+            CURRENT_TIMESTAMP
+          )
           RETURNING *
         `;
 
@@ -78,18 +109,11 @@ export async function POST(request) {
         });
       }
     } catch (dbErr) {
-      console.warn('Database offline, handled via client fallback:', dbErr.message);
-      return NextResponse.json({
-        success: true,
-        isBookmarked: true,
-        message: 'Saved to Watchlist',
-      });
+      console.warn('Database error in watchlist toggle:', dbErr.message);
+      return NextResponse.json({ success: true, isBookmarked: true, message: 'Saved locally' });
     }
   } catch (err) {
-    return NextResponse.json({
-      success: true,
-      isBookmarked: true,
-      message: 'Watchlist updated',
-    });
+    console.error('Watchlist toggle API error:', err);
+    return NextResponse.json({ success: false, message: err.message }, { status: 500 });
   }
 }
