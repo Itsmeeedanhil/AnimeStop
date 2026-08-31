@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Artplayer from 'artplayer';
 import Hls from 'hls.js';
 import { LibraryApi } from '@/lib/api';
+import { resolveStreamSources } from '@/lib/clientStreamResolver';
 import { parseSubtitles, formatTimeCode } from '@/lib/subtitles';
 import {
   RefreshCw,
@@ -52,9 +53,8 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
   // Subtitle live playback clock (for custom SRT sync overlay fallback)
   const [subCurrentTime, setSubCurrentTime] = useState(0);
   const [isSubTimerPlaying, setIsSubTimerPlaying] = useState(true);
-  const subTimerRef = useRef(null);
 
-  // 1. Fetch direct HLS stream & subtitles from our backend resolver
+  // 1. Resolve direct HLS stream & subtitles via Client-Side Resolver Engine
   useEffect(() => {
     if (isUnreleased || !animeId) return;
 
@@ -66,16 +66,15 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
     let isMounted = true;
     setIsResolving(true);
 
-    const resolveStream = async () => {
+    const loadStream = async () => {
       try {
-        const res = await fetch(
-          `/api/anime/stream/resolve?animeId=${animeId}&episode=${currentEpisode}&server=${serverType}&malId=${malId || ''}`
-        );
-        const json = await res.json();
-        if (isMounted && json?.success && json?.data?.hlsUrl) {
-          setResolvedStream(json.data);
-        } else if (isMounted) {
-          setResolvedStream(null);
+        const streamInfo = await resolveStreamSources(animeId, currentEpisode, serverType, malId);
+        if (isMounted) {
+          if (streamInfo?.hlsUrl) {
+            setResolvedStream(streamInfo);
+          } else {
+            setResolvedStream(null);
+          }
         }
       } catch (err) {
         if (isMounted) setResolvedStream(null);
@@ -84,14 +83,14 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
       }
     };
 
-    resolveStream();
+    loadStream();
 
     return () => {
       isMounted = false;
     };
   }, [animeId, currentEpisode, selectedServerId, isUnreleased, malId, reloadKey]);
 
-  // 2. Initialize Native Artplayer when direct HLS is available
+  // 2. Initialize Native Artplayer when direct HLS stream is resolved
   useEffect(() => {
     if (isUnreleased || !artRef.current || !resolvedStream?.hlsUrl) return;
 
