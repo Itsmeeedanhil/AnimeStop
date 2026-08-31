@@ -89,7 +89,7 @@ export function AuthProvider({ children }) {
   };
 
   const toggleBookmark = async (anime) => {
-    const animeId = Number(anime.id || anime.anime_id);
+    const animeId = Number(anime.anime_id || anime.id);
     setWatchlistIds(prev => {
       const next = new Set(prev);
       if (next.has(animeId)) {

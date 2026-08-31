@@ -168,7 +168,10 @@ export default function LibraryPage() {
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
               {watchlist.map((item) => (
-                <AnimeCard key={`watchlist-${item.anime_id || item.id}`} anime={item} />
+                <AnimeCard
+                  key={`watchlist-${item.anime_id || item.id}`}
+                  anime={{ ...item, id: item.anime_id || item.id, anime_id: item.anime_id || item.id }}
+                />
               ))}
             </div>
           )}

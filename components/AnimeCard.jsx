@@ -11,8 +11,9 @@ export default function AnimeCard({ anime, progress = null }) {
 
   if (!anime) return null;
 
-  const id = anime.id || anime.anime_id;
-  const title = anime.title?.english || anime.title?.romaji || anime.title || anime.anime_title || 'Unknown Title';
+  // Prioritize anime_id (AniList ID) over table primary key id
+  const id = anime.anime_id || anime.id;
+  const title = anime.title?.english || anime.title?.romaji || (typeof anime.title === 'string' ? anime.title : null) || anime.anime_title || 'Unknown Title';
   const image = anime.coverImage?.extraLarge || anime.coverImage?.large || anime.image_url || anime.anime_image || '';
   const score = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : (anime.score ? Number(anime.score).toFixed(1) : null);
   const episodes = anime.episodes || anime.episodes_count;
