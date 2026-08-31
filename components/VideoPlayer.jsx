@@ -386,10 +386,10 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
       {/* Subtitle Notice Banner */}
       {!isUnreleased && (
         <div className="bg-gradient-to-r from-[#2a220e] via-[#1a1c1c] to-[#121414] border-b border-[#ffe9b0]/30 px-3 sm:px-6 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-[#d0c5af]">
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-[#ffe9b0] shrink-0" />
-            <span>
-              <strong className="text-[#ffe9b0]">Notice:</strong> Some anime currently do not have subtitles and are currently being fixed. Thanks for your patience! You can also click <button type="button" onClick={() => setIsSubModalOpen(true)} className="text-[#ffe9b0] underline font-bold hover:text-white cursor-pointer inline">Add Subtitles (.SRT)</button> to upload or fetch any subtitle file.
+          <div className="flex items-start sm:items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-[#ffe9b0] shrink-0 mt-0.5 sm:mt-0" />
+            <span className="leading-snug sm:leading-normal">
+              <strong className="text-[#ffe9b0]">Notice:</strong> Subtitles work best on <strong className="text-white">Microsoft Edge</strong>. If using Chrome/Brave, click <button type="button" onClick={() => setIsSubModalOpen(true)} className="text-[#ffe9b0] underline font-bold hover:text-white cursor-pointer inline">Add Subtitles (.SRT)</button> to load subtitles directly.
             </span>
           </div>
           <span className="text-[10px] text-[#ffe9b0]/80 shrink-0 font-medium hidden md:inline">
