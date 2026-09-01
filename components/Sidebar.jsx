@@ -11,6 +11,8 @@ import {
   LayoutGrid,
   SlidersHorizontal,
   Sparkles,
+  Download,
+  Monitor,
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -112,6 +114,31 @@ export default function Sidebar() {
             </Link>
           ))}
         </div>
+      </div>
+
+      {/* Desktop App Promo Card */}
+      <div className="mt-6 mx-3 p-3.5 rounded-2xl bg-gradient-to-b from-[#1e2020] to-[#141616] border border-[#ffe9b0]/30 flex flex-col gap-2 shadow-lg">
+        <div className="flex items-center gap-2">
+          <span className="p-1.5 rounded-lg bg-[#ffe9b0]/15 text-[#ffe9b0]">
+            <Monitor className="w-4 h-4" />
+          </span>
+          <div className="flex flex-col min-w-0">
+            <span className="text-xs font-bold text-[#e2e2e2] leading-tight">AnimeStop App</span>
+            <span className="text-[10px] text-[#ffe9b0] font-semibold">Windows 64-bit</span>
+          </div>
+        </div>
+        <p className="text-[10px] text-[#99907c] leading-snug">
+          4K hardware acceleration, desktop hotkeys & direct subtitles.
+        </p>
+        <a
+          href="https://mega.nz/file/cx0zBawQ#fl8qr3-i3USuGu-_DlH_zXmomBQ6HM3pw6nXXGTRX0o"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="w-full py-1.5 rounded-lg bg-[#ffe9b0] hover:bg-white text-[#241a00] text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 shadow cursor-pointer hover:scale-[1.02]"
+        >
+          <Download className="w-3.5 h-3.5" />
+          <span>Download .exe</span>
+        </a>
       </div>
     </aside>
   );

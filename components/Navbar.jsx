@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { AnimeApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
-import { Search, X, Bookmark, User as UserIcon, LogOut, History, Menu, ChevronDown } from 'lucide-react';
+import { Search, X, Bookmark, User as UserIcon, LogOut, History, Menu, ChevronDown, Download } from 'lucide-react';
 
 export default function Navbar() {
   const router = useRouter();
@@ -85,19 +85,25 @@ export default function Navbar() {
 
   return (
     <header className="fixed top-0 left-0 w-full z-50 bg-[#121414]/95 backdrop-blur-xl border-b border-white/10 transition-all">
-      {/* Global Browser Subtitle Recommendation Banner on Every Page */}
-      <div className="bg-gradient-to-r from-[#241c08] via-[#1a1c1c] to-[#241c08] border-b border-[#ffe9b0]/30 px-3 sm:px-8 py-2 flex items-start sm:items-center justify-between gap-2 text-[11px] sm:text-xs text-[#d0c5af] shadow-md">
-        <div className="flex items-start sm:items-center gap-2 max-w-full">
-          <span className="px-1.5 py-0.5 rounded bg-[#ffe9b0] text-[#241a00] font-extrabold text-[9px] sm:text-[10px] uppercase tracking-wider shrink-0 shadow-sm mt-0.5 sm:mt-0">
-            Notice
+      {/* Global Windows Desktop App Download Banner */}
+      <div className="bg-gradient-to-r from-[#241c08] via-[#1a1c1c] to-[#241c08] border-b border-[#ffe9b0]/30 px-3 sm:px-8 py-1.5 flex items-center justify-between gap-2 text-[11px] sm:text-xs text-[#d0c5af] shadow-md">
+        <div className="flex items-center gap-2 max-w-full truncate">
+          <span className="px-1.5 py-0.5 rounded bg-[#ffe9b0] text-[#241a00] font-extrabold text-[9px] sm:text-[10px] uppercase tracking-wider shrink-0 shadow-sm">
+            Desktop App
           </span>
-          <p className="leading-snug text-[11px] sm:text-xs text-[#d0c5af]">
-            Some anime subtitles do not display properly on <span className="text-white font-medium">Chrome</span> or <span className="text-white font-medium">Brave</span>. We recommend using <strong className="text-[#ffe9b0] font-bold">Microsoft Edge</strong> for full subtitle support!
+          <p className="leading-snug text-[11px] sm:text-xs text-[#d0c5af] truncate">
+            Official <strong className="text-[#ffe9b0]">AnimeStop for Windows</strong> is available now with 4K acceleration & direct subtitles!
           </p>
         </div>
-        <span className="hidden md:inline-flex items-center gap-1 text-[10px] text-[#ffe9b0] font-bold shrink-0 bg-[#ffe9b0]/15 px-2 py-0.5 rounded border border-[#ffe9b0]/30">
-          <span>💡 Edge Recommended</span>
-        </span>
+        <a
+          href="https://mega.nz/file/cx0zBawQ#fl8qr3-i3USuGu-_DlH_zXmomBQ6HM3pw6nXXGTRX0o"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs text-[#241a00] bg-[#ffe9b0] hover:bg-white font-bold shrink-0 px-3 py-1 rounded-md transition-all shadow-sm cursor-pointer hover:scale-105"
+        >
+          <Download className="w-3 h-3" />
+          <span>Download for Windows</span>
+        </a>
       </div>
 
       <div className="max-w-[1920px] mx-auto px-4 md:px-12 py-3 flex justify-between items-center">
@@ -253,6 +259,18 @@ export default function Navbar() {
             <Bookmark className="w-4 h-4" />
             <span>Library</span>
           </Link>
+
+          {/* Windows Desktop App Button */}
+          <a
+            href="https://mega.nz/file/cx0zBawQ#fl8qr3-i3USuGu-_DlH_zXmomBQ6HM3pw6nXXGTRX0o"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#ffe9b0]/15 hover:bg-[#ffe9b0] text-[#ffe9b0] hover:text-[#241a00] border border-[#ffe9b0]/40 text-xs font-bold transition-all cursor-pointer shadow-sm"
+            title="Download AnimeStop Desktop App for Windows"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Windows App</span>
+          </a>
 
           {/* User Authentication / Profile Menu */}
           {user ? (

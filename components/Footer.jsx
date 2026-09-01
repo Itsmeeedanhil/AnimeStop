@@ -75,12 +75,21 @@ export default function Footer() {
 
         {/* Library & Features */}
         <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-[#e2e2e2] tracking-wider uppercase">Vault & Sanctuary</h4>
+          <h4 className="text-sm font-semibold text-[#e2e2e2] tracking-wider uppercase">Apps & Sanctuary</h4>
           <ul className="space-y-2 text-xs">
             <li><Link href="/library" className="hover:text-[#ffe9b0] transition-colors">Personal Watchlist</Link></li>
             <li><Link href="/library" className="hover:text-[#ffe9b0] transition-colors">Playback Timestamps</Link></li>
+            <li>
+              <a
+                href="https://mega.nz/file/cx0zBawQ#fl8qr3-i3USuGu-_DlH_zXmomBQ6HM3pw6nXXGTRX0o"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#ffe9b0] font-bold hover:text-white flex items-center gap-1 transition-colors"
+              >
+                <span>💻 Download for Windows (.exe)</span>
+              </a>
+            </li>
             <li><Link href="/search?sort=score" className="hover:text-[#ffe9b0] transition-colors">Highest Rated</Link></li>
-            <li><Link href="/search?season=WINTER&year=2026" className="hover:text-[#ffe9b0] transition-colors">Winter 2026 Season</Link></li>
           </ul>
         </div>
 
