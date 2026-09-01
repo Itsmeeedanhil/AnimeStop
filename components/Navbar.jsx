@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { AnimeApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
+import AnnouncementBanner from '@/components/AnnouncementBanner';
 import { Search, X, Bookmark, User as UserIcon, LogOut, History, Menu, ChevronDown, Download } from 'lucide-react';
 
 export default function Navbar() {
@@ -85,6 +86,9 @@ export default function Navbar() {
 
   return (
     <header className="fixed top-0 left-0 w-full z-50 bg-[#121414]/95 backdrop-blur-xl border-b border-white/10 transition-all">
+      {/* Live Admin Announcement Broadcast Banner (High Priority) */}
+      <AnnouncementBanner />
+
       {/* Global Windows Desktop App Download Banner */}
       <div className="bg-gradient-to-r from-[#241c08] via-[#1a1c1c] to-[#241c08] border-b border-[#ffe9b0]/30 px-3 sm:px-8 py-1.5 flex items-center justify-between gap-2 text-[10px] sm:text-xs text-[#d0c5af] shadow-md">
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">

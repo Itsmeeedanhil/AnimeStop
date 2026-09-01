@@ -29,7 +29,6 @@ export default function RootLayout({ children }) {
       </head>
       <body className="bg-[#121414] text-[#e2e2e2] min-h-screen flex flex-col selection:bg-[#ffe9b0] selection:text-[#241a00] antialiased">
         <AuthProvider>
-          <AnnouncementBanner />
           <Navbar />
           <LayoutWrapper>{children}</LayoutWrapper>
           <AuthModal />

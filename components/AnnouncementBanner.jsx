@@ -20,7 +20,10 @@ export default function AnnouncementBanner() {
 
     const fetchAnnouncements = async () => {
       try {
-        const res = await fetch('/api/announcements');
+        const res = await fetch(`/api/announcements?_t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
         const json = await res.json();
         if (json.success && Array.isArray(json.data)) {
           setAnnouncements(json.data);
@@ -33,6 +36,8 @@ export default function AnnouncementBanner() {
     };
 
     fetchAnnouncements();
+    const interval = setInterval(fetchAnnouncements, 20000);
+    return () => clearInterval(interval);
   }, []);
 
   const handleDismiss = (id) => {
