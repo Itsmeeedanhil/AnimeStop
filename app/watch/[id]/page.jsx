@@ -307,7 +307,14 @@ function PlayerContent() {
                     <div className="relative w-20 aspect-video rounded-lg overflow-hidden bg-[#121414] flex-shrink-0">
                       <img
                         src={
-                          ep.thumbnail && !ep.thumbnail.toLowerCase().includes('no_image') && !ep.thumbnail.toLowerCase().includes('placeholder')
+                          ep.thumbnail &&
+                          !ep.thumbnail.toLowerCase().includes('no_image') &&
+                          !ep.thumbnail.toLowerCase().includes('no-image') &&
+                          !ep.thumbnail.toLowerCase().includes('noimage') &&
+                          !ep.thumbnail.toLowerCase().includes('placeholder') &&
+                          !ep.thumbnail.toLowerCase().includes('default.jpg') &&
+                          !ep.thumbnail.toLowerCase().includes('default.png') &&
+                          !ep.thumbnail.toLowerCase().includes('/default')
                             ? ep.thumbnail
                             : anime?.bannerImage || anime?.coverImage?.extraLarge || anime?.coverImage?.large || '/favicon.svg'
                         }

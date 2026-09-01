@@ -326,10 +326,27 @@ export default function DetailsPage() {
             ) : (
               <div className="flex flex-col gap-3">
                 {episodesToDisplay.map((epNum) => {
+                  const isValidThumb = (url) => {
+                    if (!url || typeof url !== 'string') return false;
+                    const lower = url.toLowerCase();
+                    return (
+                      !lower.includes('no_image') &&
+                      !lower.includes('no-image') &&
+                      !lower.includes('noimage') &&
+                      !lower.includes('placeholder') &&
+                      !lower.includes('default_episode') &&
+                      !lower.includes('default.jpg') &&
+                      !lower.includes('default.png') &&
+                      !lower.includes('default.jpeg') &&
+                      !lower.includes('/default')
+                    );
+                  };
+
                   const streamingEpisodes = Array.isArray(anime.streamingEpisodes) ? anime.streamingEpisodes : [];
                   const characterImages = (anime.characters?.edges || [])
-                    .map((e) => e?.node?.image?.large)
-                    .filter(Boolean);
+                    .map((e) => e?.node?.image?.large || e?.node?.image?.medium)
+                    .filter(Boolean)
+                    .filter(isValidThumb);
 
                   const matchingStreamEp =
                     streamingEpisodes.find((se) => {
@@ -345,12 +362,6 @@ export default function DetailsPage() {
                         t === `episode ${epNum}`
                       );
                     }) || streamingEpisodes[epNum - 1];
-
-                  const isValidThumb = (url) => {
-                    if (!url || typeof url !== 'string') return false;
-                    const lower = url.toLowerCase();
-                    return !lower.includes('no_image') && !lower.includes('no-image') && !lower.includes('noimage') && !lower.includes('placeholder') && !lower.includes('default_episode');
-                  };
 
                   let epThumb = matchingStreamEp?.thumbnail;
                   if (!epThumb || !isValidThumb(epThumb)) {
