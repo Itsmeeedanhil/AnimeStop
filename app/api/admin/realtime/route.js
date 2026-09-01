@@ -3,19 +3,20 @@ import { getSql, ensureTables } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
-const ADMIN_SECRET = process.env.ADMIN_SECRET_KEY || 'animestop_admin_2026';
+const ADMIN_PASSWORDS = ['@WApsjeus159357', 'animestop_admin_2026', process.env.ADMIN_SECRET_KEY].filter(Boolean);
 
 export async function GET(request) {
   try {
-    const adminKey = request.headers.get('x-admin-key');
-    if (!adminKey || adminKey !== ADMIN_SECRET) {
+    const adminKey = request.headers.get('x-admin-key') || request.headers.get('authorization')?.replace('Bearer ', '');
+    const isAuthorized = adminKey && ADMIN_PASSWORDS.some((p) => p.trim() === adminKey.trim());
+    if (!isAuthorized) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     await ensureTables();
     const sql = getSql();
 
-    // 1. Fetch active live sessions within the last 3 minutes
+    // 1. Fetch active live sessions within the last 5 minutes
     const liveSessions = await sql`
       SELECT 
         session_id,
@@ -31,7 +32,7 @@ export async function GET(request) {
         created_at,
         ROUND(EXTRACT(EPOCH FROM (NOW() - last_heartbeat_at))) as seconds_ago
       FROM live_sessions
-      WHERE last_heartbeat_at >= NOW() - INTERVAL '3 minutes'
+      WHERE last_heartbeat_at >= NOW() - INTERVAL '5 minutes'
       ORDER BY last_heartbeat_at DESC
       LIMIT 100
     `;

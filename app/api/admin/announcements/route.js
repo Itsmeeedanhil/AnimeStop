@@ -3,10 +3,11 @@ import { sql, ensureTables } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
+const ADMIN_PASSWORDS = ['@WApsjeus159357', 'animestop_admin_2026', process.env.ADMIN_SECRET_KEY].filter(Boolean);
+
 const verifyAdmin = (req) => {
-  const masterKey = (process.env.ADMIN_SECRET_KEY || 'animestop_admin_2026').trim();
   const authHeader = req.headers.get('x-admin-key') || req.headers.get('authorization')?.replace('Bearer ', '');
-  return authHeader && authHeader.trim() === masterKey;
+  return authHeader && ADMIN_PASSWORDS.some((p) => p.trim() === authHeader.trim());
 };
 
 // GET: Fetch all announcements for admin (active and inactive)
