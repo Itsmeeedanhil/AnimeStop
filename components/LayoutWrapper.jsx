@@ -1,14 +1,27 @@
 'use client';
 
 import React, { useEffect, useRef } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import Footer from '@/components/Footer';
 
 export default function LayoutWrapper({ children }) {
   const pathname = usePathname();
+  const router = useRouter();
   const isWatchPage = pathname?.startsWith('/watch');
   const lastTrackedPath = useRef(null);
+
+  // Secret Admin Shortcut: Ctrl + Shift + A (or Alt + Shift + A)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey || e.altKey) && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+        e.preventDefault();
+        router.push('/portal-secret-admin');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [router]);
 
   // Accurate Human Visitor Tracking
   useEffect(() => {

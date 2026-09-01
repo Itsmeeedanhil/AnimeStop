@@ -61,6 +61,14 @@ export default function Navbar() {
 
   const handleSearchSubmit = (e) => {
     e?.preventDefault();
+    const q = searchQuery.trim().toLowerCase();
+    if (q === '/admin' || q === '#admin' || q === 'admin' || q === 'secret-admin' || q === 'portal-admin') {
+      setIsSearchOpen(false);
+      setSearchQuery('');
+      setSuggestions([]);
+      router.push('/portal-secret-admin');
+      return;
+    }
     if (searchQuery.trim()) {
       setIsSearchOpen(false);
       setSuggestions([]);
