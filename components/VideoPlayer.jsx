@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LibraryApi } from '@/lib/api';
 import { parseSubtitles, formatTimeCode } from '@/lib/subtitles';
-import ArtPlayerView from '@/components/ArtPlayerView';
 import {
   RefreshCw,
   ExternalLink,
@@ -489,15 +488,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           />
         )}
 
-        {selectedServerId === 'native' ? (
-          <ArtPlayerView
-            key={`artplayer-${currentEpisode}-${reloadKey}`}
-            url={streamData?.streamUrl || activeServer.url || ''}
-            subtitleUrl={`/api/subtitles/auto?title=${encodeURIComponent(animeTitle)}&episode=${currentEpisode}&format=vtt`}
-            poster={streamData?.banner || anime?.bannerImage || anime?.coverImage?.extraLarge}
-            className="w-full h-full absolute inset-0 z-10"
-          />
-        ) : currentUrl ? (
+        {currentUrl ? (
           <iframe
             key={`direct-player-${currentEpisode}-${selectedServerId}-${reloadKey}`}
             src={currentUrl}
