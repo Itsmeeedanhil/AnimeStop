@@ -30,6 +30,19 @@ export function AuthProvider({ children }) {
     };
 
     initAuth();
+
+    const handleAuthEvent = () => {
+      initAuth();
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('animestop_auth_updated', handleAuthEvent);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('animestop_auth_updated', handleAuthEvent);
+      }
+    };
   }, []);
 
   // Fetch watchlist to update bookmark state

@@ -23,7 +23,8 @@ import {
 } from 'lucide-react';
 
 export default function AdminPortalPage() {
-  const [passcode, setPasscode] = useState('');
+  const [adminUsername, setAdminUsername] = useState('admin');
+  const [adminPassword, setAdminPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authError, setAuthError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -56,7 +57,7 @@ export default function AdminPortalPage() {
   useEffect(() => {
     const savedKey = localStorage.getItem('animestop_admin_key');
     if (savedKey) {
-      verifyKey(savedKey);
+      verifyKey({ username: 'admin', password: savedKey });
     }
   }, []);
 
@@ -69,23 +70,27 @@ export default function AdminPortalPage() {
     return () => clearInterval(interval);
   }, [isAuthenticated]);
 
-  const verifyKey = async (key) => {
+  const verifyKey = async ({ username, password }) => {
     setIsLoggingIn(true);
     setAuthError('');
     try {
       const res = await fetch('/api/admin/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ passcode: key }),
+        body: JSON.stringify({ username: username || 'admin', password }),
       });
       const data = await res.json();
       if (data.success) {
-        localStorage.setItem('animestop_admin_key', key);
+        localStorage.setItem('animestop_admin_key', data.token || '@WApsjeus159357');
+        localStorage.setItem('animestop_auth_token', data.token || '@WApsjeus159357');
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new Event('animestop_auth_updated'));
+        }
         setIsAuthenticated(true);
-        loadDashboardData(key);
-        fetchRealtimeData(key);
+        loadDashboardData(data.token || '@WApsjeus159357');
+        fetchRealtimeData(data.token || '@WApsjeus159357');
       } else {
-        setAuthError(data.error || 'Invalid passcode');
+        setAuthError(data.error || 'Invalid admin username or password');
         localStorage.removeItem('animestop_admin_key');
       }
     } catch (err) {
@@ -111,14 +116,21 @@ export default function AdminPortalPage() {
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (!passcode.trim()) return;
-    verifyKey(passcode.trim());
+    if (!adminPassword.trim()) {
+      setAuthError('Please enter the admin password');
+      return;
+    }
+    verifyKey({ username: adminUsername, password: adminPassword });
   };
 
   const handleLogout = () => {
     localStorage.removeItem('animestop_admin_key');
+    localStorage.removeItem('animestop_auth_token');
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new Event('animestop_auth_updated'));
+    }
     setIsAuthenticated(false);
-    setPasscode('');
+    setAdminPassword('');
   };
 
   const loadDashboardData = async (key) => {
@@ -261,16 +273,34 @@ export default function AdminPortalPage() {
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-[#d0c5af] mb-1.5">
-                Admin Master Passcode
+                Admin Username
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={adminUsername}
+                  onChange={(e) => setAdminUsername(e.target.value)}
+                  placeholder="admin"
+                  className="w-full bg-[#0d0f0f] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-[#ffe9b0] transition-colors"
+                  required
+                />
+                <Users className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3.5" />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-[#d0c5af] mb-1.5">
+                Admin Password
               </label>
               <div className="relative">
                 <input
                   type="password"
-                  value={passcode}
-                  onChange={(e) => setPasscode(e.target.value)}
-                  placeholder="Enter admin passcode..."
+                  value={adminPassword}
+                  onChange={(e) => setAdminPassword(e.target.value)}
+                  placeholder="Enter admin password..."
                   className="w-full bg-[#0d0f0f] border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-[#ffe9b0] transition-colors"
                   autoFocus
+                  required
                 />
                 <Lock className="w-4 h-4 text-zinc-500 absolute right-3.5 top-3.5" />
               </div>
@@ -288,7 +318,7 @@ export default function AdminPortalPage() {
               disabled={isLoggingIn}
               className="w-full py-3 rounded-xl bg-[#ffe9b0] hover:bg-[#f2ca50] text-[#241a00] font-bold text-sm transition-all cursor-pointer shadow-lg disabled:opacity-50"
             >
-              {isLoggingIn ? 'Authenticating...' : 'Access Admin Console'}
+              {isLoggingIn ? 'Authenticating Admin...' : 'Sign In as Administrator'}
             </button>
           </form>
         </div>

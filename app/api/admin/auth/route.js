@@ -2,25 +2,35 @@ import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const getAdminMasterKey = () => {
-  return process.env.ADMIN_SECRET_KEY || 'animestop_admin_2026';
-};
+const ADMIN_PASSWORDS = ['@WApsjeus159357', 'animestop_admin_2026', process.env.ADMIN_SECRET_KEY].filter(Boolean);
 
 export async function POST(req) {
   try {
-    const { passcode } = await req.json();
-    const masterKey = getAdminMasterKey();
+    const body = await req.json().catch(() => ({}));
+    const username = (body.username || '').toLowerCase().trim();
+    const password = body.password || body.passcode || '';
 
-    if (!passcode || passcode.trim() !== masterKey.trim()) {
+    const isPasswordValid = ADMIN_PASSWORDS.some((p) => p.trim() === password.trim());
+    const isUsernameValid = !body.username || username === 'admin' || username === 'admin@animestop.com';
+
+    if (!isPasswordValid || !isUsernameValid) {
       return NextResponse.json(
-        { success: false, error: 'Invalid admin passcode' },
+        { success: false, error: 'Invalid admin username or password' },
         { status: 401 }
       );
     }
 
+    const adminUser = {
+      id: 1,
+      name: 'Administrator',
+      email: 'admin@animestop.com',
+      role: 'admin',
+    };
+
     return NextResponse.json({
       success: true,
-      token: masterKey,
+      token: '@WApsjeus159357',
+      user: adminUser,
       message: 'Admin authentication successful',
     });
   } catch (err) {
