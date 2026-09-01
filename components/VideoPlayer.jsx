@@ -253,6 +253,31 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
     return () => window.removeEventListener('message', handleMessage);
   }, [selectedServerId, servers]);
 
+  // Global anti-popup ad interceptor
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const originalOpen = window.open;
+    window.open = function (url, target, features) {
+      if (
+        url &&
+        (url.startsWith('https://mega.nz') ||
+         url.startsWith('https://accounts.google.com') ||
+         url.includes('cdn.4animo.xyz') ||
+         url.includes('anime-stop.vercel.app') ||
+         url.startsWith('/'))
+      ) {
+        return originalOpen.call(window, url, target, features);
+      }
+      console.warn('Blocked unauthorized popup ad attempt:', url);
+      return null;
+    };
+
+    return () => {
+      window.open = originalOpen;
+    };
+  }, []);
+
   // Synchronize server when episode changes
   useEffect(() => {
     if (isUnreleased && trailerUrl) {
