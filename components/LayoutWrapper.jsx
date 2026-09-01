@@ -23,13 +23,16 @@ export default function LayoutWrapper({ children }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [router]);
 
-  // Accurate Human Visitor Tracking
+  // Accurate Human Visitor Tracking & Instant Disconnect on Exit
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // Prevent duplicate triggers for the exact same page in short intervals
-    if (lastTrackedPath.current === pathname) return;
-    lastTrackedPath.current = pathname;
+    // Get or create unique tab session ID
+    let tabSessionId = sessionStorage.getItem('animestop_tab_session');
+    if (!tabSessionId) {
+      tabSessionId = 'sess_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
+      sessionStorage.setItem('animestop_tab_session', tabSessionId);
+    }
 
     const trackVisit = async () => {
       try {
@@ -43,7 +46,7 @@ export default function LayoutWrapper({ children }) {
         const token = localStorage.getItem('animestop_auth_token');
         const headers = {
           'Content-Type': 'application/json',
-          'X-Session-ID': localStorage.getItem('animestop_session_id') || 'session_guest',
+          'X-Session-ID': tabSessionId,
         };
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
@@ -62,9 +65,30 @@ export default function LayoutWrapper({ children }) {
 
     trackVisit();
 
-    // 20-second continuous active session heartbeat
-    const interval = setInterval(trackVisit, 20000);
-    return () => clearInterval(interval);
+    // 12-second active heartbeat
+    const interval = setInterval(trackVisit, 12000);
+
+    // Instant disconnect when tab/app is closed or navigated away
+    const handleLeave = () => {
+      const sessId = sessionStorage.getItem('animestop_tab_session');
+      if (sessId) {
+        const payload = JSON.stringify({ session_id: sessId });
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon('/api/analytics/leave', payload);
+        } else {
+          fetch('/api/analytics/leave', { method: 'POST', body: payload, keepalive: true }).catch(() => {});
+        }
+      }
+    };
+
+    window.addEventListener('beforeunload', handleLeave);
+    window.addEventListener('pagehide', handleLeave);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('beforeunload', handleLeave);
+      window.removeEventListener('pagehide', handleLeave);
+    };
   }, [pathname]);
 
   return (

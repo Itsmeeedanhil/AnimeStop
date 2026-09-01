@@ -16,7 +16,15 @@ export async function GET(request) {
     await ensureTables();
     const sql = getSql();
 
-    // 1. Fetch active live sessions within the last 5 minutes
+    // 1. Purge stale sessions older than 45 seconds immediately from Supabase
+    try {
+      await sql`
+        DELETE FROM live_sessions 
+        WHERE last_heartbeat_at < NOW() - INTERVAL '45 seconds'
+      `;
+    } catch (e) {}
+
+    // 2. Fetch truly active live sessions within the last 45 seconds
     const liveSessions = await sql`
       SELECT 
         session_id,
@@ -32,7 +40,7 @@ export async function GET(request) {
         created_at,
         ROUND(EXTRACT(EPOCH FROM (NOW() - last_heartbeat_at))) as seconds_ago
       FROM live_sessions
-      WHERE last_heartbeat_at >= NOW() - INTERVAL '5 minutes'
+      WHERE last_heartbeat_at >= NOW() - INTERVAL '45 seconds'
       ORDER BY last_heartbeat_at DESC
       LIMIT 100
     `;
