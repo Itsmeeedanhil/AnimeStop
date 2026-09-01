@@ -3,7 +3,6 @@ import { AuthProvider } from '@/context/AuthContext';
 import Navbar from '@/components/Navbar';
 import LayoutWrapper from '@/components/LayoutWrapper';
 import AuthModal from '@/components/AuthModal';
-import DesktopTitlebar from '@/components/DesktopTitlebar';
 
 export const metadata = {
   title: 'AnimeStop — Premium Anime Streaming',
@@ -29,7 +28,6 @@ export default function RootLayout({ children }) {
       </head>
       <body className="bg-[#121414] text-[#e2e2e2] min-h-screen flex flex-col selection:bg-[#ffe9b0] selection:text-[#241a00] antialiased">
         <AuthProvider>
-          <DesktopTitlebar />
           <Navbar />
           <LayoutWrapper>{children}</LayoutWrapper>
           <AuthModal />
