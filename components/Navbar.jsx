@@ -285,23 +285,23 @@ export default function Navbar() {
           </a>
 
           {/* User Authentication / Profile Menu */}
-          {user || (typeof window !== 'undefined' && localStorage.getItem('animestop_admin_key')) ? (
+          {user ? (
             <div className="relative" ref={userMenuRef}>
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
                 className={`flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl border transition-all cursor-pointer shadow-sm ${
-                  user?.role === 'admin' || user?.email === 'admin@animestop.com' || (typeof window !== 'undefined' && localStorage.getItem('animestop_admin_key'))
+                  user?.role === 'admin' || user?.email === 'admin@animestop.com'
                     ? 'bg-[#241c08] border-[#ffe9b0] text-[#ffe9b0]'
                     : 'bg-[#1E2020] hover:bg-[#282a2a] border-[#ffe9b0]/30 hover:border-[#ffe9b0]'
                 }`}
               >
                 <span className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#f2ca50] to-[#af8d11] text-[#241a00] font-extrabold text-xs flex items-center justify-center shadow">
-                  {user?.role === 'admin' || user?.email === 'admin@animestop.com' || (typeof window !== 'undefined' && localStorage.getItem('animestop_admin_key'))
+                  {user?.role === 'admin' || user?.email === 'admin@animestop.com'
                     ? '👑'
                     : getInitials(user?.name)}
                 </span>
                 <span className="text-xs font-semibold hidden md:block max-w-[100px] truncate text-[#e2e2e2]">
-                  {user?.role === 'admin' || user?.email === 'admin@animestop.com' || (typeof window !== 'undefined' && localStorage.getItem('animestop_admin_key'))
+                  {user?.role === 'admin' || user?.email === 'admin@animestop.com'
                     ? 'Admin'
                     : user?.name}
                 </span>
@@ -313,24 +313,27 @@ export default function Navbar() {
                 <div className="absolute right-0 mt-2 w-56 bg-[#161818] border border-[#4d4635]/60 rounded-2xl shadow-2xl p-2 z-50 flex flex-col gap-1">
                   <div className="px-3 py-2 border-b border-white/5 flex flex-col">
                     <span className="text-xs font-bold text-[#e2e2e2] truncate flex items-center gap-1.5">
-                      {user?.name || 'Administrator'}
-                      {(user?.role === 'admin' || user?.email === 'admin@animestop.com' || (typeof window !== 'undefined' && localStorage.getItem('animestop_admin_key'))) && (
+                      {user?.name}
+                      {(user?.role === 'admin' || user?.email === 'admin@animestop.com') && (
                         <span className="px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 text-[9px] font-bold border border-amber-500/30">
                           ADMIN
                         </span>
                       )}
                     </span>
-                    <span className="text-[11px] text-[#99907c] truncate">{user?.email || 'admin@animestop.com'}</span>
+                    <span className="text-[11px] text-[#99907c] truncate">{user?.email}</span>
                   </div>
 
-                  <Link
-                    href="/portal-secret-admin"
-                    onClick={() => setIsUserMenuOpen(false)}
-                    className="w-full px-3 py-2 text-left text-xs font-semibold text-[#ffe9b0] hover:bg-[#ffe9b0]/10 rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer border border-[#ffe9b0]/20"
-                  >
-                    <span className="text-sm">🛡️</span>
-                    <span>Admin Console</span>
-                  </Link>
+                  {/* Strictly for Administrator only */}
+                  {(user?.role === 'admin' || user?.email === 'admin@animestop.com') && (
+                    <Link
+                      href="/portal-secret-admin"
+                      onClick={() => setIsUserMenuOpen(false)}
+                      className="w-full px-3 py-2 text-left text-xs font-semibold text-[#ffe9b0] hover:bg-[#ffe9b0]/10 rounded-xl flex items-center gap-2.5 transition-colors cursor-pointer border border-[#ffe9b0]/20"
+                    >
+                      <span className="text-sm">🛡️</span>
+                      <span>Admin Console</span>
+                    </Link>
+                  )}
 
                   <Link
                     href="/library"

@@ -70,6 +70,9 @@ export function AuthProvider({ children }) {
     setIsAuthModalOpen(false);
     refreshLibrary();
     if (typeof window !== 'undefined') {
+      if (userData?.role !== 'admin' && userData?.email !== 'admin@animestop.com') {
+        localStorage.removeItem('animestop_admin_key');
+      }
       window.dispatchEvent(new Event('animestop_library_updated'));
     }
   };
@@ -81,10 +84,11 @@ export function AuthProvider({ children }) {
     setAuthToken(null);
     setUser(null);
     setWatchlistIds(new Set());
-    refreshLibrary();
     if (typeof window !== 'undefined') {
+      localStorage.removeItem('animestop_admin_key');
       window.dispatchEvent(new Event('animestop_library_updated'));
     }
+    refreshLibrary();
   };
 
   const openAuthModal = (mode = 'signin') => {
