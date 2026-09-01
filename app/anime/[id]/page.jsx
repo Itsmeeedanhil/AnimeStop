@@ -346,8 +346,14 @@ export default function DetailsPage() {
                       );
                     }) || streamingEpisodes[epNum - 1];
 
+                  const isValidThumb = (url) => {
+                    if (!url || typeof url !== 'string') return false;
+                    const lower = url.toLowerCase();
+                    return !lower.includes('no_image') && !lower.includes('no-image') && !lower.includes('noimage') && !lower.includes('placeholder') && !lower.includes('default_episode');
+                  };
+
                   let epThumb = matchingStreamEp?.thumbnail;
-                  if (!epThumb) {
+                  if (!epThumb || !isValidThumb(epThumb)) {
                     if (characterImages.length > 0) {
                       epThumb = characterImages[(epNum - 1) % characterImages.length];
                     } else {
@@ -376,8 +382,11 @@ export default function DetailsPage() {
                     >
                       <div className="relative w-36 sm:w-44 aspect-video flex-shrink-0 rounded-lg overflow-hidden bg-[#121414]">
                         <img
-                          src={epThumb}
+                          src={epThumb || banner || cover}
                           alt={`Episode ${epNum}`}
+                          onError={(e) => {
+                            e.currentTarget.src = banner || cover || '/favicon.svg';
+                          }}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">

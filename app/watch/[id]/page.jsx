@@ -306,8 +306,15 @@ function PlayerContent() {
                   >
                     <div className="relative w-20 aspect-video rounded-lg overflow-hidden bg-[#121414] flex-shrink-0">
                       <img
-                        src={ep.thumbnail}
+                        src={
+                          ep.thumbnail && !ep.thumbnail.toLowerCase().includes('no_image') && !ep.thumbnail.toLowerCase().includes('placeholder')
+                            ? ep.thumbnail
+                            : anime?.bannerImage || anime?.coverImage?.extraLarge || anime?.coverImage?.large || '/favicon.svg'
+                        }
                         alt={`Episode ${ep.number}`}
+                        onError={(e) => {
+                          e.currentTarget.src = anime?.bannerImage || anime?.coverImage?.extraLarge || anime?.coverImage?.large || '/favicon.svg';
+                        }}
                         className="w-full h-full object-cover"
                       />
                       {isActive ? (

@@ -49,9 +49,12 @@ export default function AnimeCard({ anime, progress = null }) {
       {/* Poster Image Container */}
       <div className="relative aspect-[2/3] w-full overflow-hidden bg-[#121414]">
         <img
-          src={image}
+          src={image || anime?.banner_url || anime?.bannerImage || '/favicon.svg'}
           alt={title}
           loading="lazy"
+          onError={(e) => {
+            e.currentTarget.src = anime?.banner_url || anime?.bannerImage || '/favicon.svg';
+          }}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
 
