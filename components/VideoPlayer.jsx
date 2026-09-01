@@ -308,129 +308,77 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
 
   return (
     <div className="flex flex-col w-full max-w-full overflow-x-hidden bg-[#0d0f0f]">
-      {/* Clean Player Header Toolbar */}
-      <div className="bg-[#1a1c1c] border-b border-[#4d4635]/40 px-3 sm:px-6 py-2 sm:py-2.5 flex flex-col gap-2">
-        <div className="flex items-center justify-between gap-2 w-full">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-[11px] sm:text-xs font-bold text-[#ffe9b0] flex items-center gap-1.5 truncate">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0"></span>
-              <span className="truncate">
-                {selectedServerId === 'trailer' ? 'Official PV Trailer' : `Ep ${currentEpisode}`}
-              </span>
-            </span>
+      {/* Cinema Overlay Top Toolbar matching User Screenshot */}
+      <div className="bg-[#121414] border-b border-white/10 px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-2xl">
+        {/* Left: Back Button & Anime Title Pill */}
+        <div className="flex items-center gap-2 max-w-full">
+          <Link
+            href={`/anime/${animeId}`}
+            className="px-3.5 py-1.5 rounded-full bg-black/60 hover:bg-white/10 text-white font-medium text-xs border border-white/20 transition-all flex items-center gap-1.5 shadow cursor-pointer shrink-0"
+          >
+            <span>&larr; Back</span>
+          </Link>
 
-            <button
-              onClick={handleReload}
-              className="p-1 rounded text-[#99907c] hover:text-[#ffe9b0] hover:bg-[#282a2a] transition-colors cursor-pointer shrink-0"
-              title="Reload video player"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
-            </button>
-
-            <button
-              onClick={handleAutoRecover}
-              className="px-2 py-0.5 rounded bg-[#ffe9b0]/15 hover:bg-[#ffe9b0]/25 text-[#ffe9b0] text-[10px] font-bold border border-[#ffe9b0]/30 transition-all cursor-pointer shrink-0 flex items-center gap-1"
-              title="Fix playback error & switch to next server"
-            >
-              <span>⚡ Auto-Fix</span>
-            </button>
-          </div>
-
-          {autoRecoverNotice && (
-            <span className="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/30 animate-pulse">
-              {autoRecoverNotice}
-            </span>
-          )}
-
-          <div className="flex items-center gap-2 sm:gap-3 text-xs text-[#d0c5af] shrink-0">
-            {/* Custom SRT Subtitle Button */}
-            <button
-              onClick={() => setIsSubModalOpen(true)}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer border ${
-                subtitlesList.length > 0
-                  ? 'bg-[#ffe9b0]/20 text-[#ffe9b0] border-[#ffe9b0]/50 shadow-[0_0_10px_rgba(255,233,176,0.2)]'
-                  : 'bg-[#121414] text-[#d0c5af] hover:text-[#ffe9b0] border-[#4d4635]/40 hover:border-[#ffe9b0]/40'
-              }`}
-              title="Upload custom .SRT / .VTT subtitle file"
-            >
-              <Subtitles className="w-3.5 h-3.5" />
-              <span>{subtitlesList.length > 0 ? 'Custom Subs Active' : 'Add Subtitles (.SRT)'}</span>
-            </button>
-
-            {currentUrl && (
-              <a
-                href={currentUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hidden sm:flex text-[#ffe9b0] hover:text-white items-center gap-1 bg-[#282a2a] px-2.5 py-1 rounded border border-[#4d4635]/40 transition-colors cursor-pointer text-[11px]"
-                title="Open in new window"
-              >
-                <span>New Tab</span>
-                <ExternalLink className="w-3 h-3" />
-              </a>
-            )}
-
-            {onPrevEpisode && (
-              <button
-                onClick={onPrevEpisode}
-                className="hover:text-[#ffe9b0] flex items-center gap-1 transition-colors cursor-pointer px-2 py-1 bg-[#121414] rounded border border-white/5 text-[11px]"
-              >
-                <SkipBack className="w-3 h-3" />
-                <span>Prev</span>
-              </button>
-            )}
-
-            {onNextEpisode && (
-              <button
-                onClick={onNextEpisode}
-                className="hover:text-[#ffe9b0] flex items-center gap-1 transition-colors cursor-pointer px-2 py-1 bg-[#121414] rounded border border-white/5 text-[11px]"
-              >
-                <span>Next</span>
-                <SkipForward className="w-3 h-3" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Server Capsule Switcher Row */}
-        {!isUnreleased && servers.length > 1 && (
-          <div className="flex items-center overflow-x-auto hide-scrollbar w-full py-1">
-            <div className="bg-black/70 backdrop-blur-md p-1 rounded-full border border-white/10 flex items-center gap-1 shadow-xl shrink-0">
-              {servers.map((srv) => {
-                const isSelected = selectedServerId === srv.id;
-                return (
-                  <button
-                    key={srv.id}
-                    onClick={() => setSelectedServerId(srv.id)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-white text-black font-bold shadow-md'
-                        : 'text-zinc-400 hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    {srv.name}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Subtitle Notice Banner */}
-      {!isUnreleased && (
-        <div className="bg-gradient-to-r from-[#2a220e] via-[#1a1c1c] to-[#121414] border-b border-[#ffe9b0]/30 px-3 sm:px-6 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-[#d0c5af]">
-          <div className="flex items-start sm:items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-[#ffe9b0] shrink-0 mt-0.5 sm:mt-0" />
-            <span className="leading-snug sm:leading-normal">
-              <strong className="text-[#ffe9b0]">Notice:</strong> Subtitles work best on <strong className="text-white">Microsoft Edge</strong>. If using Chrome/Brave, click <button type="button" onClick={() => setIsSubModalOpen(true)} className="text-[#ffe9b0] underline font-bold hover:text-white cursor-pointer inline">Add Subtitles (.SRT)</button> to load subtitles directly.
-            </span>
-          </div>
-          <span className="text-[10px] text-[#ffe9b0]/80 shrink-0 font-medium hidden md:inline">
-            🔧 Subtitle Updates Ongoing
+          <span className="px-4 py-1.5 rounded-full bg-black/60 text-white font-semibold text-xs border border-white/20 truncate max-w-[180px] sm:max-w-md shadow shrink-0">
+            {animeTitle} {currentEpisode ? `• Ep ${currentEpisode}` : ''}
           </span>
+
+          <button
+            onClick={handleReload}
+            className="p-1.5 rounded-full bg-black/60 text-[#99907c] hover:text-[#ffe9b0] hover:bg-white/10 border border-white/10 transition-colors cursor-pointer shrink-0"
+            title="Reload video player"
+          >
+            <RefreshCw className="w-3 h-3" />
+          </button>
         </div>
-      )}
+
+        {/* Right: Subtitles, 5-Player Capsule Selector & Next Episode */}
+        <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar">
+          {/* Subtitles Button */}
+          <button
+            onClick={() => setIsSubModalOpen(true)}
+            className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer shadow ${
+              subtitlesList.length > 0
+                ? 'bg-[#ffe9b0]/20 text-[#ffe9b0] border-[#ffe9b0]/50'
+                : 'bg-black/60 hover:bg-white/10 text-zinc-300 hover:text-white border-white/20'
+            }`}
+          >
+            <Subtitles className="w-3.5 h-3.5" />
+            <span>{subtitlesList.length > 0 ? 'Custom Subs Active' : 'Subtitles'}</span>
+          </button>
+
+          {/* 5-Player Capsule Selector from Screenshot */}
+          <div className="bg-black/80 backdrop-blur-md p-1 rounded-full border border-white/15 flex items-center gap-0.5 shadow-xl shrink-0">
+            {servers.map((srv) => {
+              const isSelected = selectedServerId === srv.id;
+              return (
+                <button
+                  key={srv.id}
+                  onClick={() => setSelectedServerId(srv.id)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                    isSelected
+                      ? 'bg-white text-black font-bold shadow-md scale-[1.02]'
+                      : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {srv.name}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Next Episode Button */}
+          {onNextEpisode && (
+            <button
+              onClick={onNextEpisode}
+              className="p-2 rounded-full bg-black/60 hover:bg-white/10 text-white border border-white/20 transition-all cursor-pointer shadow flex items-center justify-center shrink-0"
+              title="Next Episode"
+            >
+              <SkipForward className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Subtitle Sync & Progress Control Bar (When Custom Subs Loaded) */}
       {subtitlesList.length > 0 && (
