@@ -407,11 +407,10 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         </div>
       )}
 
-      {/* Custom Subtitle Floating Timing Sync Pill */}
-      {subtitlesList.length > 0 && isSubEnabled && (
-        <div className="bg-[#161818] border-b border-[#ffe9b0]/20 px-3 sm:px-6 py-1.5 flex flex-wrap items-center justify-between gap-2 text-xs text-[#d0c5af]">
+      {/* Subtitle Sync & Progress Control Bar (When Custom Subs Loaded) */}
+      {subtitlesList.length > 0 && (
+        <div className="bg-[#121414] border-b border-white/5 px-3 sm:px-6 py-1.5 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#ffe9b0] animate-pulse"></span>
             <span className="text-[#ffe9b0] font-semibold truncate max-w-[180px] sm:max-w-xs">
               {subFileName} ({subtitlesList.length} cues)
             </span>
@@ -487,9 +486,10 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             key={`direct-player-${currentEpisode}-${selectedServerId}-${reloadKey}`}
             src={currentUrl}
             title={`Streaming ${animeTitle} Episode ${currentEpisode}`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; web-share"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
             allowFullScreen
             referrerPolicy="no-referrer"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
             className="w-full h-full border-0 absolute inset-0 z-10"
           />
         ) : (
@@ -592,25 +592,15 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         </div>
       </div>
 
-      {/* Modal Section */}
+      {/* Subtitle Configuration Modal */}
       {isSubModalOpen && (
-        <div
-          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
-          onClick={() => setIsSubModalOpen(false)}
-        >
-          <div
-            className="relative w-[95vw] max-w-lg bg-[#161818] border border-[#ffe9b0]/40 rounded-2xl shadow-2xl p-5 sm:p-7 flex flex-col gap-5 my-auto max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center border-b border-[#4d4635]/40 pb-4">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-[#ffe9b0]/15 text-[#ffe9b0] flex items-center justify-center">
-                  <Subtitles className="w-4 h-4" />
-                </div>
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#1a1c1c] border border-[#4d4635] rounded-2xl max-w-lg w-full p-6 shadow-2xl flex flex-col gap-5 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-white/5">
+              <div className="flex items-center gap-2">
+                <Subtitles className="w-5 h-5 text-[#ffe9b0]" />
                 <div>
-                  <h3 className="font-['Bodoni_Moda'] text-lg font-bold text-[#e2e2e2]">
-                    Custom Subtitles (.SRT / .VTT)
-                  </h3>
+                  <h3 className="text-base font-bold text-[#e2e2e2]">Custom Subtitle Manager</h3>
                   <p className="text-xs text-[#99907c]">
                     Load your own subtitle file for Episode {currentEpisode}
                   </p>
