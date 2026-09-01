@@ -30,6 +30,7 @@ export async function POST(request) {
       await ensureTables();
       const sql = getSql();
 
+      // Record historical visit
       await sql`
         INSERT INTO site_visits (
           user_id,
@@ -53,6 +54,53 @@ export async function POST(request) {
           ${isBotDetected}
         )
       `;
+
+      // Record / update real-time live session in Supabase
+      if (!isBotDetected) {
+        await sql`
+          INSERT INTO live_sessions (
+            session_id,
+            user_id,
+            user_email,
+            user_name,
+            current_path,
+            page_title,
+            referrer,
+            device_type,
+            browser,
+            ip_address,
+            country,
+            is_active,
+            last_heartbeat_at
+          ) VALUES (
+            ${sessionId},
+            ${user?.id || null},
+            ${user?.email || null},
+            ${user?.name || null},
+            ${path},
+            ${body?.title || path},
+            ${referrer},
+            ${deviceType},
+            ${userAgent.substring(0, 99)},
+            ${ip},
+            ${country},
+            TRUE,
+            CURRENT_TIMESTAMP
+          )
+          ON CONFLICT (session_id) DO UPDATE SET
+            user_id = COALESCE(EXCLUDED.user_id, live_sessions.user_id),
+            user_email = COALESCE(EXCLUDED.user_email, live_sessions.user_email),
+            user_name = COALESCE(EXCLUDED.user_name, live_sessions.user_name),
+            current_path = EXCLUDED.current_path,
+            page_title = EXCLUDED.page_title,
+            referrer = EXCLUDED.referrer,
+            device_type = EXCLUDED.device_type,
+            ip_address = EXCLUDED.ip_address,
+            country = EXCLUDED.country,
+            is_active = TRUE,
+            last_heartbeat_at = CURRENT_TIMESTAMP
+        `;
+      }
     } catch (dbErr) {
       console.warn('Database offline during analytics tracking:', dbErr.message);
     }

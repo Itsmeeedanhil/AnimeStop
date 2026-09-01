@@ -32,6 +32,13 @@ export default function AdminPortalPage() {
   const [announcements, setAnnouncements] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [stats, setStats] = useState(null);
+  const [realtime, setRealtime] = useState({
+    total_live: 0,
+    desktop_app_live: 0,
+    web_live: 0,
+    sessions: [],
+    recent_access: [],
+  });
 
   // Form State
   const [title, setTitle] = useState('');
@@ -53,6 +60,15 @@ export default function AdminPortalPage() {
     }
   }, []);
 
+  // Real-time 4-second polling when authenticated
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const interval = setInterval(() => {
+      fetchRealtimeData();
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
+
   const verifyKey = async (key) => {
     setIsLoggingIn(true);
     setAuthError('');
@@ -67,15 +83,30 @@ export default function AdminPortalPage() {
         localStorage.setItem('animestop_admin_key', key);
         setIsAuthenticated(true);
         loadDashboardData(key);
+        fetchRealtimeData(key);
       } else {
+        setAuthError(data.error || 'Invalid passcode');
         localStorage.removeItem('animestop_admin_key');
-        setAuthError('Invalid admin passcode');
       }
     } catch (err) {
-      setAuthError('Connection error to auth server');
+      setAuthError('Connection failed');
     } finally {
       setIsLoggingIn(false);
     }
+  };
+
+  const fetchRealtimeData = async (key) => {
+    const activeKey = key || localStorage.getItem('animestop_admin_key');
+    if (!activeKey) return;
+    try {
+      const res = await fetch('/api/admin/realtime', {
+        headers: { 'x-admin-key': activeKey },
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        setRealtime(data.data);
+      }
+    } catch (e) {}
   };
 
   const handleLogin = (e) => {
@@ -105,12 +136,13 @@ export default function AdminPortalPage() {
         setAnnouncements(dataAnn.data || []);
       }
 
-      // 2. Fetch stats
+      // 2. Fetch stats & real-time
       const resStats = await fetch('/api/analytics/stats');
       const dataStats = await resStats.json();
       if (dataStats.success) {
         setStats(dataStats.data);
       }
+      fetchRealtimeData(activeKey);
     } catch (err) {
       console.error('Failed to load dashboard data:', err);
     } finally {
@@ -307,39 +339,134 @@ export default function AdminPortalPage() {
 
         {/* Quick Platform Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <div className="bg-[#161818] p-4 rounded-2xl border border-white/5">
+          <div className="bg-[#161818] p-4 rounded-2xl border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
             <div className="flex items-center justify-between text-xs text-[#99907c] mb-1">
-              <span>Total Visits</span>
-              <Activity className="w-4 h-4 text-[#ffe9b0]" />
+              <span className="flex items-center gap-1.5 font-bold text-emerald-400">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
+                Live Online
+              </span>
+              <Activity className="w-4 h-4 text-emerald-400" />
             </div>
-            <p className="text-xl font-bold text-white">{stats?.totalVisits?.toLocaleString() || '1,248+'}</p>
+            <p className="text-2xl font-black text-white">{realtime.total_live} <span className="text-xs text-[#99907c] font-normal">Active</span></p>
           </div>
 
           <div className="bg-[#161818] p-4 rounded-2xl border border-white/5">
             <div className="flex items-center justify-between text-xs text-[#99907c] mb-1">
-              <span>Unique Visitors</span>
-              <Users className="w-4 h-4 text-emerald-400" />
+              <span>Windows App Users</span>
+              <Sparkles className="w-4 h-4 text-[#ffe9b0]" />
             </div>
-            <p className="text-xl font-bold text-white">{stats?.uniqueVisitors?.toLocaleString() || '856+'}</p>
+            <p className="text-2xl font-bold text-[#ffe9b0]">{realtime.desktop_app_live}</p>
           </div>
 
           <div className="bg-[#161818] p-4 rounded-2xl border border-white/5">
             <div className="flex items-center justify-between text-xs text-[#99907c] mb-1">
-              <span>Database Status</span>
-              <Database className="w-4 h-4 text-blue-400" />
+              <span>Web Visitors</span>
+              <Users className="w-4 h-4 text-blue-400" />
             </div>
-            <p className="text-xl font-bold text-emerald-400">Connected</p>
+            <p className="text-2xl font-bold text-white">{realtime.web_live}</p>
           </div>
 
           <div className="bg-[#161818] p-4 rounded-2xl border border-white/5">
             <div className="flex items-center justify-between text-xs text-[#99907c] mb-1">
-              <span>Active Broadcasts</span>
-              <Megaphone className="w-4 h-4 text-[#ffe9b0]" />
+              <span>Total Recorded Visits</span>
+              <Database className="w-4 h-4 text-emerald-400" />
             </div>
-            <p className="text-xl font-bold text-[#ffe9b0]">
-              {announcements.filter((a) => a.is_active).length} Active
+            <p className="text-2xl font-bold text-white">
+              {stats?.totalVisits?.toLocaleString() || '1,248+'}
             </p>
           </div>
+        </div>
+
+        {/* Real-Time Live Visitors Radar Table */}
+        <div className="bg-[#161818] p-6 rounded-3xl border border-white/5 shadow-xl space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-4">
+            <div className="flex items-center gap-2.5">
+              <span className="relative flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
+              </span>
+              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                <span>Real-Time Active Visitors Radar</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono">
+                  {realtime.total_live} connected now
+                </span>
+              </h2>
+            </div>
+            <div className="flex items-center gap-2 text-[11px] text-[#99907c]">
+              <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Live auto-syncing every 4s (Supabase)</span>
+            </div>
+          </div>
+
+          {realtime.sessions.length === 0 ? (
+            <div className="p-8 text-center text-xs text-[#99907c] bg-[#0d0f0f] rounded-2xl border border-white/5">
+              <p>No active sessions detected in the last 3 minutes.</p>
+              <p className="text-[11px] text-[#666] mt-1">Open another tab or the Windows app to see your real-time session appear instantly!</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-white/5 text-[#99907c] text-[11px]">
+                    <th className="pb-3 font-semibold">User / Visitor</th>
+                    <th className="pb-3 font-semibold">Currently Accessing</th>
+                    <th className="pb-3 font-semibold">Platform</th>
+                    <th className="pb-3 font-semibold">Location / IP</th>
+                    <th className="pb-3 font-semibold text-right">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {realtime.sessions.map((sess) => (
+                    <tr key={sess.session_id} className="hover:bg-white/[0.02] transition-colors">
+                      <td className="py-3 pr-3 font-medium text-white">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-[#ffe9b0]/15 text-[#ffe9b0] flex items-center justify-center font-bold text-[10px]">
+                            {(sess.user_name?.[0] || sess.user_email?.[0] || 'G').toUpperCase()}
+                          </div>
+                          <div>
+                            <p className="text-white font-semibold truncate max-w-[140px]">
+                              {sess.user_name || sess.user_email || 'Guest Visitor'}
+                            </p>
+                            <p className="text-[10px] text-[#99907c] font-mono truncate max-w-[140px]">
+                              {sess.user_email || sess.session_id?.substring(0, 16) + '...'}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="py-3 pr-3 text-[#d0c5af]">
+                        <span className="px-2 py-1 rounded-lg bg-[#0d0f0f] border border-white/5 text-[11px] font-mono text-[#ffe9b0] truncate max-w-[220px] inline-block">
+                          {sess.current_path}
+                        </span>
+                      </td>
+
+                      <td className="py-3 pr-3">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          sess.device_type?.toLowerCase().includes('windows')
+                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                        }`}>
+                          {sess.device_type || 'Web'}
+                        </span>
+                      </td>
+
+                      <td className="py-3 pr-3 text-[11px] text-[#99907c]">
+                        <span>{sess.country || 'Global'}</span>
+                        <span className="text-[10px] font-mono text-[#666] ml-1.5">({sess.ip_address || '127.0.0.1'})</span>
+                      </td>
+
+                      <td className="py-3 text-right">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 text-[10px] font-bold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                          {sess.seconds_ago <= 5 ? 'Active Now' : `${sess.seconds_ago}s ago`}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Create Announcement Section */}

@@ -20,7 +20,6 @@ export default function LayoutWrapper({ children }) {
 
     const trackVisit = async () => {
       try {
-        // Collect genuine human client verification signals
         const clientSignals = {
           webdriver: Boolean(navigator.webdriver),
           screenW: window.screen?.width || 0,
@@ -28,14 +27,19 @@ export default function LayoutWrapper({ children }) {
           isTouch: 'ontouchstart' in window || navigator.maxTouchPoints > 0,
         };
 
+        const token = localStorage.getItem('animestop_auth_token');
+        const headers = {
+          'Content-Type': 'application/json',
+          'X-Session-ID': localStorage.getItem('animestop_session_id') || 'session_guest',
+        };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
         await fetch('/api/analytics/track', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'X-Session-ID': localStorage.getItem('animestop_session_id') || 'session_guest',
-          },
+          headers,
           body: JSON.stringify({
             path: pathname || '/',
+            title: typeof document !== 'undefined' ? document.title : '',
             referrer: document.referrer || '',
             clientSignals,
           }),
@@ -44,6 +48,10 @@ export default function LayoutWrapper({ children }) {
     };
 
     trackVisit();
+
+    // 20-second continuous active session heartbeat
+    const interval = setInterval(trackVisit, 20000);
+    return () => clearInterval(interval);
   }, [pathname]);
 
   return (
