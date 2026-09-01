@@ -392,36 +392,27 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           </div>
         </div>
 
-        {/* Server Mirror Switcher Row */}
+        {/* Server Capsule Switcher Row */}
         {!isUnreleased && servers.length > 1 && (
-          <div className="flex items-center gap-1.5 overflow-x-auto hide-scrollbar w-full py-0.5">
-            {servers.map((srv) => {
-              const isSelected = selectedServerId === srv.id;
-              return (
-                <button
-                  key={srv.id}
-                  onClick={() => setSelectedServerId(srv.id)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
-                    isSelected
-                      ? 'bg-[#ffe9b0] text-[#241a00] font-bold shadow-[0_0_12px_rgba(255,233,176,0.35)] scale-[1.02]'
-                      : 'bg-[#121414] text-[#d0c5af] hover:text-[#ffe9b0] hover:bg-[#1e2020] border border-[#4d4635]/40'
-                  }`}
-                >
-                  <span>{srv.name}</span>
-                  {srv.badge && (
-                    <span
-                      className={`text-[9px] px-1.5 py-0.5 rounded font-extrabold uppercase tracking-wide ${
-                        isSelected
-                          ? 'bg-[#241a00]/20 text-[#241a00]'
-                          : 'bg-[#ffe9b0]/15 text-[#ffe9b0]'
-                      }`}
-                    >
-                      {srv.badge}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
+          <div className="flex items-center overflow-x-auto hide-scrollbar w-full py-1">
+            <div className="bg-black/70 backdrop-blur-md p-1 rounded-full border border-white/10 flex items-center gap-1 shadow-xl shrink-0">
+              {servers.map((srv) => {
+                const isSelected = selectedServerId === srv.id;
+                return (
+                  <button
+                    key={srv.id}
+                    onClick={() => setSelectedServerId(srv.id)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-white text-black font-bold shadow-md'
+                        : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    {srv.name}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         )}
       </div>
@@ -582,23 +573,28 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         </div>
 
         <div className="flex items-center gap-1.5 text-xs text-[#99907c] overflow-x-auto hide-scrollbar">
-          <span className="shrink-0 font-medium">Select Mirror:</span>
-          {servers.map((srv) => (
-            <button
-              key={srv.id}
-              onClick={() => {
-                setSelectedServerId(srv.id);
-                setReloadKey((prev) => prev + 1);
-              }}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer shrink-0 ${
-                selectedServerId === srv.id
-                  ? 'bg-[#ffe9b0] text-[#241a00] shadow-[0_0_10px_rgba(255,233,176,0.3)]'
-                  : 'bg-[#121414] text-[#d0c5af] hover:text-[#ffe9b0] border border-white/10 hover:border-[#ffe9b0]/40'
-              }`}
-            >
-              {srv.name}
-            </button>
-          ))}
+          <span className="shrink-0 font-medium">Select Player:</span>
+          <div className="bg-black/60 p-1 rounded-full border border-white/10 flex items-center gap-1">
+            {servers.map((srv) => {
+              const isSelected = selectedServerId === srv.id;
+              return (
+                <button
+                  key={srv.id}
+                  onClick={() => {
+                    setSelectedServerId(srv.id);
+                    setReloadKey((prev) => prev + 1);
+                  }}
+                  className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer shrink-0 ${
+                    isSelected
+                      ? 'bg-white text-black font-bold shadow-md'
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  {srv.name}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
