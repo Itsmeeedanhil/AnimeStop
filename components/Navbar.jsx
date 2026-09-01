@@ -86,23 +86,23 @@ export default function Navbar() {
   return (
     <header className="fixed top-0 left-0 w-full z-50 bg-[#121414]/95 backdrop-blur-xl border-b border-white/10 transition-all">
       {/* Global Windows Desktop App Download Banner */}
-      <div className="bg-gradient-to-r from-[#241c08] via-[#1a1c1c] to-[#241c08] border-b border-[#ffe9b0]/30 px-3 sm:px-8 py-1.5 flex items-center justify-between gap-2 text-[11px] sm:text-xs text-[#d0c5af] shadow-md">
-        <div className="flex items-center gap-2 max-w-full truncate">
+      <div className="bg-gradient-to-r from-[#241c08] via-[#1a1c1c] to-[#241c08] border-b border-[#ffe9b0]/30 px-3 sm:px-8 py-1.5 flex items-center justify-between gap-2 text-[10px] sm:text-xs text-[#d0c5af] shadow-md">
+        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
           <span className="px-1.5 py-0.5 rounded bg-[#ffe9b0] text-[#241a00] font-extrabold text-[9px] sm:text-[10px] uppercase tracking-wider shrink-0 shadow-sm">
-            Desktop App
+            App
           </span>
-          <p className="leading-snug text-[11px] sm:text-xs text-[#d0c5af] truncate">
-            Official <strong className="text-[#ffe9b0]">AnimeStop for Windows</strong> is available now with 4K acceleration & direct subtitles!
+          <p className="leading-snug text-[10px] sm:text-xs text-[#d0c5af] truncate">
+            <span className="hidden sm:inline">Official </span><strong className="text-[#ffe9b0]">AnimeStop for Windows</strong> <span className="hidden md:inline">is available with 4K acceleration!</span>
           </p>
         </div>
         <a
           href="https://mega.nz/file/cx0zBawQ#fl8qr3-i3USuGu-_DlH_zXmomBQ6HM3pw6nXXGTRX0o"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs text-[#241a00] bg-[#ffe9b0] hover:bg-white font-bold shrink-0 px-3 py-1 rounded-md transition-all shadow-sm cursor-pointer hover:scale-105"
+          className="inline-flex items-center gap-1 text-[10px] sm:text-xs text-[#241a00] bg-[#ffe9b0] hover:bg-white font-bold shrink-0 px-2 sm:px-3 py-1 rounded-md transition-all shadow-sm cursor-pointer whitespace-nowrap"
         >
-          <Download className="w-3 h-3" />
-          <span>Download for Windows</span>
+          <Download className="w-3 h-3 shrink-0" />
+          <span>Get Windows App</span>
         </a>
       </div>
 
@@ -413,6 +413,17 @@ export default function Navbar() {
             >
               My Library
             </Link>
+
+            <a
+              href="https://mega.nz/file/cx0zBawQ#fl8qr3-i3USuGu-_DlH_zXmomBQ6HM3pw6nXXGTRX0o"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="mt-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#ffe9b0]/20 to-[#ffe9b0]/10 border border-[#ffe9b0]/40 text-[#ffe9b0] font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm"
+            >
+              <Download className="w-4 h-4" />
+              <span>Download Windows App (.exe)</span>
+            </a>
           </nav>
         </div>
       )}
