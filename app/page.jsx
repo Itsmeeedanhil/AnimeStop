@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { AnimeApi, LibraryApi } from '@/lib/api';
+import { AnimeApi, LibraryApi, getLastWatchedEpisode } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import AnimeCard from '@/components/AnimeCard';
 import { Analytics } from "@vercel/analytics/next"
@@ -145,11 +145,18 @@ export default function HomePage() {
             {/* Hero CTA Buttons */}
             <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
               <button
-                onClick={() => router.push(`/watch/${heroAnime.id}?ep=1`)}
+                onClick={() => {
+                  const lastEp = getLastWatchedEpisode(heroAnime.id);
+                  router.push(`/watch/${heroAnime.id}?ep=${lastEp}`);
+                }}
                 className="bg-[#ffe9b0] text-[#241a00] text-xs sm:text-sm md:text-base font-bold px-5 sm:px-7 py-3 sm:py-3.5 rounded-xl flex items-center gap-2 hover:bg-[#f2ca50] transition-all shadow-[0_0_20px_rgba(255,233,176,0.4)] transform hover:scale-105 active:scale-95 cursor-pointer"
               >
                 <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
-                Stream Episode 1
+                <span>
+                  {typeof window !== 'undefined' && getLastWatchedEpisode(heroAnime.id) > 1
+                    ? `Resume Episode ${getLastWatchedEpisode(heroAnime.id)}`
+                    : 'Stream Episode 1'}
+                </span>
               </button>
 
               <button

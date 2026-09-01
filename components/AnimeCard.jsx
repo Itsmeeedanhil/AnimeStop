@@ -3,6 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
+import { getLastWatchedEpisode } from '@/lib/api';
 import { Play, Star, Bookmark } from 'lucide-react';
 
 export default function AnimeCard({ anime, progress = null }) {
@@ -27,7 +28,7 @@ export default function AnimeCard({ anime, progress = null }) {
 
   const handleQuickPlay = (e) => {
     e.stopPropagation();
-    const ep = progress?.episode_number || 1;
+    const ep = progress?.episode_number || getLastWatchedEpisode(id) || 1;
     router.push(`/watch/${id}?ep=${ep}`);
   };
 

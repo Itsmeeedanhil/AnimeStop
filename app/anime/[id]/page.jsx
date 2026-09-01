@@ -3,10 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
-import { AnimeApi } from '@/lib/api';
+import { AnimeApi, getLastWatchedEpisode } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import AnimeCard from '@/components/AnimeCard';
-import { Play, Bookmark, Film, Star, Grid, List, Search, X, Clock, PlayCircle, AlertCircle } from 'lucide-react';
+import { Play, Bookmark, Film, Star, Grid, List, Search, X, Clock, PlayCircle, AlertCircle, RotateCcw } from 'lucide-react';
 
 export default function DetailsPage() {
   const router = useRouter();
@@ -16,10 +16,18 @@ export default function DetailsPage() {
 
   const [anime, setAnime] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [lastWatchedEp, setLastWatchedEp] = useState(1);
   const [isTrailerModalOpen, setIsTrailerModalOpen] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('detail');
+
+  useEffect(() => {
+    if (id) {
+      const ep = getLastWatchedEpisode(id);
+      setLastWatchedEp(ep || 1);
+    }
+  }, [id]);
 
   useEffect(() => {
     const fetchAnime = async () => {
@@ -155,11 +163,11 @@ export default function DetailsPage() {
           <div className="flex flex-wrap items-center gap-2.5 sm:gap-4 mt-2">
             {!isUnreleased && (
               <button
-                onClick={() => router.push(`/watch/${anime.id}?ep=1`)}
+                onClick={() => router.push(`/watch/${anime.id}?ep=${lastWatchedEp}`)}
                 className="px-5 sm:px-7 py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-[#f2ca50] to-[#af8d11] text-[#241a00] font-bold text-xs sm:text-sm flex items-center gap-2 sm:gap-2.5 shadow-[0_0_20px_rgba(242,202,80,0.3)] hover:brightness-110 transition-all hover:scale-105 active:scale-95 cursor-pointer"
               >
                 <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current" />
-                <span>Start Watching (Ep 1)</span>
+                <span>{lastWatchedEp > 1 ? `Resume Episode ${lastWatchedEp}` : 'Start Watching (Ep 1)'}</span>
               </button>
             )}
 
