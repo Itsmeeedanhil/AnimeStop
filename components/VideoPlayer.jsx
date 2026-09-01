@@ -498,7 +498,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
             allowFullScreen
             referrerPolicy="no-referrer"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+            sandbox={selectedServerId === 'videasy' ? undefined : 'allow-scripts allow-same-origin allow-forms allow-presentation'}
             className="w-full h-full border-0 absolute inset-0 z-10"
           />
         ) : (
