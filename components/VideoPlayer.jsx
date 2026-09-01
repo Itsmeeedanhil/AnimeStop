@@ -287,8 +287,9 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
     } else if (servers.length > 0 && !servers.some((s) => s.id === selectedServerId)) {
       setSelectedServerId(servers[0].id);
     }
+    setAdShieldActive(true);
     setReloadKey((prev) => prev + 1);
-  }, [currentEpisode, streamData, isUnreleased, trailerUrl]);
+  }, [currentEpisode, streamData, isUnreleased, trailerUrl, selectedServerId]);
 
   const handleReload = () => {
     setReloadKey((prev) => prev + 1);
@@ -461,9 +462,10 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             key={`direct-player-${currentEpisode}-${selectedServerId}-${reloadKey}`}
             src={currentUrl}
             title={`Streaming ${animeTitle} Episode ${currentEpisode} on ${activeServer.name || 'Player'}`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen; web-share"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
             allowFullScreen
             referrerPolicy="no-referrer"
+            sandbox={selectedServerId === 'videasy' ? undefined : 'allow-scripts allow-same-origin allow-forms allow-presentation'}
             className="w-full h-full border-0 absolute inset-0 z-10"
           />
         ) : (
