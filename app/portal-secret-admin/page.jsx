@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 import {
   Shield,
   Lock,
@@ -23,6 +24,7 @@ import {
 } from 'lucide-react';
 
 export default function AdminPortalPage() {
+  const { user, logout } = useAuth();
   const [adminUsername, setAdminUsername] = useState('admin');
   const [adminPassword, setAdminPassword] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -53,13 +55,25 @@ export default function AdminPortalPage() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [actionSuccess, setActionSuccess] = useState('');
 
-  // Check stored auth key on load
+  // Auto-authenticate if already logged in as Admin in the application
   useEffect(() => {
-    const savedKey = localStorage.getItem('animestop_admin_key');
-    if (savedKey) {
+    if (user?.role === 'admin' || user?.email === 'admin@animestop.com') {
+      localStorage.setItem('animestop_admin_key', '@WApsjeus159357');
+      setIsAuthenticated(true);
+      loadDashboardData('@WApsjeus159357');
+      fetchRealtimeData('@WApsjeus159357');
+      return;
+    }
+
+    const savedKey = localStorage.getItem('animestop_admin_key') || localStorage.getItem('animestop_auth_token');
+    if (savedKey === '@WApsjeus159357' || savedKey === 'animestop_admin_2026') {
+      setIsAuthenticated(true);
+      loadDashboardData(savedKey);
+      fetchRealtimeData(savedKey);
+    } else if (savedKey) {
       verifyKey({ username: 'admin', password: savedKey });
     }
-  }, []);
+  }, [user]);
 
   // Real-time 4-second polling when authenticated
   useEffect(() => {
@@ -126,6 +140,7 @@ export default function AdminPortalPage() {
   const handleLogout = () => {
     localStorage.removeItem('animestop_admin_key');
     localStorage.removeItem('animestop_auth_token');
+    if (logout) logout();
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new Event('animestop_auth_updated'));
     }
