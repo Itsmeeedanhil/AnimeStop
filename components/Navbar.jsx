@@ -111,7 +111,7 @@ export default function Navbar() {
           href="https://mega.nz/file/cx0zBawQ#fl8qr3-i3USuGu-_DlH_zXmomBQ6HM3pw6nXXGTRX0o"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-1 text-[10px] sm:text-xs text-[#241a00] bg-[#ffe9b0] hover:bg-white font-bold shrink-0 px-2 sm:px-3 py-1 rounded-md transition-all shadow-sm cursor-pointer whitespace-nowrap"
+          className="inline-flex items-center gap-2 text-[10px] sm:text-xs text-[#241a00] bg-[#ffe9b0] hover:bg-white font-bold shrink-0 px-2 sm:px-3 py-1 rounded-md transition-all shadow-sm cursor-pointer whitespace-nowrap"
         >
           <Download className="w-3 h-3 shrink-0" />
           <span>Get Windows App</span>
