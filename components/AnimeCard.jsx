@@ -44,37 +44,10 @@ export default function AnimeCard({ anime, progress = null }) {
   return (
     <div
       onClick={handleCardClick}
-      title={title}
-      className="group relative w-full max-w-[200px] rounded-xl overflow-visible bg-[#1E2020] border border-[#4d4635]/40 hover:border-[#ffe9b0]/60 transition-all duration-300 cursor-pointer shadow-md hover:shadow-xl flex flex-col mx-auto"
+      className="group relative w-full max-w-[200px] rounded-xl overflow-hidden bg-[#1E2020] border border-[#4d4635]/40 hover:border-[#ffe9b0]/60 transition-all duration-300 cursor-pointer shadow-md hover:shadow-xl flex flex-col mx-auto"
     >
-      {/* Floating Hover Full Title & Season Info Popover */}
-      <div className="absolute -top-2 left-1/2 -translate-x-1/2 -translate-y-full w-[220px] p-2.5 rounded-xl bg-[#181a1a]/95 backdrop-blur-md border border-[#ffe9b0]/40 shadow-[0_10px_25px_rgba(0,0,0,0.8)] text-left pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-200 z-50 transform scale-95 group-hover:scale-100">
-        <p className="text-xs font-bold text-[#ffe9b0] leading-snug">
-          {title}
-        </p>
-        {anime.title?.romaji && anime.title.romaji !== title && (
-          <p className="text-[10px] text-[#99907c] italic mt-0.5 line-clamp-1">
-            {anime.title.romaji}
-          </p>
-        )}
-        <div className="flex items-center gap-1.5 mt-2 pt-1.5 border-t border-white/10 text-[10px] text-[#d0c5af]">
-          <span className="px-1.5 py-0.2 rounded bg-white/10 text-[9px] font-bold text-[#ffe9b0]">{format}</span>
-          {anime.seasonYear && <span className="text-[#99907c]">{anime.seasonYear}</span>}
-          <span className="text-[#99907c]">•</span>
-          <span>{episodes ? `${episodes} Ep` : 'Ongoing'}</span>
-          {score && (
-            <>
-              <span className="text-[#99907c]">•</span>
-              <span className="text-[#ffe9b0] font-bold">★ {score}</span>
-            </>
-          )}
-        </div>
-        {/* Tooltip Downward Arrow */}
-        <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-[#181a1a]/95"></div>
-      </div>
-
       {/* Poster Image Container */}
-      <div className="relative aspect-[2/3] w-full overflow-hidden rounded-t-xl bg-[#121414]">
+      <div className="relative aspect-[2/3] w-full overflow-hidden bg-[#121414]">
         <img
           src={image || anime?.banner_url || anime?.bannerImage || '/favicon.svg'}
           alt={title}
@@ -135,11 +108,8 @@ export default function AnimeCard({ anime, progress = null }) {
       </div>
 
       {/* Bottom Info */}
-      <div className="p-2.5 flex flex-col justify-between flex-grow rounded-b-xl bg-[#1E2020]">
-        <h3
-          title={title}
-          className="text-xs font-semibold text-[#e2e2e2] group-hover:text-[#ffe9b0] transition-colors line-clamp-1 group-hover:line-clamp-2 leading-tight"
-        >
+      <div className="p-2.5 flex flex-col justify-between flex-grow">
+        <h3 className="text-xs font-semibold text-[#e2e2e2] group-hover:text-[#ffe9b0] transition-colors truncate leading-tight">
           {title}
         </h3>
         <div className="flex justify-between items-center mt-1 text-[11px] text-[#99907c]">
