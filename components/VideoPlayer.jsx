@@ -370,6 +370,20 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             })}
           </div>
 
+          {/* Miruro Direct Player Launcher */}
+          {animeId && currentEpisode && (
+            <a
+              href={`https://www.miruro.to/watch?id=${animeId}&ep=${currentEpisode}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-gradient-to-r from-amber-500/15 to-orange-500/15 hover:from-amber-500/25 hover:to-orange-500/25 text-[#ffe9b0] border border-[#ffe9b0]/30 transition-all cursor-pointer shadow shrink-0"
+              title="Open stream in Miruro"
+            >
+              <span>Miruro</span>
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          )}
+
           {/* Next Episode Button */}
           {onNextEpisode && (
             <button
