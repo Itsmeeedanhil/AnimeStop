@@ -203,21 +203,19 @@ export default function HomePage() {
       <section className="px-4 sm:px-8 md:px-16 pt-6 sm:pt-8 pb-3 sm:pb-4">
         <div className="flex gap-2 sm:gap-2.5 overflow-x-auto hide-scrollbar pb-2">
           {[
-            { id: 'trending', label: 'Trending' },
-            { id: 'airing', label: 'Top Airing' },
-            { id: 'popular', label: 'All-Time Popular' },
-            { id: 'Action', label: 'Action & Shonen' },
-            { id: 'Fantasy', label: 'Fantasy & Isekai' },
-            { id: 'Romance', label: 'Romance & Drama' },
-            { id: 'Sci-Fi', label: 'Sci-Fi & Cyberpunk' },
+            { id: 'trending', label: 'Trending', path: '/search?sort=trending' },
+            { id: 'airing', label: 'Top Airing', path: '/search?status=ongoing&sort=trending' },
+            { id: 'popular', label: 'All-Time Popular', path: '/search?sort=popular' },
+            { id: 'Action', label: 'Action & Shonen', path: '/search?genre=Action' },
+            { id: 'Fantasy', label: 'Fantasy & Isekai', path: '/search?genre=Fantasy' },
+            { id: 'Romance', label: 'Romance & Drama', path: '/search?genre=Romance' },
+            { id: 'Sci-Fi', label: 'Sci-Fi & Cyberpunk', path: '/search?genre=Sci-Fi' },
           ].map((cat) => (
             <button
               key={cat.id}
               onClick={() => {
                 setActiveCategoryFilter(cat.id);
-                if (cat.id !== 'trending' && cat.id !== 'airing' && cat.id !== 'popular') {
-                  router.push(`/search?genre=${cat.id}`);
-                }
+                router.push(cat.path);
               }}
               className={`px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                 activeCategoryFilter === cat.id
@@ -302,19 +300,24 @@ export default function HomePage() {
             <Flame className="w-5 h-5 sm:w-6 sm:h-6 text-[#ffe9b0]" />
             Trending Now
           </h2>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => scrollRow('trending-row', 'left')}
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
-            >
-              <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
-            <button
-              onClick={() => scrollRow('trending-row', 'right')}
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
-            >
-              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
+          <div className="flex items-center gap-3">
+            <Link href="/search?sort=trending" className="text-xs font-semibold text-[#ffe9b0] hover:underline">
+              View All →
+            </Link>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => scrollRow('trending-row', 'left')}
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+              <button
+                onClick={() => scrollRow('trending-row', 'right')}
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -334,19 +337,24 @@ export default function HomePage() {
             <Tv className="w-5 h-5 sm:w-6 sm:h-6 text-[#ffe9b0]" />
             Top Airing This Season
           </h2>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => scrollRow('airing-row', 'left')}
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
-            >
-              <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
-            <button
-              onClick={() => scrollRow('airing-row', 'right')}
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
-            >
-              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
+          <div className="flex items-center gap-3">
+            <Link href="/search?status=ongoing&sort=trending" className="text-xs font-semibold text-[#ffe9b0] hover:underline">
+              View All →
+            </Link>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => scrollRow('airing-row', 'left')}
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+              <button
+                onClick={() => scrollRow('airing-row', 'right')}
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -366,19 +374,24 @@ export default function HomePage() {
             <Star className="w-5 h-5 sm:w-6 sm:h-6 text-[#ffe9b0]" />
             Most Popular of All Time
           </h2>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => scrollRow('popular-row', 'left')}
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
-            >
-              <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
-            <button
-              onClick={() => scrollRow('popular-row', 'right')}
-              className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
-            >
-              <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            </button>
+          <div className="flex items-center gap-3">
+            <Link href="/search?sort=popular" className="text-xs font-semibold text-[#ffe9b0] hover:underline">
+              View All →
+            </Link>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => scrollRow('popular-row', 'left')}
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <ChevronLeft className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+              <button
+                onClick={() => scrollRow('popular-row', 'right')}
+                className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-[#ffe9b0] border border-[#4d4635]/40 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <ChevronRight className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            </div>
           </div>
         </div>
 

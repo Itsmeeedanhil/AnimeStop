@@ -12,8 +12,9 @@ export async function GET(request) {
     const season = searchParams.get('season') || '';
     const year = searchParams.get('year') || null;
     const sort = searchParams.get('sort') || 'trending';
+    const status = searchParams.get('status') || '';
     const page = parseInt(searchParams.get('page') || '1', 10);
-    const per_page = parseInt(searchParams.get('per_page') || '20', 10);
+    const per_page = parseInt(searchParams.get('per_page') || '24', 10);
 
     const data = await searchAnime({
       q,
@@ -22,6 +23,7 @@ export async function GET(request) {
       season,
       year,
       sort,
+      status,
       page,
       per_page,
     });
