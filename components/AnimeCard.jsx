@@ -58,16 +58,22 @@ export default function AnimeCard({ anime, progress = null }) {
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
 
-        {/* Gradient Overlays */}
+        {/* Gradient Overlays & Hover Overlay with Full Title */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#121414] via-[#121414]/10 to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-between p-3 text-center pointer-events-none">
+          <div className="w-full"></div>
           <button
             onClick={handleQuickPlay}
-            className="play-btn w-10 h-10 rounded-full bg-[#ffe9b0] text-[#241a00] flex items-center justify-center shadow-[0_0_15px_rgba(255,233,176,0.6)] transform scale-75 group-hover:scale-100 hover:scale-110 transition-all"
+            className="play-btn w-10 h-10 rounded-full bg-[#ffe9b0] text-[#241a00] flex items-center justify-center shadow-[0_0_15px_rgba(255,233,176,0.6)] transform scale-75 group-hover:scale-100 hover:scale-110 transition-all pointer-events-auto cursor-pointer"
             title="Stream Now"
           >
             <Play className="w-5 h-5 fill-current ml-0.5" />
           </button>
+          <div className="w-full px-1 bg-black/70 py-1 rounded-md border border-white/10 backdrop-blur-sm">
+            <p className="text-[10px] sm:text-[11px] font-bold text-[#ffe9b0] leading-tight line-clamp-2">
+              {title}
+            </p>
+          </div>
         </div>
 
         {/* Top Badges */}
@@ -108,8 +114,11 @@ export default function AnimeCard({ anime, progress = null }) {
       </div>
 
       {/* Bottom Info */}
-      <div className="p-2.5 flex flex-col justify-between flex-grow">
-        <h3 className="text-xs font-semibold text-[#e2e2e2] group-hover:text-[#ffe9b0] transition-colors truncate leading-tight">
+      <div className="p-2.5 flex flex-col justify-between flex-grow bg-[#1E2020]">
+        <h3
+          className="text-xs font-semibold text-[#e2e2e2] group-hover:text-[#ffe9b0] transition-colors line-clamp-1 group-hover:line-clamp-3 leading-snug break-words"
+          title={title}
+        >
           {title}
         </h3>
         <div className="flex justify-between items-center mt-1 text-[11px] text-[#99907c]">
