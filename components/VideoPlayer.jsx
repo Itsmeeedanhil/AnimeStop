@@ -459,31 +459,14 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
 
       {/* Direct Video Player Display Container */}
       <div className="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden shadow-2xl">
-        {/* First-click ad absorber */}
-        {adShieldActive && (
-          <div
-            onClick={(e) => {
-              e.stopPropagation();
-              setAdShieldActive(false);
-            }}
-            className="absolute inset-0 z-30 cursor-pointer bg-transparent"
-            title="Click to activate player"
-          />
-        )}
-
         {currentUrl ? (
           <iframe
             key={`direct-player-${currentEpisode}-${selectedServerId}-${reloadKey}`}
             src={currentUrl}
             title={`Streaming ${animeTitle} Episode ${currentEpisode} on ${activeServer.name || 'Player'}`}
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
             allowFullScreen
             referrerPolicy="no-referrer"
-            sandbox={
-              selectedServerId === 'vidsrc' || selectedServerId === 'videasy'
-                ? undefined
-                : 'allow-scripts allow-same-origin allow-forms allow-presentation'
-            }
             className="w-full h-full border-0 absolute inset-0 z-10"
           />
         ) : (
