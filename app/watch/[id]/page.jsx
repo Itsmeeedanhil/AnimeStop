@@ -6,7 +6,7 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { AnimeApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import VideoPlayer from '@/components/VideoPlayer';
-import { Bookmark, ArrowRight, Search, X, Grid, List, Play, Music, AlertCircle } from 'lucide-react';
+import { Bookmark, ArrowRight, Search, X, Grid, List, Play, Music, AlertCircle, Clock, Check } from 'lucide-react';
 
 function PlayerContent() {
   const router = useRouter();
@@ -128,9 +128,13 @@ function PlayerContent() {
                 <span className="px-2 sm:px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[11px] sm:text-xs font-semibold">
                   {anime.status?.replace('_', ' ') || 'FINISHED'}
                 </span>
-                {isOngoing && nextAiring?.episode && (
-                  <span className="px-2 sm:px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[11px] sm:text-xs font-semibold">
-                    Ep {nextAiring.episode} Airing Soon
+                {stream?.isCurrentEpisodeReleased === false ? (
+                  <span className="px-2 sm:px-2.5 py-0.5 rounded bg-amber-500/20 text-amber-300 text-[11px] sm:text-xs font-semibold border border-amber-500/30 flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> Upcoming
+                  </span>
+                ) : (
+                  <span className="px-2 sm:px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[11px] sm:text-xs font-semibold border border-emerald-500/30 flex items-center gap-1">
+                    <Check className="w-3 h-3" /> Aired
                   </span>
                 )}
               </div>
@@ -140,7 +144,7 @@ function PlayerContent() {
               </h1>
 
               <p className="text-xs sm:text-sm text-[#ffe9b0]">
-                Playing Episode {epNumber} • {totalEpisodesCount} Released Episode{totalEpisodesCount === 1 ? '' : 's'}
+                Playing Episode {epNumber} • {stream?.releasedEpisodesCount || totalEpisodesCount} Aired of {totalEpisodesCount} Total
               </p>
             </div>
 
@@ -179,13 +183,11 @@ function PlayerContent() {
           <h2 className="font-['Bodoni_Moda'] text-lg font-bold text-[#e2e2e2] truncate">
             {animeTitle}
           </h2>
-          <p className="text-xs text-[#ffe9b0] flex items-center gap-1.5">
+          <p className="text-xs text-[#ffe9b0] flex items-center justify-between">
             <span>Playing Episode {epNumber} of {totalEpisodesCount}</span>
-            {isOngoing && (
-              <span className="text-[10px] bg-emerald-500/20 text-emerald-300 px-1.5 py-0.2 rounded font-bold uppercase">
-                Released
-              </span>
-            )}
+            <span className="text-[11px] text-[#99907c]">
+              <strong className="text-emerald-400">{stream?.releasedEpisodesCount || totalEpisodesCount}</strong> Aired
+            </span>
           </p>
         </div>
 
@@ -273,16 +275,26 @@ function PlayerContent() {
                     key={ep.number}
                     ref={isActive ? activeEpisodeRef : null}
                     onClick={() => router.push(`/watch/${id}?ep=${ep.number}`)}
-                    className={`h-11 rounded-lg text-xs font-bold transition-all flex flex-col items-center justify-center cursor-pointer border ${
+                    className={`h-12 rounded-lg text-xs font-bold transition-all flex flex-col items-center justify-center cursor-pointer border ${
                       isActive
                         ? 'bg-[#ffe9b0] text-[#241a00] border-[#ffe9b0] shadow-[0_0_12px_rgba(255,233,176,0.3)] scale-105'
-                        : 'bg-[#121414] text-[#e2e2e2] border-white/5 hover:border-[#ffe9b0]/50 hover:bg-[#282a2a]'
+                        : ep.isReleased
+                        ? 'bg-[#121414] text-[#e2e2e2] border-white/5 hover:border-[#ffe9b0]/50 hover:bg-[#282a2a]'
+                        : 'bg-[#121414]/60 text-[#99907c] border-amber-500/20 hover:border-amber-500/40 hover:bg-[#202222]'
                     }`}
                   >
                     <span>{ep.number}</span>
-                    {isActive && (
-                      <span className="text-[9px] uppercase tracking-wider font-extrabold">
+                    {isActive ? (
+                      <span className="text-[8px] uppercase tracking-wider font-extrabold text-[#241a00]">
                         Active
+                      </span>
+                    ) : ep.isReleased ? (
+                      <span className="text-[8px] text-emerald-400 font-bold">
+                        Aired
+                      </span>
+                    ) : (
+                      <span className="text-[8px] text-amber-400/90 font-bold">
+                        Soon
                       </span>
                     )}
                   </button>
@@ -298,10 +310,12 @@ function PlayerContent() {
                     key={ep.number}
                     ref={isActive ? activeEpisodeRef : null}
                     onClick={() => router.push(`/watch/${id}?ep=${ep.number}`)}
-                    className={`group flex items-center gap-3 p-2 rounded-xl transition-all cursor-pointer border ${
+                    className={`group flex items-center gap-3 p-2.5 rounded-xl transition-all cursor-pointer border ${
                       isActive
                         ? 'bg-[#282a2a] border-[#ffe9b0] shadow-[0_0_15px_rgba(255,233,176,0.15)]'
-                        : 'bg-[#161818] border-transparent hover:border-white/10 hover:bg-[#202222]'
+                        : ep.isReleased
+                        ? 'bg-[#161818] border-transparent hover:border-white/10 hover:bg-[#202222]'
+                        : 'bg-[#161818]/60 border-amber-500/10 hover:border-amber-500/30 hover:bg-[#1a1c1c] opacity-80 hover:opacity-100'
                     }`}
                   >
                     <div className="relative w-20 aspect-video rounded-lg overflow-hidden bg-[#121414] flex-shrink-0">
@@ -328,20 +342,35 @@ function PlayerContent() {
                         <div className="absolute inset-0 bg-[#ffe9b0]/30 flex items-center justify-center">
                           <Music className="w-5 h-5 text-[#ffe9b0] animate-pulse" />
                         </div>
-                      ) : (
+                      ) : ep.isReleased ? (
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <Play className="w-4 h-4 text-white fill-current" />
+                        </div>
+                      ) : (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <Clock className="w-4 h-4 text-amber-300/80" />
                         </div>
                       )}
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <span className={`text-[10px] font-bold uppercase tracking-wider block ${
-                        isActive ? 'text-[#ffe9b0]' : 'text-[#99907c]'
-                      }`}>
-                        Episode {ep.number}
-                      </span>
-                      <h4 className={`text-xs font-semibold truncate ${
+                      <div className="flex items-center justify-between gap-1">
+                        <span className={`text-[10px] font-bold uppercase tracking-wider ${
+                          isActive ? 'text-[#ffe9b0]' : 'text-[#99907c]'
+                        }`}>
+                          Episode {ep.number}
+                        </span>
+                        {ep.isReleased ? (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-0.5 shrink-0">
+                            <Check className="w-2.5 h-2.5" /> Aired
+                          </span>
+                        ) : (
+                          <span className="px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-0.5 shrink-0">
+                            <Clock className="w-2.5 h-2.5" /> Upcoming
+                          </span>
+                        )}
+                      </div>
+                      <h4 className={`text-xs font-semibold truncate mt-0.5 ${
                         isActive ? 'text-white font-bold' : 'text-[#d0c5af] group-hover:text-white'
                       }`}>
                         {ep.title || `Episode ${ep.number}`}

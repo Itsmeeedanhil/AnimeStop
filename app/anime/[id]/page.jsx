@@ -6,7 +6,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { AnimeApi, getLastWatchedEpisode } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import AnimeCard from '@/components/AnimeCard';
-import { Play, Bookmark, Film, Star, Grid, List, Search, X, Clock, PlayCircle, AlertCircle, RotateCcw } from 'lucide-react';
+import { Play, Bookmark, Film, Star, Grid, List, Search, X, Clock, PlayCircle, AlertCircle, RotateCcw, Check } from 'lucide-react';
 
 export default function DetailsPage() {
   const router = useRouter();
@@ -83,7 +83,9 @@ export default function DetailsPage() {
   if (anime.status === 'NOT_YET_RELEASED') {
     releasedEpisodesCount = 0;
   } else if (isReleasing) {
-    if (nextAiring?.episode) {
+    if (anime.episodesAired !== undefined && anime.episodesAired !== null) {
+      releasedEpisodesCount = parseInt(anime.episodesAired, 10);
+    } else if (nextAiring?.episode) {
       releasedEpisodesCount = Math.max(0, nextAiring.episode - 1);
     } else if (totalEpisodes > 0) {
       releasedEpisodesCount = totalEpisodes;
@@ -98,8 +100,14 @@ export default function DetailsPage() {
   const trailer = anime.trailer;
   const bookmarked = isBookmarked(anime.id);
 
+  const totalPlannedCount = Math.max(
+    totalEpisodes > 0 ? totalEpisodes : (anime.episodesAired || 12),
+    releasedEpisodesCount,
+    1
+  );
+
   const batchSize = 25;
-  const displayEpisodes = releasedEpisodesCount;
+  const displayEpisodes = totalPlannedCount;
   const totalBatches = Math.max(1, Math.ceil(displayEpisodes / batchSize));
   const allEpisodes = Array.from({ length: displayEpisodes }, (_, i) => i + 1);
 
@@ -313,19 +321,30 @@ export default function DetailsPage() {
               </div>
             ) : viewMode === 'grid' ? (
               <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2.5">
-                {episodesToDisplay.map((epNum) => (
-                  <button
-                    key={epNum}
-                    onClick={() => router.push(`/watch/${anime.id}?ep=${epNum}`)}
-                    className="h-12 rounded-xl bg-[#1E2020] hover:bg-[#282a2a] text-[#e2e2e2] hover:text-[#ffe9b0] border border-[#4d4635]/40 hover:border-[#ffe9b0] text-sm font-bold transition-all flex items-center justify-center cursor-pointer shadow hover:scale-105"
-                  >
-                    {epNum}
-                  </button>
-                ))}
+                {episodesToDisplay.map((epNum) => {
+                  const isEpReleased = (anime.status === 'FINISHED') || (releasedEpisodesCount > 0 && epNum <= releasedEpisodesCount);
+                  return (
+                    <button
+                      key={epNum}
+                      onClick={() => router.push(`/watch/${anime.id}?ep=${epNum}`)}
+                      className={`h-12 rounded-xl text-xs font-bold transition-all flex flex-col items-center justify-center cursor-pointer shadow hover:scale-105 border ${
+                        isEpReleased
+                          ? 'bg-[#1E2020] hover:bg-[#282a2a] text-[#e2e2e2] hover:text-[#ffe9b0] border-[#4d4635]/40 hover:border-[#ffe9b0]'
+                          : 'bg-[#1E2020]/60 text-[#99907c] border-amber-500/20 hover:border-amber-500/50 hover:bg-[#202222]'
+                      }`}
+                    >
+                      <span>{epNum}</span>
+                      <span className={`text-[8px] font-semibold ${isEpReleased ? 'text-emerald-400' : 'text-amber-400'}`}>
+                        {isEpReleased ? 'Aired' : 'Soon'}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             ) : (
               <div className="flex flex-col gap-3">
                 {episodesToDisplay.map((epNum) => {
+                  const isEpReleased = (anime.status === 'FINISHED') || (releasedEpisodesCount > 0 && epNum <= releasedEpisodesCount);
                   const isValidThumb = (url) => {
                     if (!url || typeof url !== 'string') return false;
                     const lower = url.toLowerCase();
@@ -389,7 +408,9 @@ export default function DetailsPage() {
                     <div
                       key={epNum}
                       onClick={() => router.push(`/watch/${anime.id}?ep=${epNum}`)}
-                      className="group flex gap-4 p-3.5 rounded-xl bg-[#1E2020] hover:bg-[#282a2a] transition-all cursor-pointer border border-transparent hover:border-[#ffe9b0]/30 shadow"
+                      className={`group flex gap-4 p-3.5 rounded-xl bg-[#1E2020] hover:bg-[#282a2a] transition-all cursor-pointer border border-transparent hover:border-[#ffe9b0]/30 shadow ${
+                        !isEpReleased ? 'opacity-80 hover:opacity-100' : ''
+                      }`}
                     >
                       <div className="relative w-36 sm:w-44 aspect-video flex-shrink-0 rounded-lg overflow-hidden bg-[#121414]">
                         <img
@@ -401,22 +422,39 @@ export default function DetailsPage() {
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <PlayCircle className="w-8 h-8 text-[#ffe9b0]" />
+                          {isEpReleased ? (
+                            <PlayCircle className="w-8 h-8 text-[#ffe9b0]" />
+                          ) : (
+                            <Clock className="w-8 h-8 text-amber-300" />
+                          )}
                         </div>
                         <div className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/80 text-[10px] text-white/90">
                           24m
                         </div>
                       </div>
 
-                      <div className="flex flex-col justify-center min-w-0">
-                        <span className="text-xs font-bold text-[#ffe9b0] uppercase tracking-wider">
-                          Episode {epNum}
-                        </span>
+                      <div className="flex flex-col justify-center min-w-0 flex-1">
+                        <div className="flex items-center justify-between gap-1 mb-1">
+                          <span className="text-xs font-bold text-[#ffe9b0] uppercase tracking-wider">
+                            Episode {epNum}
+                          </span>
+                          {isEpReleased ? (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                              <Check className="w-3 h-3" /> Aired
+                            </span>
+                          ) : (
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> Upcoming
+                            </span>
+                          )}
+                        </div>
                         <h4 className="text-sm font-semibold text-[#e2e2e2] group-hover:text-white truncate">
                           {epTitle}
                         </h4>
                         <p className="text-xs text-[#99907c] line-clamp-2 mt-1 hidden sm:block">
-                          Follow the progression, encounters, and character development in this released episode.
+                          {isEpReleased
+                            ? 'Follow the progression, encounters, and character development in this released episode.'
+                            : 'This episode is scheduled for upcoming broadcast and will be available once aired.'}
                         </p>
                       </div>
                     </div>
