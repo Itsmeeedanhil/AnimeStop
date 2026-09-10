@@ -295,7 +295,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
     } else if (servers.length > 0 && !servers.some((s) => s.id === selectedServerId)) {
       setSelectedServerId(servers[0].id);
     }
-    setAdShieldActive(true);
+    setAdShieldStrict(true);
     setReloadKey((prev) => prev + 1);
   }, [currentEpisode, streamData, isUnreleased, trailerUrl, selectedServerId]);
 
