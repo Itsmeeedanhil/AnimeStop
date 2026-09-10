@@ -235,6 +235,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
       try {
         const str = typeof data === 'string' ? data : JSON.stringify(data);
         const hasError =
+          str.includes('233429') ||
           str.includes('232429') ||
           str.includes('232011') ||
           str.includes('233011') ||
@@ -251,7 +252,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           (data.event === 'error' && data.code);
 
         if (hasError) {
-          console.warn('Playback error code 232429 detected from embed stream, auto-switching to next server mirror...');
+          console.warn('Playback error detected from embed stream, auto-switching to next server mirror...');
           handleAutoRecover();
         }
       } catch (err) {}
@@ -544,7 +545,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             title={`Streaming ${animeTitle} Episode ${currentEpisode} on ${activeServer.name || 'Player'}`}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
             allowFullScreen
-            referrerPolicy="no-referrer"
+            referrerPolicy="strict-origin-when-cross-origin"
             sandbox={
               adShieldStrict
                 ? "allow-scripts allow-same-origin allow-forms allow-presentation"
