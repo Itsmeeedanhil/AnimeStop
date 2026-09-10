@@ -22,6 +22,8 @@ import {
   Check,
   Clock,
   Sparkles,
+  Shield,
+  ShieldCheck,
 } from 'lucide-react';
 
 export default function VideoPlayer({ streamData, anime, currentEpisode, onNextEpisode, onPrevEpisode }) {
@@ -32,10 +34,11 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
   const servers = streamData?.servers || [];
   const animeId = parseInt(anime?.id || streamData?.animeId, 10);
 
-  const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || '4animo-ani');
+  const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || 'zoryva');
   const [selectedServerId, setSelectedServerId] = useState(defaultServerId);
   const [reloadKey, setReloadKey] = useState(0);
-  const [adShieldActive, setAdShieldActive] = useState(true);
+  const [adShieldStrict, setAdShieldStrict] = useState(true);
+  const [blockedAdsCount, setBlockedAdsCount] = useState(0);
 
   // Custom SRT Subtitle State
   const [isSubModalOpen, setIsSubModalOpen] = useState(false);
@@ -258,7 +261,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
     return () => window.removeEventListener('message', handleMessage);
   }, [selectedServerId, servers]);
 
-  // Global anti-popup ad interceptor
+  // Global anti-popup ad interceptor & parent redirection shield
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -268,13 +271,15 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         url &&
         (url.startsWith('https://mega.nz') ||
          url.startsWith('https://accounts.google.com') ||
-         url.includes('cdn.4animo.xyz') ||
+         url.includes('miruro.to') ||
+         url.includes('miruro.tv') ||
          url.includes('anime-stop.vercel.app') ||
          url.startsWith('/'))
       ) {
         return originalOpen.call(window, url, target, features);
       }
-      console.warn('Blocked unauthorized popup ad attempt:', url);
+      console.warn('[AdShield] Blocked unauthorized popup / redirect attempt:', url);
+      setBlockedAdsCount((prev) => prev + 1);
       return null;
     };
 
@@ -338,12 +343,37 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           </button>
         </div>
 
-        {/* Right: Subtitles, 5-Player Capsule Selector & Next Episode */}
+        {/* Right: Subtitles, Ad-Shield, 5-Player Capsule Selector & Next Episode */}
         <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar">
+          {/* Ad Shield Toggle Pill */}
+          <button
+            onClick={() => {
+              setAdShieldStrict((prev) => !prev);
+              setReloadKey((prev) => prev + 1);
+            }}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer shadow shrink-0 ${
+              adShieldStrict
+                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/25'
+                : 'bg-amber-500/15 text-amber-300 border-amber-500/40 hover:bg-amber-500/25'
+            }`}
+            title={
+              adShieldStrict
+                ? 'Strict Ad-Shield: Zero popups, clickjack overlays & ad redirects (Click to toggle)'
+                : 'Ad-Shield Compatibility Mode: (Click to re-enable Strict Ad Blocking)'
+            }
+          >
+            {adShieldStrict ? (
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+            ) : (
+              <Shield className="w-3.5 h-3.5 text-amber-400" />
+            )}
+            <span className="hidden sm:inline">{adShieldStrict ? 'Ad-Shield: Strict' : 'Ad-Shield: Off'}</span>
+          </button>
+
           {/* Subtitles Button */}
           <button
             onClick={() => setIsSubModalOpen(true)}
-            className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer shadow ${
+            className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer shadow shrink-0 ${
               subtitlesList.length > 0
                 ? 'bg-[#ffe9b0]/20 text-[#ffe9b0] border-[#ffe9b0]/50'
                 : 'bg-black/60 hover:bg-white/10 text-zinc-300 hover:text-white border-white/20'
@@ -509,12 +539,17 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           </div>
         ) : currentUrl ? (
           <iframe
-            key={`direct-player-${currentEpisode}-${selectedServerId}-${reloadKey}`}
+            key={`direct-player-${currentEpisode}-${selectedServerId}-${reloadKey}-${adShieldStrict ? 'shield-on' : 'shield-off'}`}
             src={currentUrl}
             title={`Streaming ${animeTitle} Episode ${currentEpisode} on ${activeServer.name || 'Player'}`}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
             allowFullScreen
             referrerPolicy="no-referrer"
+            sandbox={
+              adShieldStrict
+                ? "allow-scripts allow-same-origin allow-forms allow-presentation"
+                : "allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox"
+            }
             className="w-full h-full border-0 absolute inset-0 z-10"
           />
         ) : (
@@ -608,9 +643,25 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
               {isUnreleased ? 'OFFICIAL HD TRAILER' : activeServer.name || 'DIRECT HD STREAM'}
             </strong>
           </span>
-          <span className="text-[9px] text-[#2ebd85] font-semibold bg-[#2ebd85]/10 px-1.5 py-0.5 rounded">
-            Ad-Shield Active
-          </span>
+          <button
+            onClick={() => {
+              setAdShieldStrict((prev) => !prev);
+              setReloadKey((prev) => prev + 1);
+            }}
+            className={`text-[9px] font-semibold px-2 py-0.5 rounded flex items-center gap-1 transition-colors cursor-pointer ${
+              adShieldStrict
+                ? 'text-[#2ebd85] bg-[#2ebd85]/10 border border-[#2ebd85]/30 hover:bg-[#2ebd85]/20'
+                : 'text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20'
+            }`}
+            title="Toggle Strict Ad-Shield"
+          >
+            {adShieldStrict ? <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" /> : <Shield className="w-2.5 h-2.5 text-amber-400" />}
+            <span>
+              {adShieldStrict
+                ? `Ad-Shield Active ${blockedAdsCount > 0 ? `(${blockedAdsCount} Popups Blocked)` : '(Zero Popups)'}`
+                : 'Compatibility Mode'}
+            </span>
+          </button>
         </div>
         <div>
           <span>Progress auto-saved</span>
