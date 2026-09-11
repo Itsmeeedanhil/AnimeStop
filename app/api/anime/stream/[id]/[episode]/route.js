@@ -15,12 +15,14 @@ export async function GET(request, { params }) {
       return NextResponse.json({ success: false, message: 'Anime not found on TMDB' }, { status: 404 });
     }
 
+    const realTmdbId = animeDetails.tmdbId || animeDetails.id || id;
+
     let seasonEpisodes = [];
     if (!animeDetails.isMovie) {
-      seasonEpisodes = await getSeasonEpisodes(id, season);
+      seasonEpisodes = await getSeasonEpisodes(realTmdbId, season);
     }
 
-    const streamData = getStreamData(id, episode, animeDetails, season, seasonEpisodes);
+    const streamData = getStreamData(realTmdbId, episode, animeDetails, season, seasonEpisodes);
 
     return NextResponse.json({
       success: true,
