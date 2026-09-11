@@ -37,7 +37,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
   const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || 'vidlink');
   const [selectedServerId, setSelectedServerId] = useState(defaultServerId);
   const [reloadKey, setReloadKey] = useState(0);
-  const [adShieldStrict, setAdShieldStrict] = useState(false);
+  const [adShieldStrict, setAdShieldStrict] = useState(true);
   const [blockedAdsCount, setBlockedAdsCount] = useState(0);
 
   // Custom SRT Subtitle State
@@ -256,27 +256,32 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
     if (typeof window === 'undefined') return;
 
     const originalOpen = window.open;
-    window.open = function (url, target, features) {
-      if (
-        url &&
-        (url.startsWith('https://mega.nz') ||
-         url.startsWith('https://accounts.google.com') ||
-         url.includes('miruro.to') ||
-         url.includes('miruro.tv') ||
-         url.includes('anime-stop.vercel.app') ||
-         url.startsWith('/'))
-      ) {
-        return originalOpen.call(window, url, target, features);
-      }
-      console.warn('[AdShield] Blocked unauthorized popup / redirect attempt:', url);
-      setBlockedAdsCount((prev) => prev + 1);
-      return null;
-    };
+
+    if (adShieldStrict) {
+      window.open = function (url, target, features) {
+        if (
+          url &&
+          (url.startsWith('https://mega.nz') ||
+           url.startsWith('https://accounts.google.com') ||
+           url.includes('miruro.to') ||
+           url.includes('miruro.tv') ||
+           url.includes('anime-stop.vercel.app') ||
+           url.startsWith('/'))
+        ) {
+          return originalOpen.call(window, url, target, features);
+        }
+        console.warn('[AdShield] Blocked unauthorized popup / redirect attempt:', url);
+        setBlockedAdsCount((prev) => prev + 1);
+        return null;
+      };
+    } else {
+      window.open = originalOpen;
+    }
 
     return () => {
       window.open = originalOpen;
     };
-  }, []);
+  }, [adShieldStrict]);
 
   // Synchronize server when episode changes
   useEffect(() => {
@@ -336,10 +341,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar">
           {/* Ad Shield Toggle Pill */}
           <button
-            onClick={() => {
-              setAdShieldStrict((prev) => !prev);
-              setReloadKey((prev) => prev + 1);
-            }}
+            onClick={() => setAdShieldStrict((prev) => !prev)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer shadow shrink-0 ${
               adShieldStrict
                 ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/25'
@@ -347,8 +349,8 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             }`}
             title={
               adShieldStrict
-                ? 'Strict Ad-Shield: Zero popups, clickjack overlays & ad redirects (Click to toggle)'
-                : 'Ad-Shield Compatibility Mode: (Click to re-enable Strict Ad Blocking)'
+                ? 'Strict Ad-Shield: Zero popups & ad redirects active (Click to toggle)'
+                : 'Ad-Shield Paused (Click to re-enable ad protection)'
             }
           >
             {adShieldStrict ? (
@@ -356,7 +358,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             ) : (
               <Shield className="w-3.5 h-3.5 text-amber-400" />
             )}
-            <span className="hidden sm:inline">{adShieldStrict ? 'Ad-Shield: Strict' : 'Ad-Shield: Off'}</span>
+            <span className="hidden sm:inline">{adShieldStrict ? 'Ad-Shield: Active' : 'Ad-Shield: Paused'}</span>
           </button>
 
           {/* Subtitles Button */}
@@ -533,17 +535,12 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           </div>
         ) : currentUrl ? (
           <iframe
-            key={`direct-player-${currentEpisode}-${selectedServerId}-${reloadKey}-${adShieldStrict ? 'shield-on' : 'shield-off'}`}
+            key={`direct-player-${currentEpisode}-${selectedServerId}-${reloadKey}`}
             src={currentUrl}
             title={`Streaming ${animeTitle} Episode ${currentEpisode} on ${activeServer.name || 'Player'}`}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
             allowFullScreen
             referrerPolicy="no-referrer"
-            sandbox={
-              adShieldStrict
-                ? "allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
-                : undefined
-            }
             className="w-full h-full border-0 absolute inset-0 z-10"
           />
         ) : (
@@ -632,22 +629,19 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             </strong>
           </span>
           <button
-            onClick={() => {
-              setAdShieldStrict((prev) => !prev);
-              setReloadKey((prev) => prev + 1);
-            }}
+            onClick={() => setAdShieldStrict((prev) => !prev)}
             className={`text-[9px] font-semibold px-2 py-0.5 rounded flex items-center gap-1 transition-colors cursor-pointer ${
               adShieldStrict
                 ? 'text-[#2ebd85] bg-[#2ebd85]/10 border border-[#2ebd85]/30 hover:bg-[#2ebd85]/20'
                 : 'text-amber-300 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20'
             }`}
-            title="Toggle Strict Ad-Shield"
+            title="Toggle Ad-Shield protection"
           >
             {adShieldStrict ? <ShieldCheck className="w-2.5 h-2.5 text-emerald-400" /> : <Shield className="w-2.5 h-2.5 text-amber-400" />}
             <span>
               {adShieldStrict
                 ? `Ad-Shield Active ${blockedAdsCount > 0 ? `(${blockedAdsCount} Popups Blocked)` : '(Zero Popups)'}`
-                : 'Compatibility Mode'}
+                : 'Ad-Shield Paused'}
             </span>
           </button>
         </div>
