@@ -341,10 +341,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar">
           {/* Ad Shield Toggle Pill */}
           <button
-            onClick={() => {
-              setAdShieldStrict((prev) => !prev);
-              setReloadKey((prev) => prev + 1);
-            }}
+            onClick={() => setAdShieldStrict((prev) => !prev)}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all cursor-pointer shadow shrink-0 ${
               adShieldStrict
                 ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/40 hover:bg-emerald-500/25'
@@ -538,19 +535,12 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           </div>
         ) : currentUrl ? (
           <iframe
-            key={`direct-player-${currentEpisode}-${selectedServerId}-${reloadKey}-${adShieldStrict ? 'shield-on' : 'shield-off'}`}
+            key={`direct-player-${currentEpisode}-${selectedServerId}-${reloadKey}`}
             src={currentUrl}
             title={`Streaming ${animeTitle} Episode ${currentEpisode} on ${activeServer.name || 'Player'}`}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
             allowFullScreen
             referrerPolicy="no-referrer"
-            sandbox={
-              adShieldStrict
-                ? (selectedServerId === 'vidlink'
-                    ? "allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
-                    : "allow-scripts allow-same-origin allow-forms allow-presentation")
-                : undefined
-            }
             className="w-full h-full border-0 absolute inset-0 z-10"
           />
         ) : (
@@ -639,10 +629,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             </strong>
           </span>
           <button
-            onClick={() => {
-              setAdShieldStrict((prev) => !prev);
-              setReloadKey((prev) => prev + 1);
-            }}
+            onClick={() => setAdShieldStrict((prev) => !prev)}
             className={`text-[9px] font-semibold px-2 py-0.5 rounded flex items-center gap-1 transition-colors cursor-pointer ${
               adShieldStrict
                 ? 'text-[#2ebd85] bg-[#2ebd85]/10 border border-[#2ebd85]/30 hover:bg-[#2ebd85]/20'
