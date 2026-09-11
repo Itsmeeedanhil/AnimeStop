@@ -34,10 +34,10 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
   const servers = streamData?.servers || [];
   const animeId = parseInt(anime?.id || streamData?.animeId, 10);
 
-  const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || 'tmdb-stream');
+  const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || 'vidlink');
   const [selectedServerId, setSelectedServerId] = useState(defaultServerId);
   const [reloadKey, setReloadKey] = useState(0);
-  const [adShieldStrict, setAdShieldStrict] = useState(true);
+  const [adShieldStrict, setAdShieldStrict] = useState(false);
   const [blockedAdsCount, setBlockedAdsCount] = useState(0);
 
   // Custom SRT Subtitle State
@@ -285,7 +285,6 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
     } else if (servers.length > 0 && !servers.some((s) => s.id === selectedServerId)) {
       setSelectedServerId(servers[0].id);
     }
-    setAdShieldStrict(true);
     setReloadKey((prev) => prev + 1);
   }, [currentEpisode, streamData, isUnreleased, trailerUrl, selectedServerId]);
 
@@ -375,7 +374,30 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
 
 
 
-          {/* Miruro Direct Player Launcher */}
+          {/* Multi-Player Capsule Selector */}
+          {servers.length > 1 && (
+            <div className="bg-black/80 backdrop-blur-md p-1 rounded-full border border-white/15 flex items-center gap-0.5 shadow-xl shrink-0">
+              {servers.map((srv) => {
+                const isSelected = selectedServerId === srv.id;
+                return (
+                  <button
+                    key={srv.id}
+                    onClick={() => {
+                      setSelectedServerId(srv.id);
+                      setReloadKey((prev) => prev + 1);
+                    }}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-[#ffe9b0] text-[#241a00] font-bold shadow-md scale-[1.02]'
+                        : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                    }`}
+                  >
+                    {srv.name}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {animeId && currentEpisode && (
             <a
               href={`https://www.miruro.to/watch?id=${animeId}&ep=${currentEpisode}`}
@@ -519,8 +541,8 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             referrerPolicy="no-referrer"
             sandbox={
               adShieldStrict
-                ? "allow-scripts allow-same-origin allow-forms allow-presentation"
-                : "allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox"
+                ? "allow-scripts allow-same-origin allow-forms allow-presentation allow-popups allow-popups-to-escape-sandbox allow-top-navigation-by-user-activation"
+                : undefined
             }
             className="w-full h-full border-0 absolute inset-0 z-10"
           />
@@ -548,6 +570,54 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           </div>
         )}
       </div>
+
+      {/* Stream Recovery Quick-Switch Bar */}
+      {servers.length > 1 && (
+        <div className="bg-[#161818] border-t border-white/5 px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-[#ffe9b0] flex items-center gap-1">
+              <span>⚡ Stream Recovery:</span>
+            </span>
+            <button
+              onClick={() => {
+                const currentIndex = servers.findIndex((s) => s.id === selectedServerId);
+                const nextIndex = (currentIndex + 1) % servers.length;
+                setSelectedServerId(servers[nextIndex].id);
+                setReloadKey((prev) => prev + 1);
+              }}
+              className="px-3 py-1 rounded-lg bg-[#ffe9b0] text-[#241a00] text-xs font-extrabold hover:brightness-110 transition-all cursor-pointer flex items-center gap-1 shadow-[0_0_10px_rgba(255,233,176,0.3)]"
+              title="Auto-switch to next server mirror"
+            >
+              <span>Next Player Mirror →</span>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1.5 text-xs text-[#99907c] overflow-x-auto hide-scrollbar">
+            <span className="shrink-0 font-medium">Select Player:</span>
+            <div className="bg-black/60 p-1 rounded-full border border-white/10 flex items-center gap-1">
+              {servers.map((srv) => {
+                const isSelected = selectedServerId === srv.id;
+                return (
+                  <button
+                    key={srv.id}
+                    onClick={() => {
+                      setSelectedServerId(srv.id);
+                      setReloadKey((prev) => prev + 1);
+                    }}
+                    className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer shrink-0 ${
+                      isSelected
+                        ? 'bg-white text-black font-bold shadow-md'
+                        : 'text-zinc-400 hover:text-white'
+                    }`}
+                  >
+                    {srv.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
 
 
