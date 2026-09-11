@@ -41,7 +41,7 @@ export default function AnimeCard({ anime, progress = null }) {
       console.error(err);
     }
   };
-
+ 
   return (
     <div
       onClick={handleCardClick}
