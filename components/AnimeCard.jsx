@@ -44,7 +44,7 @@ export default function AnimeCard({ anime, progress = null }) {
   return (
     <div
       onClick={handleCardClick}
-      className="group relative w-full max-w-[200px] rounded-xl overflow-hidden bg-[#1E2020] border border-[#4d4635]/40 hover:border-[#ffe9b0]/60 transition-all duration-300 cursor-pointer shadow-md hover:shadow-xl flex flex-col mx-auto"
+      className="group relative w-full rounded-xl overflow-hidden bg-[#1E2020] border border-[#4d4635]/40 hover:border-[#ffe9b0]/60 transition-all duration-300 cursor-pointer shadow-md hover:shadow-xl flex flex-col"
     >
       {/* Poster Image Container */}
       <div className="relative aspect-[2/3] w-full overflow-hidden bg-[#121414]">

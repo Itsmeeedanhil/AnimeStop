@@ -11,10 +11,11 @@ export async function GET(request) {
     const format = searchParams.get('format') || 'all';
     const page = parseInt(searchParams.get('page') || '1', 10);
     const sort = searchParams.get('sort') || 'popularity.desc';
+    const status = searchParams.get('status') || '';
 
     const type = format.toLowerCase() === 'movie' ? 'movie' : format.toLowerCase() === 'tv' ? 'tv' : 'all';
 
-    const data = await searchAnime(q, page, type, genre, sort);
+    const data = await searchAnime(q, page, type, genre, sort, status);
 
     return NextResponse.json({
       success: true,
