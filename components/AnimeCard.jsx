@@ -19,6 +19,7 @@ export default function AnimeCard({ anime, progress = null }) {
   const score = anime.averageScore ? (anime.averageScore / 10).toFixed(1) : (anime.score ? Number(anime.score).toFixed(1) : null);
   const episodes = anime.episodes || anime.episodes_count;
   const format = anime.format || 'TV';
+  const year = anime.seasonYear || (anime.releaseDate ? anime.releaseDate.split('-')[0] : null);
   const bookmarked = isBookmarked(id);
 
   const handleCardClick = (e) => {
@@ -122,7 +123,13 @@ export default function AnimeCard({ anime, progress = null }) {
           {title}
         </h3>
         <div className="flex justify-between items-center mt-1 text-[11px] text-[#99907c]">
-          <span>{episodes ? `${episodes} Ep` : 'Ongoing'}</span>
+          <span>
+            {episodes
+              ? `${episodes} Ep`
+              : year
+              ? `${year} • ${format}`
+              : format}
+          </span>
           {progress?.episode_number && (
             <span className="text-[#ffe9b0] text-[10px] font-bold bg-[#ffe9b0]/10 px-1 py-0.2 rounded">
               Ep {progress.episode_number}

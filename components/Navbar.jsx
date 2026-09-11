@@ -236,7 +236,7 @@ export default function Navbar() {
                         {anime.title?.english || anime.title?.romaji}
                       </p>
                       <p className="text-xs text-[#99907c] truncate mt-0.5">
-                        {anime.format || 'TV'} • {anime.episodes ? `${anime.episodes} eps` : 'Ongoing'} • ★ {anime.averageScore ? (anime.averageScore / 10).toFixed(1) : 'N/A'}
+                        {anime.format || 'TV'}{anime.seasonYear ? ` • ${anime.seasonYear}` : ''}{anime.episodes ? ` • ${anime.episodes} eps` : ''} • ★ {anime.averageScore ? (anime.averageScore / 10).toFixed(1) : 'N/A'}
                       </p>
                     </div>
                   </button>
