@@ -249,9 +249,12 @@ function SearchContent() {
               className="bg-[#1E2020] border border-[#4d4635] text-[#e2e2e2] text-xs rounded-lg px-3 py-2 focus:border-[#ffe9b0] focus:outline-none cursor-pointer"
             >
               <option value="">All Genres</option>
-              {genresList.map((g) => (
-                <option key={g} value={g}>{g}</option>
-              ))}
+              {genresList.map((g) => {
+                const gName = typeof g === 'string' ? g : g.name;
+                return (
+                  <option key={gName} value={gName}>{gName}</option>
+                );
+              })}
             </select>
           </div>
 

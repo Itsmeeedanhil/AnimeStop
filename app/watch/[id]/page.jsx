@@ -6,7 +6,20 @@ import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { AnimeApi } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import VideoPlayer from '@/components/VideoPlayer';
-import { Bookmark, ArrowRight, Search, X, Grid, List, Play, Music, AlertCircle, Clock, Check } from 'lucide-react';
+import {
+  Bookmark,
+  ArrowRight,
+  Search,
+  X,
+  Grid,
+  List,
+  Play,
+  Music,
+  AlertCircle,
+  Clock,
+  Check,
+  Layers,
+} from 'lucide-react';
 
 function PlayerContent() {
   const router = useRouter();
@@ -14,7 +27,9 @@ function PlayerContent() {
   const searchParams = useSearchParams();
   const id = params?.id;
   const episodeQuery = searchParams.get('ep');
+  const seasonQuery = searchParams.get('season');
   const epNumber = parseInt(episodeQuery || '1', 10);
+  const seasonNumber = parseInt(seasonQuery || '1', 10);
 
   const { isBookmarked, toggleBookmark } = useAuth();
   const [data, setData] = useState(null);
@@ -30,7 +45,7 @@ function PlayerContent() {
     const fetchStream = async () => {
       setIsLoading(true);
       try {
-        const streamData = await AnimeApi.getStream(id, epNumber);
+        const streamData = await AnimeApi.getStream(id, epNumber, seasonNumber);
         setData(streamData);
 
         const currentBatchIndex = Math.floor((epNumber - 1) / batchSize);
@@ -43,7 +58,7 @@ function PlayerContent() {
     };
 
     if (id) fetchStream();
-  }, [id, epNumber]);
+  }, [id, epNumber, seasonNumber]);
 
   useEffect(() => {
     if (activeEpisodeRef.current) {
@@ -52,17 +67,17 @@ function PlayerContent() {
         block: 'nearest',
       });
     }
-  }, [epNumber, data, selectedBatch, viewMode]);
+  }, [epNumber, data, selectedBatch, viewMode, seasonNumber]);
 
   const handleNextEpisode = () => {
-    if (data?.stream?.episodes?.some(ep => ep.number === epNumber + 1)) {
-      router.push(`/watch/${id}?ep=${epNumber + 1}`);
+    if (data?.stream?.episodes?.some((ep) => ep.number === epNumber + 1)) {
+      router.push(`/watch/${id}?season=${seasonNumber}&ep=${epNumber + 1}`);
     }
   };
 
   const handlePrevEpisode = () => {
     if (epNumber > 1) {
-      router.push(`/watch/${id}?ep=${epNumber - 1}`);
+      router.push(`/watch/${id}?season=${seasonNumber}&ep=${epNumber - 1}`);
     }
   };
 
@@ -91,16 +106,16 @@ function PlayerContent() {
   }
 
   const { anime, stream } = data;
+  const isMovie = anime.isMovie || anime.format === 'MOVIE';
   const animeTitle = anime.title?.english || anime.title?.romaji || 'Anime';
   const allEpisodes = stream?.episodes || [];
   const totalEpisodesCount = stream?.totalEpisodes || allEpisodes.length;
-  const nextAiring = anime?.nextAiringEpisode;
-  const isOngoing = anime?.status === 'RELEASING';
+  const seasonsList = anime?.seasons || [];
   const totalBatches = Math.max(1, Math.ceil(allEpisodes.length / batchSize));
   const bookmarked = isBookmarked(anime.id);
 
   const filteredEpisodes = searchQuery.trim()
-    ? allEpisodes.filter(ep => ep.number.toString().includes(searchQuery.trim()))
+    ? allEpisodes.filter((ep) => ep.number.toString().includes(searchQuery.trim()))
     : allEpisodes.slice(selectedBatch * batchSize, (selectedBatch + 1) * batchSize);
 
   return (
@@ -119,9 +134,11 @@ function PlayerContent() {
           <div className="flex flex-wrap justify-between items-start gap-3 sm:gap-4">
             <div className="flex flex-col gap-1.5 sm:gap-2 max-w-3xl">
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <span className="px-2 sm:px-2.5 py-0.5 rounded bg-[#ffe9b0] text-[#241a00] font-bold text-[11px] sm:text-xs">
-                  Episode {epNumber}
-                </span>
+                {!isMovie && (
+                  <span className="px-2 sm:px-2.5 py-0.5 rounded bg-[#ffe9b0] text-[#241a00] font-bold text-[11px] sm:text-xs">
+                    Season {seasonNumber} • Episode {epNumber}
+                  </span>
+                )}
                 <span className="px-2 sm:px-2.5 py-0.5 rounded bg-[#1E2020] text-[#d0c5af] text-[11px] sm:text-xs border border-white/10">
                   {anime.format || 'TV'}
                 </span>
@@ -144,7 +161,9 @@ function PlayerContent() {
               </h1>
 
               <p className="text-xs sm:text-sm text-[#ffe9b0]">
-                Playing Episode {epNumber} • {stream?.releasedEpisodesCount || totalEpisodesCount} Aired of {totalEpisodesCount} Total
+                {isMovie
+                  ? 'Full Anime Feature Film'
+                  : `Playing Season ${seasonNumber}, Episode ${epNumber} • ${stream?.releasedEpisodesCount || totalEpisodesCount} Aired of ${totalEpisodesCount} in this Season`}
               </p>
             </div>
 
@@ -179,12 +198,34 @@ function PlayerContent() {
 
       {/* Right: Episode Queue Sidebar (Optimized Desktop & Mobile Layout) */}
       <div className="w-full lg:w-[380px] xl:w-[420px] bg-[#1E2020] flex flex-col border-t lg:border-t-0 lg:border-l border-[#4d4635]/40 h-[560px] lg:h-[calc(100vh-64px)] lg:sticky lg:top-16 shrink-0 shadow-2xl">
-        <div className="p-4 border-b border-[#4d4635]/30 flex flex-col gap-1 shrink-0 bg-[#1a1c1c]">
+        <div className="p-4 border-b border-[#4d4635]/30 flex flex-col gap-2 shrink-0 bg-[#1a1c1c]">
           <h2 className="font-['Bodoni_Moda'] text-lg font-bold text-[#e2e2e2] truncate">
             {animeTitle}
           </h2>
+
+          {/* Season Selector Dropdown */}
+          {!isMovie && seasonsList.length > 1 && (
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <select
+                  value={seasonNumber}
+                  onChange={(e) => router.push(`/watch/${id}?season=${e.target.value}&ep=1`)}
+                  className="w-full bg-[#121414] border border-[#ffe9b0]/40 text-[#ffe9b0] font-bold text-xs rounded-lg px-3 py-2 outline-none cursor-pointer transition-colors shadow"
+                >
+                  {seasonsList.map((s) => (
+                    <option key={s.seasonNumber} value={s.seasonNumber} className="bg-[#1a1c1c] text-white font-medium">
+                      {s.name || `Season ${s.seasonNumber}`} ({s.episodeCount} Episodes)
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          )}
+
           <p className="text-xs text-[#ffe9b0] flex items-center justify-between">
-            <span>Playing Episode {epNumber} of {totalEpisodesCount}</span>
+            <span>
+              {isMovie ? 'Movie' : `Season ${seasonNumber} • Episode ${epNumber} of ${totalEpisodesCount}`}
+            </span>
             <span className="text-[11px] text-[#99907c]">
               <strong className="text-emerald-400">{stream?.releasedEpisodesCount || totalEpisodesCount}</strong> Aired
             </span>
@@ -192,73 +233,75 @@ function PlayerContent() {
         </div>
 
         {/* Controls */}
-        <div className="p-3 bg-[#161818] border-b border-white/5 flex flex-col gap-2.5 shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                placeholder="Jump to Episode #..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#121414] border border-[#4d4635]/50 focus:border-[#ffe9b0] text-[#e2e2e2] text-xs rounded-lg pl-8 pr-3 py-1.5 outline-none transition-colors"
-              />
-              <Search className="w-3.5 h-3.5 text-[#99907c] absolute left-2 top-2" />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-2 top-1.5 text-[#99907c] hover:text-white"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            <div className="flex bg-[#121414] rounded-lg p-0.5 border border-[#4d4635]/50">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded text-xs transition-colors ${
-                  viewMode === 'grid' ? 'bg-[#ffe9b0] text-[#241a00]' : 'text-[#99907c] hover:text-[#ffe9b0]'
-                }`}
-                title="Compact Grid View"
-              >
-                <Grid className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('detail')}
-                className={`p-1.5 rounded text-xs transition-colors ${
-                  viewMode === 'detail' ? 'bg-[#ffe9b0] text-[#241a00]' : 'text-[#99907c] hover:text-[#ffe9b0]'
-                }`}
-                title="Detailed List View"
-              >
-                <List className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {totalBatches > 1 && !searchQuery && (
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
-              {Array.from({ length: totalBatches }).map((_, idx) => {
-                const from = idx * batchSize + 1;
-                const to = Math.min((idx + 1) * batchSize, allEpisodes.length);
-                const isCurrentBatch = selectedBatch === idx;
-
-                return (
+        {!isMovie && (
+          <div className="p-3 bg-[#161818] border-b border-white/5 flex flex-col gap-2.5 shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  placeholder="Jump to Episode #..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-[#121414] border border-[#4d4635]/50 focus:border-[#ffe9b0] text-[#e2e2e2] text-xs rounded-lg pl-8 pr-3 py-1.5 outline-none transition-colors"
+                />
+                <Search className="w-3.5 h-3.5 text-[#99907c] absolute left-2 top-2" />
+                {searchQuery && (
                   <button
-                    key={idx}
-                    onClick={() => setSelectedBatch(idx)}
-                    className={`px-2.5 py-1 text-[11px] font-semibold rounded whitespace-nowrap transition-all cursor-pointer ${
-                      isCurrentBatch
-                        ? 'bg-[#ffe9b0] text-[#241a00] font-bold shadow'
-                        : 'bg-[#121414] text-[#d0c5af] hover:text-[#ffe9b0] border border-white/5'
-                    }`}
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2 top-1.5 text-[#99907c] hover:text-white"
                   >
-                    {from} - {to}
+                    <X className="w-3.5 h-3.5" />
                   </button>
-                );
-              })}
+                )}
+              </div>
+
+              <div className="flex bg-[#121414] rounded-lg p-0.5 border border-[#4d4635]/50">
+                <button
+                  onClick={() => setViewMode('grid')}
+                  className={`p-1.5 rounded text-xs transition-colors ${
+                    viewMode === 'grid' ? 'bg-[#ffe9b0] text-[#241a00]' : 'text-[#99907c] hover:text-[#ffe9b0]'
+                  }`}
+                  title="Compact Grid View"
+                >
+                  <Grid className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setViewMode('detail')}
+                  className={`p-1.5 rounded text-xs transition-colors ${
+                    viewMode === 'detail' ? 'bg-[#ffe9b0] text-[#241a00]' : 'text-[#99907c] hover:text-[#ffe9b0]'
+                  }`}
+                  title="Detailed List View"
+                >
+                  <List className="w-4 h-4" />
+                </button>
+              </div>
             </div>
-          )}
-        </div>
+
+            {totalBatches > 1 && !searchQuery && (
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
+                {Array.from({ length: totalBatches }).map((_, idx) => {
+                  const from = idx * batchSize + 1;
+                  const to = Math.min((idx + 1) * batchSize, allEpisodes.length);
+                  const isCurrentBatch = selectedBatch === idx;
+
+                  return (
+                    <button
+                      key={idx}
+                      onClick={() => setSelectedBatch(idx)}
+                      className={`px-2.5 py-1 text-[11px] font-semibold rounded whitespace-nowrap transition-all cursor-pointer ${
+                        isCurrentBatch
+                          ? 'bg-[#ffe9b0] text-[#241a00] font-bold shadow'
+                          : 'bg-[#121414] text-[#d0c5af] hover:text-[#ffe9b0] border border-white/5'
+                      }`}
+                    >
+                      {from} - {to}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Scrollable Episode Queue */}
         <div className="flex-1 overflow-y-auto p-3 hide-scrollbar">
@@ -274,7 +317,7 @@ function PlayerContent() {
                   <button
                     key={ep.number}
                     ref={isActive ? activeEpisodeRef : null}
-                    onClick={() => router.push(`/watch/${id}?ep=${ep.number}`)}
+                    onClick={() => router.push(`/watch/${id}?season=${seasonNumber}&ep=${ep.number}`)}
                     className={`h-12 rounded-lg text-xs font-bold transition-all flex flex-col items-center justify-center cursor-pointer border ${
                       isActive
                         ? 'bg-[#ffe9b0] text-[#241a00] border-[#ffe9b0] shadow-[0_0_12px_rgba(255,233,176,0.3)] scale-105'
@@ -309,7 +352,7 @@ function PlayerContent() {
                   <div
                     key={ep.number}
                     ref={isActive ? activeEpisodeRef : null}
-                    onClick={() => router.push(`/watch/${id}?ep=${ep.number}`)}
+                    onClick={() => router.push(`/watch/${id}?season=${seasonNumber}&ep=${ep.number}`)}
                     className={`group flex items-center gap-3 p-2.5 rounded-xl transition-all cursor-pointer border ${
                       isActive
                         ? 'bg-[#282a2a] border-[#ffe9b0] shadow-[0_0_15px_rgba(255,233,176,0.15)]'
@@ -375,7 +418,7 @@ function PlayerContent() {
                       }`}>
                         {ep.title || `Episode ${ep.number}`}
                       </h4>
-                      <span className="text-[10px] text-[#99907c]">24m</span>
+                      <span className="text-[10px] text-[#99907c]">{ep.duration || '24m'}</span>
                     </div>
                   </div>
                 );
@@ -402,4 +445,3 @@ export default function PlayerPage() {
     </Suspense>
   );
 }
-

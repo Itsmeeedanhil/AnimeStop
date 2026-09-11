@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAnimeDetails } from '@/lib/anilist';
+import { getAnimeDetails } from '@/lib/tmdb';
 
 export async function GET(request, { params }) {
   try {

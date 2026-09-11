@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getHomeFeed } from '@/lib/anilist';
+import { getHomeFeed } from '@/lib/tmdb';
 
 export const dynamic = 'force-dynamic';
 

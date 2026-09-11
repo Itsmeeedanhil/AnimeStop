@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { getGenres } from '@/lib/anilist';
+import { ANIME_GENRES } from '@/lib/tmdb';
 
 export async function GET() {
   return NextResponse.json({
     success: true,
-    data: getGenres(),
+    data: ANIME_GENRES,
   });
 }
-
