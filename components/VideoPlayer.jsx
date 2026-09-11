@@ -212,22 +212,12 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
     return () => clearInterval(interval);
   }, [anime, currentEpisode, animeTitle, streamData, animeId]);
 
-  const [autoRecoverNotice, setAutoRecoverNotice] = useState('');
-
-  // Automatic Server Failover on error
+  // Automatic Player Reload on error
   const handleAutoRecover = () => {
-    if (servers.length > 1) {
-      const currentIndex = servers.findIndex((s) => s.id === selectedServerId);
-      const nextIndex = (currentIndex + 1) % servers.length;
-      const nextServer = servers[nextIndex];
-      setSelectedServerId(nextServer.id);
-      setAutoRecoverNotice(`⚡ Auto-switched to backup mirror: ${nextServer.name}`);
-      setTimeout(() => setAutoRecoverNotice(''), 5000);
-    }
     setReloadKey((prev) => prev + 1);
   };
 
-  // Listen for iframe / JW Player postMessage error signals (e.g. Error Code 232429) to auto-recover immediately
+  // Listen for iframe / JW Player postMessage error signals (e.g. Error Code 232429) to auto-reload
   useEffect(() => {
     const handleMessage = (e) => {
       const data = e.data;
@@ -251,7 +241,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           (data.event === 'error' && data.code);
 
         if (hasError) {
-          console.warn('Playback error code 232429 detected from embed stream, auto-switching to next server mirror...');
+          console.warn('Playback error detected from embed stream, reloading player...');
           handleAutoRecover();
         }
       } catch (err) {}
@@ -259,7 +249,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
 
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [selectedServerId, servers]);
+  }, []);
 
   // Global anti-popup ad interceptor & parent redirection shield
   useEffect(() => {
@@ -383,25 +373,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             <span>{subtitlesList.length > 0 ? 'Custom Subs Active' : 'Subtitles'}</span>
           </button>
 
-          {/* 5-Player Capsule Selector from Screenshot */}
-          <div className="bg-black/80 backdrop-blur-md p-1 rounded-full border border-white/15 flex items-center gap-0.5 shadow-xl shrink-0">
-            {servers.map((srv) => {
-              const isSelected = selectedServerId === srv.id;
-              return (
-                <button
-                  key={srv.id}
-                  onClick={() => setSelectedServerId(srv.id)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
-                    isSelected
-                      ? 'bg-white text-black font-bold shadow-md scale-[1.02]'
-                      : 'text-zinc-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  {srv.name}
-                </button>
-              );
-            })}
-          </div>
+
 
           {/* Miruro Direct Player Launcher */}
           {animeId && currentEpisode && (
@@ -556,23 +528,8 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
           <div className="flex flex-col items-center justify-center text-center p-6 text-[#d0c5af]">
             <VideoOff className="w-10 h-10 text-[#ffe9b0] mb-2" />
             <p className="text-sm font-semibold">Video Stream Unavailable</p>
-            <p className="text-xs text-[#99907c] mt-1">Please check back later or switch servers above.</p>
+            <p className="text-xs text-[#99907c] mt-1">Please check back later or reload the player.</p>
           </div>
-        )}
-
-        {/* Floating Instant Server Failover Switcher */}
-        {!isUnreleased && servers.length > 1 && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleAutoRecover();
-            }}
-            className="absolute top-3 right-3 z-30 px-3 py-1.5 rounded-xl bg-black/85 hover:bg-[#ffe9b0] text-[#ffe9b0] hover:text-[#241a00] text-xs font-bold border border-[#ffe9b0]/60 shadow-[0_0_20px_rgba(0,0,0,0.8)] backdrop-blur-md transition-all cursor-pointer flex items-center gap-1.5 hover:scale-105"
-            title="Video error 233429 or buffering? Click to switch to next high-speed server mirror"
-          >
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>⚡ Fix: Switch Server</span>
-          </button>
         )}
 
         {/* Custom Subtitle Overlay */}
@@ -592,46 +549,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
         )}
       </div>
 
-      {/* Stream Recovery Quick-Switch Bar */}
-      <div className="bg-[#161818] border-t border-white/5 px-3 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-bold text-[#ffe9b0] flex items-center gap-1">
-            <span>⚡ Stream Recovery:</span>
-          </span>
-          <button
-            onClick={handleAutoRecover}
-            className="px-3 py-1 rounded-lg bg-[#ffe9b0] text-[#241a00] text-xs font-extrabold hover:brightness-110 transition-all cursor-pointer flex items-center gap-1 shadow-[0_0_10px_rgba(255,233,176,0.3)]"
-            title="Auto-switch to next server mirror"
-          >
-            <span>Switch Next Server →</span>
-          </button>
-        </div>
 
-        <div className="flex items-center gap-1.5 text-xs text-[#99907c] overflow-x-auto hide-scrollbar">
-          <span className="shrink-0 font-medium">Select Player:</span>
-          <div className="bg-black/60 p-1 rounded-full border border-white/10 flex items-center gap-1">
-            {servers.map((srv) => {
-              const isSelected = selectedServerId === srv.id;
-              return (
-                <button
-                  key={srv.id}
-                  onClick={() => {
-                    setSelectedServerId(srv.id);
-                    setReloadKey((prev) => prev + 1);
-                  }}
-                  className={`px-3 py-1 rounded-full text-[11px] font-semibold transition-all cursor-pointer shrink-0 ${
-                    isSelected
-                      ? 'bg-white text-black font-bold shadow-md'
-                      : 'text-zinc-400 hover:text-white'
-                  }`}
-                >
-                  {srv.name}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
 
       {/* Bottom Stream Status */}
       <div className="bg-[#121414] px-3 sm:px-4 py-2 border-t border-[#4d4635]/30 flex flex-wrap justify-between items-center text-[10px] sm:text-xs text-[#99907c] gap-2">
