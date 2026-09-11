@@ -34,7 +34,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
   const servers = streamData?.servers || [];
   const animeId = parseInt(anime?.id || streamData?.animeId, 10);
 
-  const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || 'zoryva');
+  const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || 'tmdb-stream');
   const [selectedServerId, setSelectedServerId] = useState(defaultServerId);
   const [reloadKey, setReloadKey] = useState(0);
   const [adShieldStrict, setAdShieldStrict] = useState(true);
