@@ -34,7 +34,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
   const servers = streamData?.servers || [];
   const animeId = parseInt(anime?.id || streamData?.animeId, 10);
 
-  const defaultServerId = isUnreleased ? 'trailer' : (servers[0]?.id || 'zoryva');
+  const defaultServerId = servers[0]?.id || 'cinesrc';
   const [selectedServerId, setSelectedServerId] = useState(defaultServerId);
   const [reloadKey, setReloadKey] = useState(0);
   const [forcePlayUpcoming, setForcePlayUpcoming] = useState(false);
@@ -287,13 +287,11 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
   // Synchronize server when episode changes
   useEffect(() => {
     setForcePlayUpcoming(false);
-    if (isUnreleased && trailerUrl) {
-      setSelectedServerId('trailer');
-    } else if (servers.length > 0 && !servers.some((s) => s.id === selectedServerId)) {
+    if (servers.length > 0 && (!selectedServerId || selectedServerId === 'trailer' || !servers.some((s) => s.id === selectedServerId))) {
       setSelectedServerId(servers[0].id);
     }
     setReloadKey((prev) => prev + 1);
-  }, [currentEpisode, streamData, isUnreleased, trailerUrl, selectedServerId]);
+  }, [currentEpisode, streamData]);
 
   const handleReload = () => {
     setReloadKey((prev) => prev + 1);
@@ -497,7 +495,11 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2.5 mt-2">
               <button
-                onClick={() => setForcePlayUpcoming(true)}
+                onClick={() => {
+                  setSelectedServerId(servers[0]?.id || 'cinesrc');
+                  setForcePlayUpcoming(true);
+                  setReloadKey((prev) => prev + 1);
+                }}
                 className="px-5 py-2.5 rounded-xl bg-[#ffe9b0] text-[#241a00] font-bold text-xs hover:bg-[#f2ca50] transition-all shadow-[0_0_15px_rgba(255,233,176,0.3)] cursor-pointer flex items-center gap-1.5"
               >
                 <Play className="w-3.5 h-3.5 fill-current" />
