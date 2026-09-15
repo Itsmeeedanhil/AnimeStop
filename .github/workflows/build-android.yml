@@ -58,8 +58,13 @@ jobs:
         env:
           TMDB_API_KEY: 8265bd1679663a7ea12ac168da84d2e8
 
+      - name: Generate Official AnimeStop App Icons
+        run: npx tauri icon public/favicon.svg
+
       - name: Initialize Tauri Android Project
-        run: npx tauri android init --ci
+        run: |
+          npx tauri android init --ci
+          cp -rf src-tauri/icons/android/* src-tauri/gen/android/app/src/main/res/ 2>/dev/null || true
         env:
           ANDROID_HOME: ${{ env.ANDROID_HOME }}
           NDK_HOME: ${{ env.NDK_HOME }}
