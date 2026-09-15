@@ -93,12 +93,12 @@ export default function Navbar() {
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full z-50 bg-[#121414]/95 backdrop-blur-xl border-b border-white/10 transition-all">
+    <header className="fixed top-0 left-0 w-full z-50 bg-[#121414]/95 backdrop-blur-xl border-b border-white/10 transition-all pt-[env(safe-area-inset-top,0px)]">
       {/* Live Admin Announcement Broadcast Banner (High Priority) */}
       <AnnouncementBanner />
 
-      {/* Global Windows Desktop App Download Banner */}
-      <div className="bg-gradient-to-r from-[#241c08] via-[#1a1c1c] to-[#241c08] border-b border-[#ffe9b0]/30 px-3 sm:px-8 py-1.5 flex items-center justify-between gap-2 text-[10px] sm:text-xs text-[#d0c5af] shadow-md">
+      {/* Global Windows Desktop App Download Banner (Desktop Web Only) */}
+      <div className="hidden lg:flex bg-gradient-to-r from-[#241c08] via-[#1a1c1c] to-[#241c08] border-b border-[#ffe9b0]/30 px-4 sm:px-8 py-1.5 items-center justify-between gap-2 text-[10px] sm:text-xs text-[#d0c5af] shadow-md">
         <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
           <span className="px-1.5 py-0.5 rounded bg-[#ffe9b0] text-[#241a00] font-extrabold text-[9px] sm:text-[10px] uppercase tracking-wider shrink-0 shadow-sm">
             App
