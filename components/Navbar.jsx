@@ -97,25 +97,38 @@ export default function Navbar() {
       {/* Live Admin Announcement Broadcast Banner (High Priority) */}
       <AnnouncementBanner />
 
-      {/* Global Windows Desktop App Download Banner (Desktop Web Only) */}
-      <div className="hidden lg:flex bg-gradient-to-r from-[#241c08] via-[#1a1c1c] to-[#241c08] border-b border-[#ffe9b0]/30 px-4 sm:px-8 py-1.5 items-center justify-between gap-2 text-[10px] sm:text-xs text-[#d0c5af] shadow-md">
-        <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1">
+      {/* Global Desktop & Mobile App Download Banner (Desktop Web Only) */}
+      <div className="hidden lg:flex bg-gradient-to-r from-[#241c08] via-[#1a1c1c] to-[#241c08] border-b border-[#ffe9b0]/30 px-4 sm:px-8 py-1.5 items-center justify-between gap-3 text-[10px] sm:text-xs text-[#d0c5af] shadow-md">
+        <div className="flex items-center gap-2 min-w-0 flex-1">
           <span className="px-1.5 py-0.5 rounded bg-[#ffe9b0] text-[#241a00] font-extrabold text-[9px] sm:text-[10px] uppercase tracking-wider shrink-0 shadow-sm">
-            App
+            Apps
           </span>
           <p className="leading-snug text-[10px] sm:text-xs text-[#d0c5af] truncate">
-            <span className="hidden sm:inline">Official </span><strong className="text-[#ffe9b0]">AnimeStop for Windows</strong> <span className="hidden md:inline">is available with 4K acceleration!</span>
+            <span>Official </span><strong className="text-[#ffe9b0]">AnimeStop for Android & Windows</strong> <span>are now available with 4K acceleration & offline syncing!</span>
           </p>
         </div>
-        <a
-          href="https://mega.nz/file/cx0zBawQ#fl8qr3-i3USuGu-_DlH_zXmomBQ6HM3pw6nXXGTRX0o"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-[10px] sm:text-xs text-[#241a00] bg-[#ffe9b0] hover:bg-white font-bold shrink-0 px-2 sm:px-3 py-1 rounded-md transition-all shadow-sm cursor-pointer whitespace-nowrap"
-        >
-          <Download className="w-3 h-3 shrink-0" />
-          <span>Get Windows App</span>
-        </a>
+        <div className="flex items-center gap-2 shrink-0">
+          <a
+            href="https://mega.nz/file/xwVjySiA#y36DU4nMfGrT5MDO9AWgYkZ-jIIbI0bIJXStC7kHniY"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs text-[#241a00] bg-[#ffe9b0] hover:bg-white font-bold shrink-0 px-2.5 py-1 rounded-md transition-all shadow-sm cursor-pointer whitespace-nowrap"
+            title="Download AnimeStop for Android (.apk)"
+          >
+            <Download className="w-3 h-3 shrink-0" />
+            <span>Android APK</span>
+          </a>
+          <a
+            href="https://mega.nz/file/cx0zBawQ#fl8qr3-i3USuGu-_DlH_zXmomBQ6HM3pw6nXXGTRX0o"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs text-[#d0c5af] hover:text-[#ffe9b0] bg-white/5 hover:bg-white/10 border border-white/10 font-bold shrink-0 px-2.5 py-1 rounded-md transition-all shadow-sm cursor-pointer whitespace-nowrap"
+            title="Download AnimeStop for Windows (.exe)"
+          >
+            <Download className="w-3 h-3 shrink-0" />
+            <span>Windows (.exe)</span>
+          </a>
+        </div>
       </div>
 
       <div className="max-w-[1920px] mx-auto px-4 md:px-12 py-3 flex justify-between items-center">
@@ -272,17 +285,28 @@ export default function Navbar() {
             <span>Library</span>
           </Link>
 
-          {/* Windows Desktop App Button */}
-          <a
-            href="https://mega.nz/file/cx0zBawQ#fl8qr3-i3USuGu-_DlH_zXmomBQ6HM3pw6nXXGTRX0o"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#ffe9b0]/15 hover:bg-[#ffe9b0] text-[#ffe9b0] hover:text-[#241a00] border border-[#ffe9b0]/40 text-xs font-bold transition-all cursor-pointer shadow-sm"
-            title="Download AnimeStop Desktop App for Windows"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span>Windows App</span>
-          </a>
+          {/* App Downloads Pill */}
+          <div className="hidden xl:flex items-center gap-1 bg-[#161818] p-0.5 rounded-lg border border-[#ffe9b0]/30 shadow-sm">
+            <a
+              href="https://mega.nz/file/xwVjySiA#y36DU4nMfGrT5MDO9AWgYkZ-jIIbI0bIJXStC7kHniY"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#ffe9b0] text-[#241a00] text-xs font-bold transition-all hover:bg-white shadow-sm"
+              title="Download AnimeStop for Android (.apk)"
+            >
+              <Download className="w-3 h-3" />
+              <span>Android</span>
+            </a>
+            <a
+              href="https://mega.nz/file/cx0zBawQ#fl8qr3-i3USuGu-_DlH_zXmomBQ6HM3pw6nXXGTRX0o"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1 px-2.5 py-1 rounded-md text-[#d0c5af] hover:text-[#ffe9b0] hover:bg-white/5 text-xs font-semibold transition-all"
+              title="Download AnimeStop for Windows (.exe)"
+            >
+              <span>Windows</span>
+            </a>
+          </div>
 
           {/* User Authentication / Profile Menu */}
           {user ? (
@@ -453,16 +477,29 @@ export default function Navbar() {
               My Library
             </Link>
 
-            <a
-              href="https://mega.nz/file/cx0zBawQ#fl8qr3-i3USuGu-_DlH_zXmomBQ6HM3pw6nXXGTRX0o"
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="mt-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#ffe9b0]/20 to-[#ffe9b0]/10 border border-[#ffe9b0]/40 text-[#ffe9b0] font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-sm"
-            >
-              <Download className="w-4 h-4" />
-              <span>Download Windows App (.exe)</span>
-            </a>
+            <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-white/10">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#99907c]">Download Native Apps</span>
+              <a
+                href="https://mega.nz/file/xwVjySiA#y36DU4nMfGrT5MDO9AWgYkZ-jIIbI0bIJXStC7kHniY"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="py-2.5 px-4 rounded-xl bg-[#ffe9b0] text-[#241a00] font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md"
+              >
+                <Download className="w-4 h-4" />
+                <span>Download Android App (.apk)</span>
+              </a>
+              <a
+                href="https://mega.nz/file/cx0zBawQ#fl8qr3-i3USuGu-_DlH_zXmomBQ6HM3pw6nXXGTRX0o"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="py-2 px-4 rounded-xl bg-[#1E2020] text-[#d0c5af] hover:text-white border border-white/10 font-semibold text-xs flex items-center justify-center gap-2 transition-all"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Download Windows App (.exe)</span>
+              </a>
+            </div>
           </nav>
         </div>
       )}

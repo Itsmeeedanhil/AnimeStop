@@ -81,10 +81,22 @@ export default function Footer() {
             <li><Link href="/library" className="hover:text-[#ffe9b0] transition-colors">Playback Timestamps</Link></li>
             <li>
               <a
-                href="https://mega.nz/file/cx0zBawQ#fl8qr3-i3USuGu-_DlH_zXmomBQ6HM3pw6nXXGTRX0o"
+                href="https://mega.nz/file/xwVjySiA#y36DU4nMfGrT5MDO9AWgYkZ-jIIbI0bIJXStC7kHniY"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#ffe9b0] font-bold hover:text-white flex items-center gap-1 transition-colors"
+                title="Download AnimeStop for Android (.apk)"
+              >
+                <span>📱 Download for Android (.apk)</span>
+              </a>
+            </li>
+            <li>
+              <a
+                href="https://mega.nz/file/cx0zBawQ#fl8qr3-i3USuGu-_DlH_zXmomBQ6HM3pw6nXXGTRX0o"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[#d0c5af] font-semibold hover:text-[#ffe9b0] flex items-center gap-1 transition-colors"
+                title="Download AnimeStop for Windows (.exe)"
               >
                 <span>💻 Download for Windows (.exe)</span>
               </a>

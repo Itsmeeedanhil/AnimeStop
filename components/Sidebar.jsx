@@ -116,29 +116,42 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* Desktop App Promo Card */}
+      {/* Native App Promo Card */}
       <div className="mt-6 mx-3 p-3.5 rounded-2xl bg-gradient-to-b from-[#1e2020] to-[#141616] border border-[#ffe9b0]/30 flex flex-col gap-2 shadow-lg">
         <div className="flex items-center gap-2">
           <span className="p-1.5 rounded-lg bg-[#ffe9b0]/15 text-[#ffe9b0]">
-            <Monitor className="w-4 h-4" />
+            <Download className="w-4 h-4" />
           </span>
           <div className="flex flex-col min-w-0">
-            <span className="text-xs font-bold text-[#e2e2e2] leading-tight">AnimeStop App</span>
-            <span className="text-[10px] text-[#ffe9b0] font-semibold">Windows 64-bit</span>
+            <span className="text-xs font-bold text-[#e2e2e2] leading-tight">AnimeStop Apps</span>
+            <span className="text-[10px] text-[#ffe9b0] font-semibold">Android & Windows</span>
           </div>
         </div>
         <p className="text-[10px] text-[#99907c] leading-snug">
-          4K hardware acceleration, desktop hotkeys & direct subtitles.
+          4K hardware acceleration, offline syncing & zero popups.
         </p>
-        <a
-          href="https://mega.nz/file/cx0zBawQ#fl8qr3-i3USuGu-_DlH_zXmomBQ6HM3pw6nXXGTRX0o"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="w-full py-1.5 rounded-lg bg-[#ffe9b0] hover:bg-white text-[#241a00] text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 shadow cursor-pointer hover:scale-[1.02]"
-        >
-          <Download className="w-3.5 h-3.5" />
-          <span>Download .exe</span>
-        </a>
+        <div className="flex flex-col gap-1.5 mt-1">
+          <a
+            href="https://mega.nz/file/xwVjySiA#y36DU4nMfGrT5MDO9AWgYkZ-jIIbI0bIJXStC7kHniY"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-1.5 rounded-lg bg-[#ffe9b0] hover:bg-white text-[#241a00] text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 shadow cursor-pointer hover:scale-[1.02]"
+            title="Download AnimeStop for Android (.apk)"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Android (.apk)</span>
+          </a>
+          <a
+            href="https://mega.nz/file/cx0zBawQ#fl8qr3-i3USuGu-_DlH_zXmomBQ6HM3pw6nXXGTRX0o"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="w-full py-1 rounded-lg bg-[#1E2020] hover:bg-[#282a2a] text-[#d0c5af] hover:text-white border border-white/10 text-[11px] font-semibold transition-all text-center flex items-center justify-center gap-1.5 cursor-pointer"
+            title="Download AnimeStop for Windows (.exe)"
+          >
+            <Download className="w-3 h-3" />
+            <span>Windows (.exe)</span>
+          </a>
+        </div>
       </div>
     </aside>
   );
