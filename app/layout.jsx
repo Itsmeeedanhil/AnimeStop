@@ -8,10 +8,16 @@ import AuthModal from '@/components/AuthModal';
 export const metadata = {
   title: 'AnimeStop — Premium Anime Streaming',
   description: 'Ultra-HD anime streaming with multi-provider failover, curated seasonal archives, and real-time cloud synchronisation.',
+  manifest: '/manifest.json',
   icons: {
     icon: '/favicon.svg',
     shortcut: '/favicon.svg',
     apple: '/favicon.svg',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'AnimeStop',
   },
 };
 
