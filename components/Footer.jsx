@@ -81,7 +81,7 @@ export default function Footer() {
             <li><Link href="/library" className="hover:text-[#ffe9b0] transition-colors">Playback Timestamps</Link></li>
             <li>
               <a
-                href="https://mega.nz/file/xwVjySiA#y36DU4nMfGrT5MDO9AWgYkZ-jIIbI0bIJXStC7kHniY"
+                href="https://mega.nz/file/4lVEVLhL#Gejamxk3LCFguFG39YEsSrL9IJy6uZfUSBy8439qlmA"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[#ffe9b0] font-bold hover:text-white flex items-center gap-1 transition-colors"

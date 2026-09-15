@@ -109,7 +109,7 @@ export default function Navbar() {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           <a
-            href="https://mega.nz/file/xwVjySiA#y36DU4nMfGrT5MDO9AWgYkZ-jIIbI0bIJXStC7kHniY"
+            href="https://mega.nz/file/4lVEVLhL#Gejamxk3LCFguFG39YEsSrL9IJy6uZfUSBy8439qlmA"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-[10px] sm:text-xs text-[#241a00] bg-[#ffe9b0] hover:bg-white font-bold shrink-0 px-2.5 py-1 rounded-md transition-all shadow-sm cursor-pointer whitespace-nowrap"
@@ -288,7 +288,7 @@ export default function Navbar() {
           {/* App Downloads Pill */}
           <div className="hidden xl:flex items-center gap-1 bg-[#161818] p-0.5 rounded-lg border border-[#ffe9b0]/30 shadow-sm">
             <a
-              href="https://mega.nz/file/xwVjySiA#y36DU4nMfGrT5MDO9AWgYkZ-jIIbI0bIJXStC7kHniY"
+              href="https://mega.nz/file/4lVEVLhL#Gejamxk3LCFguFG39YEsSrL9IJy6uZfUSBy8439qlmA"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#ffe9b0] text-[#241a00] text-xs font-bold transition-all hover:bg-white shadow-sm"
@@ -480,7 +480,7 @@ export default function Navbar() {
             <div className="flex flex-col gap-2 mt-2 pt-2 border-t border-white/10">
               <span className="text-[10px] font-bold uppercase tracking-wider text-[#99907c]">Download Native Apps</span>
               <a
-                href="https://mega.nz/file/xwVjySiA#y36DU4nMfGrT5MDO9AWgYkZ-jIIbI0bIJXStC7kHniY"
+                href="https://mega.nz/file/4lVEVLhL#Gejamxk3LCFguFG39YEsSrL9IJy6uZfUSBy8439qlmA"
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setIsMobileMenuOpen(false)}

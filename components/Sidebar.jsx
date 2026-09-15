@@ -132,7 +132,7 @@ export default function Sidebar() {
         </p>
         <div className="flex flex-col gap-1.5 mt-1">
           <a
-            href="https://mega.nz/file/xwVjySiA#y36DU4nMfGrT5MDO9AWgYkZ-jIIbI0bIJXStC7kHniY"
+            href="https://mega.nz/file/4lVEVLhL#Gejamxk3LCFguFG39YEsSrL9IJy6uZfUSBy8439qlmA"
             target="_blank"
             rel="noopener noreferrer"
             className="w-full py-1.5 rounded-lg bg-[#ffe9b0] hover:bg-white text-[#241a00] text-xs font-bold transition-all text-center flex items-center justify-center gap-1.5 shadow cursor-pointer hover:scale-[1.02]"
