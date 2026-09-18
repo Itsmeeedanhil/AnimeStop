@@ -592,7 +592,7 @@ export default function VideoPlayer({ streamData, anime, currentEpisode, onNextE
                 const isSelected = selectedServerId === srv.id;
                 return (
                   <button
-                    key={srv.id}
+                    key={srv.id} 
                     onClick={() => {
                       setSelectedServerId(srv.id);
                       setForcePlayUpcoming(true);
